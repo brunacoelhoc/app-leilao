@@ -1,0 +1,199 @@
+// Schema do Prisma: aqui descrevemos as tabelas do banco de dados
+// Docs: https://pris.ly/d/prisma-schema
+
+// Gera o client do Prisma (o codigo que usamos para consultar o banco)
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma" // pasta onde o client e gerado (dentro de src para o build do Nest enxergar; fica fora do Git)
+}
+
+// Banco de dados usado: PostgreSQL (a URL de conexao vem do prisma.config.ts e do .env)
+datasource db {
+  provider = "postgresql"
+}
+
+// Perfis do sistema (a matriz de permissoes depende disso)
+enum Role {
+  BIDDER // participante: da lances
+  SELLER // vendedor: cria leiloes e itens
+  ADMIN // administrador: gerencia categorias e usuarios
+}
+
+// Estados do leilao: DRAFT -> SCHEDULED -> OPEN -> CLOSED (ou CANCELED)
+enum AuctionStatus {
+  DRAFT // rascunho, ainda sendo montado
+  SCHEDULED // agendado, esperando a data de inicio
+  OPEN // aberto, aceitando lances
+  CLOSED // encerrado
+  CANCELED // cancelado
+}
+
+// Estados do item: comeca disponivel; ao fechar o leilao vira vendido ou nao vendido
+enum ItemStatus {
+  AVAILABLE // disponivel para receber lances
+  SOLD // vendido (teve lance vencedor)
+  UNSOLD // nao vendido (o leilao fechou sem lances)
+}
+
+// Tipo do arquivo enviado: foto do item ou documento (certificado, laudo)
+enum DocumentType {
+  PHOTO // foto do item
+  DOCUMENT // documento (ex.: certificado de autenticidade)
+}
+
+// Resultado de uma acao registrada na auditoria
+enum AuditResult {
+  SUCCESS // a acao foi feita
+  REJECTED // a acao foi tentada mas recusada (ex.: lance baixo, sem permissao)
+}
+
+// Usuario do sistema (quem faz login)
+model User {
+  id                 String                 @id @default(uuid()) // identificador unico gerado sozinho
+  nome               String
+  email              String                 @unique // nao pode repetir email
+  senha              String // guarda o HASH bcrypt, nunca a senha pura
+  papel              Role                   @default(BIDDER) // perfil do usuario; todo cadastro comeca como BIDDER
+  ativo              Boolean                @default(true) // false = usuario desativado (nao consegue entrar)
+  criadoEm           DateTime               @default(now()) // data de criacao, preenchida sozinha
+  atualizadoEm       DateTime               @updatedAt // o Prisma atualiza a cada alteracao
+  leiloes            Auction[] // lista dos leiloes que este usuario criou
+  alteracoes         AuctionStatusHistory[] // mudancas de estado feitas por este usuario
+  itensGanhos        AuctionItem[] // itens que este usuario venceu
+  lances             Bid[] // lances dados por este usuario
+  documentosEnviados Document[] // arquivos enviados por este usuario
+  auditorias         AuditLog[] // acoes registradas na auditoria feitas por este usuario
+}
+
+// Categoria do item (ex.: Eletronicos, Veiculos). So o ADMIN cadastra
+model Category {
+  id           String        @id @default(uuid()) // identificador unico gerado sozinho
+  nome         String        @unique // nao pode ter duas categorias com o mesmo nome
+  descricao    String? // o "?" quer dizer que e opcional
+  criadoEm     DateTime      @default(now()) // data de criacao, preenchida sozinha
+  atualizadoEm DateTime      @updatedAt // o Prisma atualiza a cada alteracao
+  itens        AuctionItem[] // itens desta categoria
+}
+
+// Leilao: o evento em si (quem vende, titulo e estado). Os itens ficam em AuctionItem
+model Auction {
+  id           String                 @id @default(uuid()) // identificador unico gerado sozinho
+  titulo       String
+  descricao    String? // opcional
+  status       AuctionStatus          @default(DRAFT) // todo leilao nasce como rascunho
+  dataInicio   DateTime // quando o leilao abre para lances
+  dataFim      DateTime // quando o leilao fecha
+  vendedorId   String // guarda o id do usuario dono do leilao (chave estrangeira)
+  vendedor     User                   @relation(fields: [vendedorId], references: [id], onDelete: Restrict) // liga ao usuario
+  criadoEm     DateTime               @default(now())
+  atualizadoEm DateTime               @updatedAt
+  historico    AuctionStatusHistory[] // todas as mudancas de estado deste leilao
+  itens        AuctionItem[] // itens que fazem parte deste leilao
+
+  @@index([vendedorId]) // deixa mais rapido buscar os leiloes de um vendedor
+  @@index([status, dataFim]) // deixa rapido listar leiloes por estado, ordenados pelo termino
+}
+
+// Historico: guarda cada mudanca de estado de um leilao (quem mudou, de qual para qual e quando)
+model AuctionStatusHistory {
+  id             String         @id @default(uuid()) // identificador unico gerado sozinho
+  leilaoId       String // id do leilao que mudou de estado
+  leilao         Auction        @relation(fields: [leilaoId], references: [id], onDelete: Restrict) // liga ao leilao
+  statusAnterior AuctionStatus? // estado antes da mudanca (vazio no primeiro registro)
+  statusNovo     AuctionStatus // estado depois da mudanca
+  alteradoPorId  String // id do usuario que fez a mudanca
+  alteradoPor    User           @relation(fields: [alteradoPorId], references: [id], onDelete: Restrict) // liga ao usuario
+  motivo         String? // por que o estado mudou (ex.: motivo do cancelamento)
+  criadoEm       DateTime       @default(now()) // quando a mudanca aconteceu
+
+  @@index([leilaoId, criadoEm]) // deixa rapido buscar o historico de um leilao em ordem de data
+  @@index([alteradoPorId]) // deixa rapido buscar o que um usuario alterou
+}
+
+// Item do leilao: o que esta sendo vendido (um leilao pode ter varios itens)
+model AuctionItem {
+  id               String     @id @default(uuid()) // identificador unico gerado sozinho
+  titulo           String
+  descricao        String? // opcional
+  status           ItemStatus @default(AVAILABLE) // todo item nasce disponivel
+  precoInicial     Decimal    @db.Decimal(12, 2) // preco de partida do item
+  incrementoMinimo Decimal    @db.Decimal(12, 2) // quanto cada lance precisa superar o lance atual
+  lanceAtual       Decimal?   @db.Decimal(12, 2) // maior lance ate agora (vazio se ninguem deu lance)
+  cep              String // cep de onde o item sera retirado (so numeros)
+  logradouro       String? // rua, preenchida pela consulta de CEP
+  cidade           String? // cidade, preenchida pela consulta de CEP
+  uf               String? // estado (ex.: SP), preenchido pela consulta de CEP
+  vencedorId       String? // id de quem ganhou; so e preenchido quando o item e vendido
+  vencedor         User?      @relation(fields: [vencedorId], references: [id], onDelete: Restrict) // liga ao vencedor
+  leilaoId         String // id do leilao a que o item pertence
+  leilao           Auction    @relation(fields: [leilaoId], references: [id], onDelete: Restrict) // liga ao leilao
+  categoriaId      String // id da categoria do item
+  categoria        Category   @relation(fields: [categoriaId], references: [id], onDelete: Restrict) // liga a categoria
+  lances           Bid[] // lances recebidos por este item
+  documentos       Document[] // fotos e documentos deste item
+  criadoEm         DateTime   @default(now())
+  atualizadoEm     DateTime   @updatedAt
+
+  @@index([leilaoId]) // deixa rapido buscar os itens de um leilao
+  @@index([categoriaId]) // deixa rapido buscar os itens de uma categoria
+  @@index([vencedorId]) // deixa rapido buscar os itens que um usuario ganhou
+}
+
+// Lance: cada oferta feita em um item. Nunca e editado nem apagado (serve de historico e auditoria)
+model Bid {
+  id            String      @id @default(uuid()) // identificador unico gerado sozinho
+  valor         Decimal     @db.Decimal(12, 2) // valor oferecido
+  lanceAnterior Decimal?    @db.Decimal(12, 2) // lance atual do item logo antes deste (vazio se for o primeiro)
+  itemId        String // id do item que recebeu o lance
+  item          AuctionItem @relation(fields: [itemId], references: [id], onDelete: Restrict) // liga ao item
+  licitanteId   String // id de quem deu o lance
+  licitante     User        @relation(fields: [licitanteId], references: [id], onDelete: Restrict) // liga ao usuario
+  ipOrigem      String? // ip de quem deu o lance (auditoria)
+  userAgent     String? // navegador ou aplicativo usado (auditoria)
+  idRequisicao  String? // id da requisicao, para cruzar com os logs (auditoria)
+  criadoEm      DateTime    @default(now()) // quando o lance foi dado
+
+  @@unique([itemId, valor]) // nao existem dois lances com o mesmo valor no mesmo item
+  @@index([licitanteId, criadoEm]) // deixa rapido buscar os lances de um usuario, do mais recente
+}
+
+// Arquivo enviado para um item (foto ou documento). O arquivo fica em disco; aqui so a referencia
+model Document {
+  id           String       @id @default(uuid()) // identificador unico gerado sozinho
+  tipo         DocumentType // foto ou documento
+  nomeOriginal String // nome que o arquivo tinha no computador de quem enviou
+  nomeArquivo  String       @unique // nome seguro gerado por nos, usado para salvar em disco
+  mimeType     String // tipo do arquivo (ex.: image/jpeg, application/pdf)
+  tamanho      Int // tamanho em bytes
+  hash         String // impressao digital SHA-256, prova que o arquivo nao foi alterado
+  itemId       String // id do item ao qual o arquivo pertence
+  item         AuctionItem  @relation(fields: [itemId], references: [id], onDelete: Restrict) // liga ao item
+  enviadoPorId String // id de quem enviou
+  enviadoPor   User         @relation(fields: [enviadoPorId], references: [id], onDelete: Restrict) // liga ao usuario
+  criadoEm     DateTime     @default(now()) // quando foi enviado
+
+  @@index([itemId]) // deixa rapido buscar os arquivos de um item
+  @@index([enviadoPorId]) // deixa rapido buscar o que um usuario enviou
+}
+
+// Registro de auditoria: quem tentou fazer o que, quando, de onde e com que resultado
+model AuditLog {
+  id           String      @id @default(uuid()) // identificador unico gerado sozinho
+  usuarioId    String? // quem fez a acao (vazio se nao estava logado, ex.: login falho)
+  usuario      User?       @relation(fields: [usuarioId], references: [id], onDelete: Restrict) // liga ao usuario
+  papel        Role? // papel do usuario naquele momento
+  acao         String // o que foi feito (ex.: LANCE_CRIADO, LOGIN, LEILAO_CANCELADO)
+  entidade     String? // tipo do recurso afetado (ex.: Auction, AuctionItem)
+  entidadeId   String? // id do recurso afetado
+  resultado    AuditResult // deu certo ou foi recusado
+  motivo       String? // por que foi recusado (ex.: lance abaixo do minimo)
+  statusHttp   Int? // codigo de resposta (ex.: 201, 403, 409)
+  ipOrigem     String? // ip de quem fez a requisicao
+  userAgent    String? // navegador ou aplicativo usado
+  idRequisicao String? // id da requisicao, para cruzar com os logs
+  criadoEm     DateTime    @default(now()) // quando aconteceu
+
+  @@index([usuarioId]) // deixa rapido buscar o que um usuario fez
+  @@index([entidade, entidadeId]) // deixa rapido buscar tudo o que aconteceu com um recurso
+  @@index([criadoEm]) // deixa rapido buscar por periodo
+}
