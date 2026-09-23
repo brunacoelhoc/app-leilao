@@ -2,6 +2,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -52,6 +53,8 @@ interface ItemTravado {
 
 @Injectable()
 export class BidsService {
+  private readonly logger = new Logger(BidsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
@@ -160,16 +163,21 @@ export class BidsService {
 
       // Tempo real: avisa quem esta vendo este item (nao pode derrubar o lance se falhar)
       const resposta = paraResposta(bid);
-      const licitante = await this.prisma.user.findUnique({
-        where: { id: usuario.id },
-        select: { nome: true },
-      });
-      this.lancesGateway.emitirLanceNovo(itemId, {
-        lance: resposta,
-        licitanteNome: licitante?.nome ?? 'Licitante',
-        lanceAtual: resposta.valor,
-        lanceMinimo: proximoMinimo.toString(),
-      });
+      try {
+        const licitante = await this.prisma.user.findUnique({
+          where: { id: usuario.id },
+          select: { nome: true },
+        });
+        this.lancesGateway.emitirLanceNovo(itemId, {
+          lance: resposta,
+          licitanteNome: licitante?.nome ?? 'Licitante',
+          lanceAtual: resposta.valor,
+          lanceMinimo: proximoMinimo.toString(),
+        });
+      } catch (erroAviso) {
+        // O lance ja foi gravado: falha no aviso nao pode virar erro para quem lancou
+        this.logger.error(`Falha ao avisar lance em tempo real: ${(erroAviso as Error).message}`);
+      }
 
       return resposta;
     } catch (erro) {

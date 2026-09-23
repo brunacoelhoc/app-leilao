@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -33,6 +34,8 @@ import { transicaoEhValida } from './transicoes-status';
 
 @Injectable()
 export class AuctionsService {
+  private readonly logger = new Logger(AuctionsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
@@ -287,6 +290,15 @@ export class AuctionsService {
     motivo?: string,
   ): Promise<Auction> {
     const atualizado = await this.prisma.$transaction(async (tx) => {
+      // Ao fechar, trava os itens ANTES de mudar o status: um lance em
+      // andamento termina primeiro (ou espera e ja ve o leilao fechado),
+      // entao o vencedor calculado nunca fica desatualizado
+      if (novoStatus === AuctionStatus.CLOSED) {
+        await tx.$queryRaw`
+          SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${leilao.id} FOR UPDATE
+        `;
+      }
+
       const resultado = await tx.auction.update({
         where: { id: leilao.id },
         data: { status: novoStatus },
@@ -315,7 +327,12 @@ export class AuctionsService {
 
     // Tempo real: so depois do commit avisamos quem esta na sala de cada item
     if (novoStatus === AuctionStatus.CLOSED) {
-      await this.avisarItensFinalizados(leilao.id);
+      try {
+        await this.avisarItensFinalizados(leilao.id);
+      } catch (erroAviso) {
+        // O fechamento ja foi gravado: falha no aviso nao pode virar erro
+        this.logger.error(`Falha ao avisar itens finalizados: ${(erroAviso as Error).message}`);
+      }
     }
     return atualizado;
   }
