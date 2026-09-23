@@ -1,0 +1,32 @@
+<div class="pagina">
+  <h1>Meus lances</h1>
+
+  @if (carregando()) {
+    <p class="lista-vazia">Carregando...</p>
+  } @else if (erro()) {
+    <p class="erro">{{ erro() }}</p>
+  } @else if (resposta()!.dados.length === 0) {
+    <p class="lista-vazia">Você ainda não deu nenhum lance.</p>
+  } @else {
+    <table style="width: 100%; border-collapse: collapse">
+      <thead>
+        <tr style="text-align: left; border-bottom: 1px solid var(--cor-borda)">
+          <th style="padding: 0.4rem 0">Valor</th>
+          <th style="padding: 0.4rem 0">Quando</th>
+          <th style="padding: 0.4rem 0">Item</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (lance of resposta()!.dados; track lance.id) {
+          <tr style="border-bottom: 1px solid var(--cor-borda)">
+            <td style="padding: 0.4rem 0">R$ {{ lance.valor }}</td>
+            <td style="padding: 0.4rem 0">{{ lance.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td style="padding: 0.4rem 0">
+              <a [routerLink]="['/itens', lance.itemId]">ver item</a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

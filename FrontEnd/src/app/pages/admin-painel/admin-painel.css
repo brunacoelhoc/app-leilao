@@ -1,0 +1,239 @@
+.abas {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--cor-borda);
+  margin: 1.25rem 0 1.5rem;
+}
+
+.abas button {
+  background: none;
+  border: none;
+  padding: 0.7rem 1.4rem;
+  font-family: var(--fonte-titulo);
+  font-size: 1.05rem;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.abas button:hover {
+  color: var(--cor-bordo);
+}
+
+.abas button.ativa {
+  color: var(--cor-bordo);
+  border-bottom-color: var(--cor-bordo);
+  font-weight: 700;
+}
+
+.topo-secao {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.topo-secao h2 {
+  margin: 0;
+}
+
+.filtro {
+  margin: 0;
+  min-width: 180px;
+}
+
+.tabela-rolavel {
+  overflow-x: auto;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-suave);
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.tabela th {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  background: var(--cor-superficie-alt);
+  color: var(--cor-marrom);
+  font-family: var(--fonte-titulo);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--cor-dourado-suave);
+}
+
+.tabela td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--cor-borda);
+  vertical-align: middle;
+}
+
+.tabela tbody tr:hover {
+  background: color-mix(in srgb, var(--cor-dourado) 8%, transparent);
+}
+
+.tabela td.destaque {
+  font-weight: 600;
+  color: var(--cor-marrom);
+}
+
+.acoes-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.acoes-col > * {
+  margin-left: 0.35rem;
+}
+
+button.pequeno,
+a.pequeno {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+a.pequeno {
+  color: var(--cor-marrom);
+  border: 1.5px solid var(--cor-dourado);
+  text-decoration: none;
+}
+
+.grade-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1rem;
+}
+
+.usuario-card {
+  margin: 0;
+}
+
+.topo-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.topo-card > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.topo-card strong {
+  display: block;
+  font-family: var(--fonte-titulo);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.papel {
+  font-size: 0.72rem;
+  color: var(--cor-texto-suave);
+  letter-spacing: 0.08em;
+}
+
+.dados-mascarados {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.dados-mascarados span {
+  display: inline-block;
+  width: 4.5rem;
+  color: var(--cor-texto-suave);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.dica {
+  display: block;
+  margin-top: 0.6rem;
+  color: var(--cor-dourado);
+  font-style: italic;
+}
+
+.detalhe-usuario {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dados-completos {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem;
+}
+
+.dados-completos div {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 1px dashed var(--cor-borda);
+  padding-bottom: 0.4rem;
+}
+
+.dados-completos dt {
+  width: 6rem;
+  color: var(--cor-texto-suave);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.dados-completos dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+/* Card de categoria / leilao (visao em grade, com acoes de CRUD no rodape) */
+.item-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.item-card h3 {
+  margin: 0.4rem 0 0.25rem;
+}
+
+.item-card .descricao {
+  margin: 0 0 0.5rem;
+  color: var(--cor-texto-suave);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.item-card .meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.acoes-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--cor-borda);
+}

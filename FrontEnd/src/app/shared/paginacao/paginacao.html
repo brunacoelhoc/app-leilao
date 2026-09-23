@@ -1,0 +1,33 @@
+<div class="barra">
+  <div class="tamanho">
+    <label for="limite-{{ limite() }}">Itens por página</label>
+    <select [value]="limite()" (change)="aoMudarLimite($any($event.target).value)" id="limite-{{ limite() }}">
+      @for (opcao of opcoesLimite; track opcao) {
+        <option [value]="opcao" [selected]="opcao === limite()">{{ opcao }}</option>
+      }
+    </select>
+    <span class="total">{{ total() }} no total</span>
+  </div>
+
+  @if (totalPaginas() > 1) {
+    <nav class="paginas" aria-label="Paginação">
+      <button type="button" class="seta" (click)="irPara(pagina() - 1)" [disabled]="pagina() === 1" aria-label="Página anterior">‹</button>
+
+      @if (numeros()[0] > 1) {
+        <button type="button" (click)="irPara(1)">1</button>
+        <span class="reticencias">…</span>
+      }
+
+      @for (n of numeros(); track n) {
+        <button type="button" [class.atual]="n === pagina()" (click)="irPara(n)" [attr.aria-current]="n === pagina() ? 'page' : null">{{ n }}</button>
+      }
+
+      @if (numeros()[numeros().length - 1] < totalPaginas()) {
+        <span class="reticencias">…</span>
+        <button type="button" (click)="irPara(totalPaginas())">{{ totalPaginas() }}</button>
+      }
+
+      <button type="button" class="seta" (click)="irPara(pagina() + 1)" [disabled]="pagina() === totalPaginas()" aria-label="Próxima página">›</button>
+    </nav>
+  }
+</div>

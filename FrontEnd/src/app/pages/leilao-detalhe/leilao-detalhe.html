@@ -1,0 +1,71 @@
+<div class="pagina">
+  @if (erro()) {
+    <p class="erro">{{ erro() }}</p>
+  }
+
+  @if (leilao(); as l) {
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem">
+      <div>
+        <h1>{{ l.titulo }}</h1>
+        <p class="lista-vazia">
+          {{ l.dataInicio | date: 'dd/MM/yyyy HH:mm' }} — {{ l.dataFim | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
+      </div>
+      <span [class]="classeSeloLeilao(l.status)">{{ ROTULO_STATUS_LEILAO[l.status] }}</span>
+    </div>
+
+    @if (l.descricao) {
+      <p>{{ l.descricao }}</p>
+    }
+
+    @if (indicadores(); as ind) {
+      <div class="cartao">
+        <h3>Indicadores</h3>
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap">
+          <div><strong>{{ ind.totalItens }}</strong><br /><small>itens</small></div>
+          <div><strong>{{ ind.totalLances }}</strong><br /><small>lances</small></div>
+          <div><strong>{{ ind.maiorLance ?? '—' }}</strong><br /><small>maior lance</small></div>
+          <div><strong>{{ ind.itensVendidos }}</strong><br /><small>vendidos</small></div>
+          <div><strong>{{ ind.itensDisponiveis }}</strong><br /><small>disponíveis</small></div>
+          <div><strong>R$ {{ ind.arrecadadoTotal }}</strong><br /><small>arrecadado</small></div>
+        </div>
+      </div>
+    }
+  }
+
+  <h2>Itens</h2>
+  <div class="campo">
+    <label for="busca-itens">Buscar item por título ou descrição</label>
+    <input
+      id="busca-itens"
+      type="search"
+      placeholder="Digite parte do texto..."
+      maxlength="100"
+      [ngModel]="busca"
+      (ngModelChange)="aoDigitarBusca($event)"
+    />
+  </div>
+
+  @if (carregando()) {
+    <p class="lista-vazia">Carregando...</p>
+  } @else if (itens()!.dados.length === 0) {
+    <p class="lista-vazia">
+      {{ busca.trim() ? 'Nenhum item encontrado para essa busca.' : 'Este leilão ainda não tem itens.' }}
+    </p>
+  } @else {
+    @for (item of itens()!.dados; track item.id) {
+      <a [routerLink]="['/itens', item.id]" class="cartao" style="display: block; text-decoration: none">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem">
+          <div>
+            <h3 style="margin-bottom: 0.25rem">{{ item.titulo }}</h3>
+            <p class="lista-vazia" style="margin: 0">
+              {{ item.cidade }}/{{ item.uf }} · lance atual: R$ {{ item.lanceAtual ?? item.precoInicial }} ·
+              {{ item.totalLances }} lance(s)
+            </p>
+          </div>
+          <span [class]="classeSeloItem(item.status)">{{ ROTULO_STATUS_ITEM[item.status] }}</span>
+        </div>
+      </a>
+    }
+  }
+</div>

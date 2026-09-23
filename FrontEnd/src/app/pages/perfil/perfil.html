@@ -1,0 +1,182 @@
+<div class="pagina">
+  <section class="cabecalho-perfil cartao">
+    <app-avatar [avatarUrl]="usuario().avatarUrl" [nome]="usuario().nome" [tamanho]="110" />
+    <div class="identidade">
+      <h1>{{ usuario().nome }}</h1>
+      <p class="subtitulo">{{ usuario().email }}</p>
+      <span class="selo status-open">{{ usuario().papel }}</span>
+      <small class="desde">Membro desde {{ usuario().criadoEm | date: 'MMMM \'de\' yyyy' }}</small>
+    </div>
+    <div class="acoes">
+      <button type="button" class="primario" (click)="abrirEdicao()">Editar perfil</button>
+      <button type="button" class="secundario" (click)="abrirSenha()">Alterar senha</button>
+    </div>
+  </section>
+
+  <section class="cartao">
+    <h2>Informações pessoais</h2>
+    <p class="lista-vazia">Dados sensíveis ficam ocultos. Clique em “Mostrar” para ver.</p>
+
+    <dl class="dados">
+      <div>
+        <dt>Telefone</dt>
+        <dd>
+          {{ revelado().telefone ? (formatarTelefone(usuario().telefone) || '—') : ocultarTelefone(usuario().telefone) }}
+          @if (usuario().telefone) {
+            <button type="button" class="link" (click)="alternar('telefone')">{{ revelado().telefone ? 'Ocultar' : 'Mostrar' }}</button>
+          }
+        </dd>
+      </div>
+      <div>
+        <dt>CPF</dt>
+        <dd>
+          {{ revelado().cpf ? (formatarCpf(usuario().cpf) || '—') : ocultarCpf(usuario().cpf) }}
+          @if (usuario().cpf) {
+            <button type="button" class="link" (click)="alternar('cpf')">{{ revelado().cpf ? 'Ocultar' : 'Mostrar' }}</button>
+          }
+        </dd>
+      </div>
+      <div>
+        <dt>Endereço</dt>
+        <dd>
+          {{ revelado().endereco ? (usuario().endereco || '—') : ocultarEndereco(usuario().endereco) }}
+          @if (usuario().endereco) {
+            <button type="button" class="link" (click)="alternar('endereco')">{{ revelado().endereco ? 'Ocultar' : 'Mostrar' }}</button>
+          }
+        </dd>
+      </div>
+    </dl>
+  </section>
+</div>
+
+@if (editando()) {
+  <app-modal titulo="Editar perfil" [largura]="680" (fechar)="editando.set(false)">
+    <form (ngSubmit)="salvar()">
+      <h3>Foto de perfil</h3>
+      <div class="avatar-atual">
+        <app-avatar [avatarUrl]="formAvatar" [nome]="formNome || '?'" [tamanho]="84" />
+        <label class="botao-arquivo secundario">
+          Enviar do computador
+          <input type="file" accept="image/*" (change)="aoEscolherArquivo($event)" hidden />
+        </label>
+      </div>
+
+      <p class="lista-vazia">Ou escolha um dos nossos avatares:</p>
+      <div class="grade-avatares" role="listbox" aria-label="Avatares disponíveis">
+        @for (a of avatares; track a.chave) {
+          <button
+            type="button"
+            class="opcao-avatar"
+            [class.escolhido]="formAvatar === a.chave"
+            [style.background]="a.cor"
+            (click)="escolherAvatar(a.chave)"
+            [attr.aria-label]="a.nome"
+            [attr.aria-selected]="formAvatar === a.chave"
+          >@if (a.imagem) {<img [src]="a.imagem" [alt]="a.nome" />} @else {{{ a.emoji }}}</button>
+        }
+      </div>
+
+      <h3>Dados</h3>
+      <div class="campo">
+        <label for="nome">Nome</label>
+        <input id="nome" name="nome" type="text" [(ngModel)]="formNome" required />
+      </div>
+      <div class="campo">
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email" [(ngModel)]="formEmail" required autocomplete="email" />
+      </div>
+      @if (emailMudou) {
+        <div class="campo">
+          <label for="senhaEmail">Senha atual (necessária para trocar o e-mail)</label>
+          <input id="senhaEmail" name="senhaEmail" type="password" [(ngModel)]="formSenhaEmail" required autocomplete="current-password" />
+        </div>
+      }
+      <div class="linha">
+        <div class="campo">
+          <label for="telefone">Telefone</label>
+          <input id="telefone" name="telefone" type="text" inputmode="numeric" placeholder="(11) 98765-4321" [(ngModel)]="formTelefone" (input)="mascararTelefone()" />
+        </div>
+        <div class="campo">
+          <label for="cpf">CPF</label>
+          <input id="cpf" name="cpf" type="text" inputmode="numeric" placeholder="123.456.789-00" [(ngModel)]="formCpf" (input)="mascararCpf()" />
+        </div>
+      </div>
+      <h3>Endereço</h3>
+      @if (formEndereco) {
+        <p class="lista-vazia">Endereço atual: <strong>{{ formEndereco }}</strong>. Preencha o CEP abaixo para trocá-lo.</p>
+      }
+      <div class="linha">
+        <div class="campo">
+          <label for="cep">CEP</label>
+          <div class="campo-cep">
+            <input id="cep" name="cep" type="text" inputmode="numeric" placeholder="00000-000" [(ngModel)]="formCep" (input)="mascararCep()" autocomplete="postal-code" />
+            <button type="button" class="secundario" (click)="buscarCep()" [disabled]="buscandoCep()">{{ buscandoCep() ? 'Buscando…' : 'Buscar CEP' }}</button>
+          </div>
+          @if (erroCep()) {
+            <small class="erro">{{ erroCep() }}</small>
+          }
+        </div>
+        <div class="campo">
+          <label for="numero">Número</label>
+          <input id="numero" name="numero" type="text" [(ngModel)]="formNumero" maxlength="10" />
+        </div>
+      </div>
+      <div class="campo">
+        <label for="logradouro">Rua</label>
+        <input id="logradouro" name="logradouro" type="text" [(ngModel)]="formLogradouro" maxlength="120" />
+      </div>
+      <div class="linha">
+        <div class="campo">
+          <label for="complemento">Complemento</label>
+          <input id="complemento" name="complemento" type="text" [(ngModel)]="formComplemento" maxlength="40" />
+        </div>
+        <div class="campo">
+          <label for="cidade">Cidade / UF</label>
+          <input id="cidade" name="cidade" type="text" [value]="formCidade ? formCidade + '/' + formUf : ''" readonly placeholder="Preenchido pelo CEP" />
+        </div>
+      </div>
+
+      @if (erroEdicao()) {
+        <p class="erro">{{ erroEdicao() }}</p>
+      }
+
+      <div class="botoes">
+        <button type="submit" class="primario" [disabled]="salvando()">{{ salvando() ? 'Salvando...' : 'Salvar alterações' }}</button>
+        <button type="button" class="secundario" (click)="editando.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (trocandoSenha()) {
+  <app-modal titulo="Alterar senha" [largura]="460" (fechar)="trocandoSenha.set(false)">
+    <form (ngSubmit)="trocarSenha()">
+      <div class="campo">
+        <label for="senhaAtual">Senha atual</label>
+        <input id="senhaAtual" name="senhaAtual" [type]="mostrarSenhas() ? 'text' : 'password'" [(ngModel)]="senhaAtual" required autocomplete="current-password" />
+      </div>
+      <div class="campo">
+        <label for="novaSenha">Nova senha</label>
+        <input id="novaSenha" name="novaSenha" [type]="mostrarSenhas() ? 'text' : 'password'" [(ngModel)]="novaSenha" required autocomplete="new-password" />
+        <small class="lista-vazia">Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo.</small>
+      </div>
+      <div class="campo">
+        <label for="confirmarSenha">Confirmar nova senha</label>
+        <input id="confirmarSenha" name="confirmarSenha" [type]="mostrarSenhas() ? 'text' : 'password'" [(ngModel)]="confirmarSenha" required autocomplete="new-password" />
+      </div>
+      <div class="campo-checkbox">
+        <input id="verSenhas" name="verSenhas" type="checkbox" [checked]="mostrarSenhas()" (change)="mostrarSenhas.set(!mostrarSenhas())" />
+        <label for="verSenhas">Mostrar senhas digitadas</label>
+      </div>
+
+      @if (erroSenha()) {
+        <p class="erro">{{ erroSenha() }}</p>
+      }
+
+      <div class="botoes">
+        <button type="submit" class="primario" [disabled]="salvando()">{{ salvando() ? 'Salvando...' : 'Alterar senha' }}</button>
+        <button type="button" class="secundario" (click)="trocandoSenha.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </app-modal>
+}

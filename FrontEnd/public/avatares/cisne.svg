@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Cisne">
+  <defs>
+    <radialGradient id="fundo" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#eaf0f2"/><stop offset="1" stop-color="#bfcdd4"/></radialGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#fundo)" stroke="#a9822c" stroke-width="2"/>
+  <circle cx="50" cy="50" r="44" fill="none" stroke="#a9822c" stroke-width="0.6" stroke-dasharray="1.5 2"/>
+  <!-- agua -->
+  <g fill="none" stroke="#6f8fa0" stroke-width="1" stroke-linecap="round">
+    <path d="M16 74 Q24 70 32 74 T48 74 T64 74 T80 74 T88 74"/>
+    <path d="M22 82 Q30 78 38 82 T54 82 T70 82 T84 82" opacity="0.7"/>
+  </g>
+  <g stroke="#4a5b66" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- pescoco em S -->
+    <path d="M40 62 C30 50 44 44 44 34 C44 24 60 22 60 32" fill="none" stroke-width="7" stroke="#4a5b66"/>
+    <path d="M40 62 C30 50 44 44 44 34 C44 24 60 22 60 32" fill="none" stroke-width="5" stroke="#fbfaf4"/>
+    <!-- corpo -->
+    <path d="M28 66 Q40 56 62 60 Q78 62 82 52 Q86 66 74 74 Q52 80 34 74 Q26 72 28 66 Z" fill="#fbfaf4"/>
+    <!-- asa -->
+    <path d="M46 64 Q60 58 72 60 Q66 70 52 70 Q46 68 46 64 Z" fill="#e4e8e6"/>
+    <path d="M52 64 Q60 62 66 62 M52 67 Q60 66 64 66" fill="none" stroke-width="0.6"/>
+    <!-- cabeca e bico -->
+    <circle cx="60" cy="31" r="3.6" fill="#fbfaf4"/>
+    <path d="M62.6 30 L69 32 L62.6 34.2 Z" fill="#d98a2a"/>
+    <path d="M62.6 30 L60.6 29" stroke="#2f1c11" stroke-width="1.4" fill="none"/>
+    <circle cx="60.2" cy="30.4" r="0.9" fill="#2f1c11" stroke="none"/>
+  </g>
+</svg>

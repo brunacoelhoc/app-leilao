@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Coruja">
+  <defs>
+    <radialGradient id="fundo" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#f3ead4"/><stop offset="1" stop-color="#d9c7a0"/></radialGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#fundo)" stroke="#a9822c" stroke-width="2"/>
+  <circle cx="50" cy="50" r="44" fill="none" stroke="#a9822c" stroke-width="0.6" stroke-dasharray="1.5 2"/>
+  <!-- galho -->
+  <path d="M14 82 Q50 76 86 82" fill="none" stroke="#5b3a24" stroke-width="3" stroke-linecap="round"/>
+  <g stroke="#4a2e1f" stroke-width="1.2" stroke-linejoin="round">
+    <!-- corpo -->
+    <path d="M26 44 Q24 26 34 22 L40 28 Q50 25 60 28 L66 22 Q76 26 74 44 Q76 72 50 78 Q24 72 26 44 Z" fill="#a67c52"/>
+    <!-- barriga -->
+    <path d="M38 52 Q50 46 62 52 Q64 70 50 75 Q36 70 38 52 Z" fill="#e6d2a6"/>
+    <g fill="none" stroke-width="0.8">
+      <path d="M43 58 q3 3 6 0 M51 58 q3 3 6 0 M40 64 q3 3 6 0 M48 64 q3 3 6 0 M56 64 q3 3 6 0 M45 70 q3 3 6 0 M53 70 q3 3 6 0"/>
+      <path d="M30 44 Q28 58 34 68 M70 44 Q72 58 66 68"/>
+    </g>
+    <!-- discos faciais e olhos -->
+    <circle cx="40" cy="42" r="10" fill="#f4e6c2"/><circle cx="60" cy="42" r="10" fill="#f4e6c2"/>
+    <circle cx="40" cy="42" r="6.5" fill="#d9a441"/><circle cx="60" cy="42" r="6.5" fill="#d9a441"/>
+    <circle cx="40" cy="42" r="3.2" fill="#2f1c11"/><circle cx="60" cy="42" r="3.2" fill="#2f1c11"/>
+    <circle cx="41.2" cy="40.8" r="1" fill="#fff" stroke="none"/><circle cx="61.2" cy="40.8" r="1" fill="#fff" stroke="none"/>
+    <!-- bico -->
+    <path d="M47 47 L53 47 L50 55 Z" fill="#c98a2a"/>
+    <!-- pes -->
+    <path d="M42 78 v4 M45 78 v4 M55 78 v4 M58 78 v4" stroke="#c98a2a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

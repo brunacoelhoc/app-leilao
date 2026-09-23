@@ -1,0 +1,331 @@
+:host {
+  display: block;
+}
+
+.carrossel {
+  padding: 2.5rem 0 1rem;
+}
+
+.titulo {
+  text-align: center;
+  font-family: var(--fonte-titulo);
+  color: var(--cor-bordo);
+  margin: 0 0 1.5rem;
+}
+
+.aviso {
+  text-align: center;
+  color: var(--cor-texto-suave);
+}
+
+.palco {
+  position: relative;
+  padding: 0 3rem;
+  outline: none;
+}
+
+.palco:focus-visible {
+  outline: 3px solid var(--cor-dourado);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+/* Palco 3D: os cards ficam empilhados no centro e cada um se desloca pela variável --o */
+.pista {
+  position: relative;
+  height: 25rem;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.card {
+  --largura: clamp(11rem, 20vw, 15rem);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--largura);
+  margin-left: calc(var(--largura) / -2);
+  display: flex;
+  flex-direction: column;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  box-shadow: var(--sombra-suave);
+  overflow: hidden;
+  transform: translateY(-50%) translateX(calc(var(--o) * 108%)) translateZ(calc(var(--o) * var(--o) * -70px))
+    rotateY(calc(var(--o) * -14deg)) scale(0.92);
+  transition:
+    transform 0.5s cubic-bezier(0.22, 0.8, 0.3, 1),
+    opacity 0.4s,
+    box-shadow 0.3s;
+  z-index: calc(10 - var(--o) * var(--o));
+}
+
+.card.dist-0 {
+  transform: translateY(-50%) translateZ(60px) scale(1.14);
+  box-shadow: var(--sombra-media);
+  border-color: var(--cor-dourado);
+}
+
+.card.dist-1,
+.card.dist-m1 {
+  opacity: 0.95;
+}
+
+.card.dist-2,
+.card.dist-m2 {
+  opacity: 0.7;
+  transform: translateY(-50%) translateX(calc(var(--o) * 96%)) translateZ(-140px) rotateY(calc(var(--o) * -18deg)) scale(0.8);
+}
+
+/* Hover: expansão sutil (soma um pouco de escala ao estado atual) */
+.card:hover {
+  box-shadow: var(--sombra-media);
+}
+
+.card.dist-0:hover {
+  transform: translateY(-50%) translateZ(80px) scale(1.19);
+}
+
+.card.dist-1:hover,
+.card.dist-m1:hover {
+  transform: translateY(-50%) translateX(calc(var(--o) * 108%)) translateZ(-40px) rotateY(calc(var(--o) * -10deg)) scale(0.98);
+}
+
+.abrir {
+  all: unset;
+  cursor: pointer;
+  display: block;
+}
+
+.abrir:focus-visible {
+  outline: 3px solid var(--cor-dourado);
+  outline-offset: -3px;
+}
+
+.imagem {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3.4;
+  background: radial-gradient(circle at 50% 30%, #6b1420, #2f1c11);
+}
+
+.imagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sem-capa {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 3.5rem;
+  color: var(--cor-dourado-suave);
+}
+
+.etiqueta {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: #fff;
+  color: var(--cor-marrom);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.etiqueta-open {
+  background: #2f6b3e;
+  color: #fff;
+}
+
+.etiqueta-scheduled {
+  background: var(--cor-dourado);
+  color: #fff;
+}
+
+.etiqueta-closed {
+  background: var(--cor-marrom);
+  color: #fff;
+}
+
+.info {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem 0.85rem 0.5rem;
+}
+
+.nome {
+  font-family: var(--fonte-titulo);
+  font-size: 1rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+time {
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.participar {
+  margin: 0.25rem 0.85rem 0.85rem;
+  padding: 0.5rem;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 8px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--cor-dourado), #8c6d3b);
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.participar:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.seta {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--cor-dourado);
+  background: var(--cor-superficie);
+  color: var(--cor-bordo);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--sombra-suave);
+}
+
+.seta:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.seta:hover:not(:disabled) {
+  background: var(--cor-bordo);
+  color: #fff;
+}
+
+.esquerda {
+  left: 0;
+}
+
+.direita {
+  right: 0;
+}
+
+.posicao {
+  text-align: center;
+  color: var(--cor-texto-suave);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+/* Telas pequenas: 3 cards (some as pontas) e cards um pouco maiores */
+@media (max-width: 700px) {
+  .palco {
+    padding: 0 2.4rem;
+  }
+  .card {
+    --largura: 12rem;
+  }
+  .card.dist-2,
+  .card.dist-m2 {
+    display: none;
+  }
+}
+
+/* ---- Modal do evento ---- */
+.modal-evento {
+  display: grid;
+  gap: 1rem;
+}
+
+.modal-capa {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 30%, #6b1420, #2f1c11);
+}
+
+.modal-capa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dados {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.dados div {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: var(--cor-superficie-alt);
+}
+
+dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cor-texto-suave);
+}
+
+dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+
+.acoes {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.botao-ouro,
+.botao-borda {
+  flex: 1 1 10rem;
+  padding: 0.65rem 1rem;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.botao-ouro {
+  color: #fff;
+  background: linear-gradient(135deg, var(--cor-dourado), #8c6d3b);
+}
+
+.botao-borda {
+  color: var(--cor-bordo);
+  border: 1px solid var(--cor-bordo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .participar {
+    transition: none;
+  }
+}

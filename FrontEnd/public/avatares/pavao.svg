@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Pavão">
+  <defs>
+    <radialGradient id="fundo" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#eef0dc"/><stop offset="1" stop-color="#cfd3b0"/></radialGradient>
+    <g id="pena">
+      <path d="M50 66 Q44 40 50 14 Q56 40 50 66 Z" fill="#3c8f78" stroke="#1f4d40" stroke-width="0.8"/>
+      <ellipse cx="50" cy="22" rx="4.6" ry="6.6" fill="#d9a441" stroke="#1f4d40" stroke-width="0.7"/>
+      <ellipse cx="50" cy="22" rx="2.6" ry="4" fill="#2a6fa8"/>
+      <ellipse cx="50" cy="21.5" rx="1" ry="1.8" fill="#1b2f5a"/>
+    </g>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#fundo)" stroke="#a9822c" stroke-width="2"/>
+  <circle cx="50" cy="50" r="44" fill="none" stroke="#a9822c" stroke-width="0.6" stroke-dasharray="1.5 2"/>
+  <!-- leque de penas -->
+  <g transform="translate(0 6)">
+    <use href="#pena" transform="rotate(-72 50 66)"/><use href="#pena" transform="rotate(-54 50 66)"/>
+    <use href="#pena" transform="rotate(-36 50 66)"/><use href="#pena" transform="rotate(-18 50 66)"/>
+    <use href="#pena"/>
+    <use href="#pena" transform="rotate(18 50 66)"/><use href="#pena" transform="rotate(36 50 66)"/>
+    <use href="#pena" transform="rotate(54 50 66)"/><use href="#pena" transform="rotate(72 50 66)"/>
+  </g>
+  <g stroke="#1f3f5c" stroke-width="1.1" stroke-linejoin="round">
+    <!-- corpo e pescoco -->
+    <path d="M42 90 Q40 74 46 68 Q46 60 49 56 L51 56 Q54 60 54 68 Q60 74 58 90 Z" fill="#2a6fa8"/>
+    <!-- cabeca -->
+    <circle cx="50" cy="53" r="4.6" fill="#2a6fa8"/>
+    <path d="M50 48.4 V44 M47.5 49 L45.5 45.5 M52.5 49 L54.5 45.5" stroke="#a9822c" stroke-width="1" fill="none"/>
+    <circle cx="45.5" cy="45" r="1" fill="#a9822c" stroke="none"/><circle cx="50" cy="43.5" r="1" fill="#a9822c" stroke="none"/><circle cx="54.5" cy="45" r="1" fill="#a9822c" stroke="none"/>
+    <path d="M48.6 55.5 L51.4 55.5 L50 58.6 Z" fill="#c98a2a" stroke="none"/>
+    <circle cx="48.4" cy="52.5" r="0.8" fill="#fff" stroke="none"/><circle cx="51.6" cy="52.5" r="0.8" fill="#fff" stroke="none"/>
+  </g>
+</svg>

@@ -1,0 +1,124 @@
+<div class="pagina sala">
+  @if (erro()) {
+    <p class="erro">{{ erro() }}</p>
+  }
+
+  @if (item(); as it) {
+    <header class="cabecalho-sala">
+      <div>
+        @if (leilao(); as l) {
+          <a [routerLink]="['/leiloes', l.id]" class="voltar">← {{ l.titulo }}</a>
+        }
+        <h1>{{ it.titulo }}</h1>
+        <p class="lista-vazia">{{ it.logradouro }}, {{ it.cidade }}/{{ it.uf }}</p>
+      </div>
+      <span [class]="classeSeloItem(it.status)">
+        {{ it.situacao === 'ABERTO' ? 'Ao vivo' : it.situacao === 'VENDIDO' ? 'INDISPONÍVEL / VENDIDO' : it.status === 'AVAILABLE' ? ROTULO_STATUS_ITEM[it.status] : 'INDISPONÍVEL' }}
+      </span>
+    </header>
+
+    <div class="grade-sala">
+      <section aria-label="Visualização 3D da peça">
+        <app-visualizador-3d [fotoUrl]="fotoPrincipal()" [titulo]="it.titulo" [indisponivel]="indisponivel()" />
+        @if (fotos().length > 1) {
+          <p class="lista-vazia">{{ fotos().length }} fotos disponíveis para este lote.</p>
+        }
+        @if (it.descricao) {
+          <p class="descricao">{{ it.descricao }}</p>
+        }
+      </section>
+
+      <section class="painel-lote" aria-label="Painel do lote">
+        @if (situacao() === 'VENDIDO') {
+          <div class="festa" role="status">
+            <div class="festa-icone" aria-hidden="true">🎉</div>
+            <h2>{{ euGanhei() ? 'Parabéns, você arrematou!' : 'Parabéns, ' + it.vencedorNome + '!' }}</h2>
+            <p>Lote arrematado por <strong>{{ it.vencedorNome }}</strong> por <strong>{{ moeda(it.lanceAtual) }}</strong>.</p>
+          </div>
+        } @else if (situacao() === 'NAO_VENDIDO') {
+          <div class="encerrado" role="status"><strong>Lote encerrado sem lances.</strong> Não foi vendido.</div>
+        } @else if (situacao() === 'CANCELADO') {
+          <div class="encerrado" role="status"><strong>Leilão cancelado.</strong></div>
+        } @else if (situacao() === 'ENCERRANDO') {
+          <div class="encerrado" role="status"><strong>Tempo esgotado!</strong> Apurando o vencedor…</div>
+        } @else if (contagem(); as c) {
+          <div class="contagem" [class.urgente]="c.urgente" role="timer" aria-live="off">
+            <small>{{ c.rotulo }}</small>
+            <strong>{{ c.texto }}</strong>
+          </div>
+        }
+
+        <dl class="valores">
+          <div>
+            <dt>Valor inicial</dt>
+            <dd>{{ moeda(it.precoInicial) }}</dd>
+          </div>
+          <div class="destaque">
+            <dt>Lance atual</dt>
+            <dd aria-live="polite">{{ it.lanceAtual ? moeda(it.lanceAtual) : 'sem lances' }}</dd>
+          </div>
+          <div>
+            <dt>Incremento mínimo</dt>
+            <dd>{{ moeda(it.incrementoMinimo) }}</dd>
+          </div>
+        </dl>
+
+        <form (ngSubmit)="darLance()" class="form-lance">
+          <label for="valor">Seu lance (R$)</label>
+          <div class="linha-lance">
+            <input
+              id="valor"
+              name="valor"
+              type="number"
+              step="0.01"
+              [min]="lanceMinimo()"
+              [(ngModel)]="valorLance"
+              [disabled]="!podeDarLance()"
+              required
+            />
+            <button type="button" class="secundario" (click)="usarMinimo()" [disabled]="!podeDarLance()">
+              Mínimo: {{ moeda(lanceMinimo()) }}
+            </button>
+          </div>
+          <button type="submit" class="primario" [disabled]="!podeDarLance() || enviandoLance() || !valorLance">
+            @if (indisponivel()) {
+              Lance indisponível
+            } @else {
+              {{ enviandoLance() ? 'Enviando...' : 'Dar lance' }}
+            }
+          </button>
+          @if (erroLance()) {
+            <p class="erro" role="alert">{{ erroLance() }}</p>
+          }
+          @if (!auth.estaLogado() && !indisponivel()) {
+            <p class="lista-vazia"><a routerLink="/login">Entre</a> como licitante para dar um lance.</p>
+          } @else if (auth.estaLogado() && auth.papel() !== 'BIDDER' && !indisponivel()) {
+            <p class="lista-vazia">Somente licitantes podem dar lances.</p>
+          } @else if (situacao() === 'EM_BREVE') {
+            <p class="lista-vazia">Os lances abrem quando o leilão começar.</p>
+          }
+        </form>
+      </section>
+    </div>
+  }
+
+  <h2>Histórico de lances <small class="ao-vivo" aria-hidden="true">● ao vivo</small></h2>
+  @if (lances(); as l) {
+    @if (l.dados.length === 0) {
+      <p class="lista-vazia">Nenhum lance ainda.</p>
+    } @else {
+      <ol class="historico" aria-live="polite">
+        @for (lance of l.dados; track lance.id; let primeiro = $first) {
+          <li [class.lider]="primeiro" [class.meu]="ehMeuLance(lance)">
+            <span class="quem">{{ ehMeuLance(lance) ? 'Você' : nomeAbreviado(lance.licitanteNome) }}</span>
+            <strong>{{ moeda(lance.valor) }}</strong>
+            <time [attr.datetime]="lance.criadoEm">{{ lance.criadoEm | date: 'dd/MM HH:mm:ss' }}</time>
+            @if (primeiro) {
+              <span class="selo status-open">{{ situacao() === 'VENDIDO' ? 'Vencedor' : 'Maior lance' }}</span>
+            }
+          </li>
+        }
+      </ol>
+    }
+  }
+</div>

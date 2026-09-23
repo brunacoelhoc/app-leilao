@@ -1,0 +1,182 @@
+<div class="pagina">
+  <a routerLink="/vendedor" class="voltar">← Meus leilões</a>
+
+  @if (leilao(); as l) {
+    <div class="cabecalho">
+      <div>
+        <h1>{{ l.titulo }}</h1>
+        <p class="periodo">{{ l.dataInicio | date: 'dd/MM/yyyy HH:mm' }} — {{ l.dataFim | date: 'dd/MM/yyyy HH:mm' }}</p>
+        @if (l.descricao) {
+          <p class="subtitulo">{{ l.descricao }}</p>
+        }
+      </div>
+      <div class="acoes-cabecalho">
+        <span [class]="classeSeloLeilao(l.status)">{{ ROTULO_STATUS_LEILAO[l.status] }}</span>
+        @if (l.editavel) {
+          <button type="button" class="secundario pequeno" (click)="abrirEdicaoLeilao()">Editar leilão</button>
+        }
+      </div>
+    </div>
+
+    @if (l.transicoesPermitidas.length > 0) {
+      <div class="cartao barra-status">
+        <strong>Andamento do leilão:</strong>
+        @for (proximo of l.transicoesPermitidas; track proximo) {
+          <button type="button" [class]="proximo === 'CANCELED' ? 'perigo' : 'primario'" [disabled]="mudandoStatus()" (click)="mudarStatus(proximo)">
+            {{ ROTULO_STATUS_LEILAO[proximo] }}
+          </button>
+        }
+      </div>
+    }
+
+    <div class="topo-itens">
+      <h2>Itens</h2>
+      @if (l.editavel) {
+        <button type="button" class="primario" (click)="abrirModalItem()">+ Adicionar item</button>
+      }
+    </div>
+  }
+
+  @if (itens(); as it) {
+    @if (it.dados.length === 0) {
+      <p class="lista-vazia">Nenhum item cadastrado ainda.</p>
+    } @else {
+      <div class="grade-itens">
+        @for (item of it.dados; track item.id) {
+          <article class="cartao item-card">
+            <div class="linha-topo">
+              <h3>{{ item.titulo }}</h3>
+              <span [class]="classeSeloItem(item.status)">{{ ROTULO_STATUS_ITEM[item.status] }}</span>
+            </div>
+            <p class="descricao">{{ item.descricao || 'Sem descrição.' }}</p>
+            <ul class="numeros">
+              <li><span>Inicial</span> R$ {{ item.precoInicial }}</li>
+              <li><span>Lance atual</span> {{ item.lanceAtual ? 'R$ ' + item.lanceAtual : '—' }}</li>
+              <li><span>Lances</span> {{ item.totalLances }}</li>
+            </ul>
+            <div class="acoes-item">
+              <a [routerLink]="['/itens', item.id]" class="secundario pequeno botao-como-link">Ver página</a>
+              <label class="secundario pequeno botao-como-link" [class.desabilitado]="enviandoFoto() === item.id">
+                {{ enviandoFoto() === item.id ? 'Enviando...' : '+ Foto' }}
+                <input type="file" accept="image/*" hidden (change)="aoEscolherFotoAvulsa(item.id, $event)" />
+              </label>
+              @if (leilao()?.editavel) {
+                <button type="button" class="secundario pequeno" (click)="abrirEdicaoItem(item)">Editar</button>
+                <button type="button" class="perigo pequeno" (click)="removerItem(item)">Remover</button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+
+      <app-paginacao
+        [pagina]="it.pagina"
+        [totalPaginas]="it.totalPaginas"
+        [total]="it.total"
+        [limite]="limite"
+        (mudarPagina)="mudarPagina($event)"
+        (mudarLimite)="mudarLimite($event)"
+      />
+    }
+  }
+</div>
+
+@if (modalItem()) {
+  <app-modal [titulo]="itemEditandoId ? 'Editar item' : 'Novo item'" [largura]="640" (fechar)="modalItem.set(false)">
+    <form #f="ngForm" (ngSubmit)="salvarItem()" novalidate>
+      <p class="lista-vazia">Todos os campos são obrigatórios. O endereço de retirada é preenchido pelo CEP.</p>
+
+      <div class="campo">
+        <label for="itemTitulo">Título</label>
+        <input id="itemTitulo" name="itemTitulo" type="text" [(ngModel)]="itemTitulo" required />
+      </div>
+      <div class="campo">
+        <label for="itemDescricao">Descrição</label>
+        <textarea id="itemDescricao" name="itemDescricao" rows="2" [(ngModel)]="itemDescricao" required></textarea>
+      </div>
+      <div class="linha">
+        <div class="campo">
+          <label for="itemPreco">Preço inicial (R$)</label>
+          <input id="itemPreco" name="itemPreco" type="number" step="any" [(ngModel)]="itemPrecoInicial" required />
+        </div>
+        <div class="campo">
+          <label for="itemIncremento">Incremento mínimo (R$)</label>
+          <input id="itemIncremento" name="itemIncremento" type="number" step="any" [(ngModel)]="itemIncremento" required />
+        </div>
+      </div>
+      <div class="linha">
+        <div class="campo">
+          <label for="itemCep">CEP de retirada</label>
+          <input id="itemCep" name="itemCep" type="text" inputmode="numeric" placeholder="00000-000" [(ngModel)]="itemCep" (input)="mascararCep()" required />
+        </div>
+        <div class="campo">
+          <label for="itemCategoria">Categoria</label>
+          <select id="itemCategoria" name="itemCategoria" [(ngModel)]="itemCategoriaId" required>
+            <option value="" disabled>Selecione</option>
+            @for (categoria of categorias(); track categoria.id) {
+              <option [value]="categoria.id">{{ categoria.nome }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="foto">{{ itemEditandoId ? 'Nova foto (opcional)' : 'Foto do item' }}</label>
+        <label class="area-foto" for="foto">
+          @if (fotoPreview(); as preview) {
+            <img [src]="preview" alt="Pré-visualização da foto do item" />
+            <span>Clique para trocar a foto</span>
+          } @else {
+            <span class="icone">🖼</span>
+            <span>Clique para escolher a foto do item</span>
+          }
+          <input id="foto" type="file" accept="image/*" (change)="aoEscolherFoto($event)" hidden />
+        </label>
+      </div>
+
+      @if (erroItem()) {
+        <p class="erro">{{ erroItem() }}</p>
+      }
+
+      <div class="botoes">
+        <button type="submit" class="primario" [disabled]="criandoItem() || f.invalid || (!itemEditandoId && !foto)">
+          {{ criandoItem() ? 'Salvando...' : itemEditandoId ? 'Salvar alterações' : 'Cadastrar item' }}
+        </button>
+        <button type="button" class="secundario" (click)="modalItem.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (modalLeilao()) {
+  <app-modal titulo="Editar leilão" [largura]="560" (fechar)="modalLeilao.set(false)">
+    <form #fl="ngForm" (ngSubmit)="salvarLeilao()" novalidate>
+      <p class="lista-vazia">Só é possível editar enquanto o leilão está em rascunho.</p>
+      <div class="campo">
+        <label for="leilaoTitulo">Título</label>
+        <input id="leilaoTitulo" name="leilaoTitulo" type="text" [(ngModel)]="leilaoTitulo" #t="ngModel" required />
+        @if (t.invalid && t.touched) { <small class="erro">Campo obrigatório.</small> }
+      </div>
+      <div class="campo">
+        <label for="leilaoDescricao">Descrição</label>
+        <textarea id="leilaoDescricao" name="leilaoDescricao" rows="3" [(ngModel)]="leilaoDescricao" #d="ngModel" required></textarea>
+        @if (d.invalid && d.touched) { <small class="erro">Campo obrigatório.</small> }
+      </div>
+      <div class="linha">
+        <div class="campo">
+          <label for="leilaoInicio">Início</label>
+          <input id="leilaoInicio" name="leilaoInicio" type="datetime-local" [(ngModel)]="leilaoInicio" required />
+        </div>
+        <div class="campo">
+          <label for="leilaoFim">Fim</label>
+          <input id="leilaoFim" name="leilaoFim" type="datetime-local" [(ngModel)]="leilaoFim" required />
+        </div>
+      </div>
+      @if (erroLeilao()) { <p class="erro" role="alert">{{ erroLeilao() }}</p> }
+      <div class="botoes">
+        <button type="submit" class="primario" [disabled]="salvandoLeilao() || fl.invalid">{{ salvandoLeilao() ? 'Salvando...' : 'Salvar alterações' }}</button>
+        <button type="button" class="secundario" (click)="modalLeilao.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </app-modal>
+}

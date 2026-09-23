@@ -1,0 +1,88 @@
+<section class="carrossel" aria-labelledby="titulo-destaques" id="destaques">
+  <h2 id="titulo-destaques" class="titulo">Leilões em Destaque</h2>
+
+  @if (carregando()) {
+    <p class="aviso">Carregando leilões…</p>
+  } @else if (erro()) {
+    <p class="aviso">Não foi possível carregar os destaques agora.</p>
+  } @else if (destaques().length === 0) {
+    <p class="aviso">Nenhum leilão em destaque no momento.</p>
+  } @else {
+    <div
+      class="palco"
+      role="group"
+      aria-roledescription="carrossel"
+      aria-label="Leilões em destaque"
+      tabindex="0"
+      (keydown)="aoTeclar($event)"
+    >
+      <button type="button" class="seta esquerda" (click)="anterior()" [disabled]="!temAnterior()" aria-label="Leilão anterior">‹</button>
+
+      <div class="pista">
+        @for (item of visiveis(); track item.destaque.id) {
+          <article
+            class="card"
+            [class]="'card dist-' + (item.deslocamento < 0 ? 'm' : '') + (item.deslocamento < 0 ? -item.deslocamento : item.deslocamento)"
+            [style.--o]="item.deslocamento"
+            [attr.aria-label]="item.destaque.titulo + ', ' + item.destaque.etiqueta"
+            [attr.aria-current]="item.deslocamento === 0 ? 'true' : null"
+          >
+            <button type="button" class="abrir" (click)="aberto.set(item.destaque)" [attr.aria-label]="'Ver detalhes: ' + item.destaque.titulo">
+              <span class="imagem">
+                @if (capaDe(item.destaque); as capa) {
+                  <img [src]="capa" alt="" loading="lazy" />
+                } @else {
+                  <span class="sem-capa" aria-hidden="true">⚜</span>
+                }
+                <span [class]="classeEtiqueta(item.destaque)">{{ item.destaque.etiqueta }}</span>
+              </span>
+              <span class="info">
+                <strong class="nome">{{ item.destaque.titulo }}</strong>
+                <time [attr.datetime]="item.destaque.dataInicio">{{ item.destaque.dataInicio | date: 'dd/MM/yyyy · HH:mm' }}</time>
+              </span>
+            </button>
+            <a class="participar" [routerLink]="destinoParticipar(item.destaque)" [attr.tabindex]="item.deslocamento === 0 ? 0 : -1">
+              {{ rotuloAcao(item.destaque) }}
+            </a>
+          </article>
+        }
+      </div>
+
+      <button type="button" class="seta direita" (click)="proximo()" [disabled]="!temProximo()" aria-label="Próximo leilão">›</button>
+    </div>
+
+    <p class="posicao" aria-live="polite">{{ centro() + 1 }} de {{ destaques().length }}</p>
+  }
+</section>
+
+@if (aberto(); as d) {
+  <app-modal [titulo]="d.titulo" [largura]="560" (fechar)="aberto.set(null)">
+    <div class="modal-evento">
+      <div class="modal-capa">
+        @if (capaDe(d); as capa) {
+          <img [src]="capa" [alt]="'Foto de ' + d.titulo" />
+        } @else {
+          <span class="sem-capa" aria-hidden="true">⚜</span>
+        }
+        <span [class]="classeEtiqueta(d)">{{ d.etiqueta }}</span>
+      </div>
+
+      @if (d.descricao) {
+        <p>{{ d.descricao }}</p>
+      }
+
+      <dl class="dados">
+        <div><dt>Início</dt><dd>{{ d.dataInicio | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+        <div><dt>Término</dt><dd>{{ d.dataFim | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+        <div><dt>Itens</dt><dd>{{ d.totalItens }}</dd></div>
+        <div><dt>Lances</dt><dd>{{ d.totalLances }}</dd></div>
+        <div><dt>Maior lance</dt><dd>{{ d.maiorLance ? (d.maiorLance | currency: 'BRL') : '—' }}</dd></div>
+      </dl>
+
+      <div class="acoes">
+        <a class="botao-ouro" [routerLink]="destinoParticipar(d)" (click)="aberto.set(null)">{{ rotuloAcao(d) }}</a>
+        <a class="botao-borda" [routerLink]="['/leiloes', d.id]" (click)="aberto.set(null)">Ver todos os itens</a>
+      </div>
+    </div>
+  </app-modal>
+}

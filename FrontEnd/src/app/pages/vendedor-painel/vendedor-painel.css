@@ -1,0 +1,127 @@
+.topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.grade-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.1rem;
+}
+
+.leilao-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.faixa {
+  height: 6px;
+  background: var(--cor-dourado);
+}
+
+.faixa-open { background: var(--cor-sucesso); }
+.faixa-closed { background: var(--cor-marrom); }
+.faixa-canceled { background: var(--cor-bordo); }
+.faixa-scheduled { background: #35577a; }
+
+.conteudo {
+  padding: 1.1rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.conteudo h3 {
+  margin: 0.2rem 0 0;
+}
+
+.descricao {
+  margin: 0;
+  color: var(--cor-texto-suave);
+  font-size: 0.88rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.periodo {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cor-dourado);
+  font-weight: 600;
+}
+
+.gerenciar {
+  margin-top: auto;
+  padding-top: 0.6rem;
+  color: var(--cor-bordo);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.vazio {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+input.invalido,
+textarea.invalido {
+  border-color: var(--cor-bordo);
+  background: color-mix(in srgb, var(--cor-bordo) 6%, var(--cor-superficie));
+}
+
+.area-foto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border: 2px dashed var(--cor-dourado-suave);
+  border-radius: 10px;
+  background: var(--cor-superficie-alt);
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.area-foto:hover {
+  border-color: var(--cor-bordo);
+  background: color-mix(in srgb, var(--cor-dourado) 10%, var(--cor-superficie-alt));
+}
+
+.area-foto img {
+  max-width: 220px;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: var(--sombra-suave);
+}
+
+.area-foto .icone {
+  font-size: 2rem;
+}
+
+@media (max-width: 600px) {
+  .linha {
+    grid-template-columns: 1fr;
+  }
+}

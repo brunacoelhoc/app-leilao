@@ -1,1 +1,449 @@
-/* You can add global styles to this file, and also import other style files */
+@import '@fontsource/opendyslexic/latin-400.css';
+@import '@fontsource/opendyslexic/latin-700.css';
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Paleta "Belle Époque": dourado apagado, marrom antigo, bordô, branco marfim */
+  --cor-fundo: #f4f1ea; /* marmore */
+  --cor-superficie: #fdfbf7; /* creme nobre */
+  --cor-superficie-alt: #f4f1ea;
+  --cor-borda: #e0d2b4;
+  --cor-texto: #2c2118;
+  --cor-texto-suave: #7a6a55;
+  --cor-dourado: #8c6d3b; /* bronze */
+  --cor-dourado-suave: #c5a059; /* dourado envelhecido */
+  --cor-marrom: #4a2e1f;
+  --cor-marrom-escuro: #2f1c11;
+  --cor-bordo: #6b111d;
+  --cor-bordo-escuro: #4a0e17;
+  --cor-sucesso: #3f6b4a;
+  --cor-erro: #6b111d;
+
+  --fonte-titulo: 'Playfair Display', serif;
+  --fonte-elegante: 'Cormorant Garamond', serif;
+  --fonte-texto: 'Inter', system-ui, sans-serif;
+
+  --largura-sidebar: 250px;
+  --altura-a11y: 40px;
+  --sombra-suave: 0 4px 16px rgba(47, 28, 17, 0.08);
+  --sombra-media: 0 8px 28px rgba(47, 28, 17, 0.14);
+}
+
+:root[data-tema='escuro'] {
+  --cor-fundo: #1c140d;
+  --cor-superficie: #241a12;
+  --cor-superficie-alt: #2c2016;
+  --cor-borda: #4a3826;
+  --cor-texto: #f0e6d6;
+  --cor-texto-suave: #c9b99b;
+  --cor-dourado: #c5a059;
+  --cor-dourado-suave: #8c6d3b;
+  --cor-bordo: #e0808c;
+}
+
+:root[data-tema='escuro'] h1,
+:root[data-tema='escuro'] h2,
+:root[data-tema='escuro'] h3 {
+  color: var(--cor-dourado);
+}
+
+:root[data-tema='escuro'] button.secundario {
+  color: var(--cor-texto);
+}
+
+:root[data-tema='alto-contraste'] {
+  --cor-fundo: #000;
+  --cor-superficie: #0b0b0b;
+  --cor-superficie-alt: #111;
+  --cor-borda: #ffd76a;
+  --cor-texto: #fff;
+  --cor-texto-suave: #ffe9b3;
+  --cor-dourado: #ffd76a;
+  --cor-bordo: #ff5a6e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: var(--tamanho-fonte-base, 16px);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: var(--fonte-texto);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fonte-titulo);
+  color: var(--cor-marrom);
+  letter-spacing: 0.01em;
+  margin: 0 0 0.5rem;
+}
+
+:root[data-tema='alto-contraste'] h1,
+:root[data-tema='alto-contraste'] h2,
+:root[data-tema='alto-contraste'] h3 {
+  color: var(--cor-dourado);
+}
+
+p.subtitulo,
+.texto-elegante {
+  font-family: var(--fonte-elegante);
+  font-size: 1.15rem;
+  color: var(--cor-texto-suave);
+  font-style: italic;
+}
+
+a {
+  color: var(--cor-bordo);
+}
+
+button {
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+button.primario {
+  background: linear-gradient(135deg, var(--cor-dourado), var(--cor-marrom));
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.25rem;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease;
+  font-weight: 600;
+}
+
+button.primario:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+button.primario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.secundario {
+  background: transparent;
+  color: var(--cor-marrom);
+  border: 1.5px solid var(--cor-dourado);
+  border-radius: 6px;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button.secundario:hover {
+  background: color-mix(in srgb, var(--cor-dourado) 12%, transparent);
+}
+
+button.perigo {
+  background: var(--cor-bordo);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.95rem;
+  cursor: pointer;
+}
+
+button.perigo:hover {
+  background: var(--cor-bordo-escuro);
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--cor-dourado);
+  outline-offset: 1px;
+}
+
+.pagina {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem 3rem;
+}
+
+.cartao {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  padding: 1.35rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--sombra-suave);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.cartao-clicavel {
+  cursor: pointer;
+}
+
+.cartao-clicavel:hover {
+  box-shadow: var(--sombra-media);
+  transform: translateY(-2px);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+}
+
+.campo label {
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.erro {
+  color: var(--cor-erro);
+  font-size: 0.85rem;
+  margin: 0.3rem 0;
+}
+
+.selo {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.selo.status-draft { background: #e5ddc9; color: #5a5142; }
+.selo.status-scheduled { background: #dce6ef; color: #35577a; }
+.selo.status-open { background: #e0efe2; color: var(--cor-sucesso); }
+.selo.status-closed { background: #f1ddd0; color: var(--cor-marrom); }
+.selo.status-canceled { background: #f3d9dc; color: var(--cor-bordo); }
+.selo.status-available { background: #e0efe2; color: var(--cor-sucesso); }
+.selo.status-sold { background: #f1ddd0; color: var(--cor-marrom); }
+.selo.status-unsold { background: #e5ddc9; color: #5a5142; }
+
+.lista-vazia {
+  color: var(--cor-texto-suave);
+  font-style: italic;
+}
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.paginacao button {
+  min-width: 2.25rem;
+}
+
+.paginacao .seta {
+  font-family: var(--fonte-titulo);
+}
+
+/* Paginas de autenticacao (login/cadastro) */
+.pagina-central {
+  min-height: calc(100dvh - 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  background: radial-gradient(circle at top, var(--cor-superficie-alt), var(--cor-fundo) 70%);
+}
+
+.cartao-auth {
+  width: 100%;
+  max-width: 420px;
+  padding: 2rem;
+}
+
+.campo-senha {
+  position: relative;
+}
+
+.campo-senha input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.campo-senha .olho {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.2rem;
+}
+
+.campo-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.campo-checkbox input {
+  margin-top: 0.2rem;
+}
+
+.campo-checkbox label {
+  font-size: 0.82rem;
+  color: var(--cor-texto-suave);
+}
+
+.link-esqueci {
+  background: none;
+  border: none;
+  color: var(--cor-bordo);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
+  text-decoration: underline;
+}
+
+.botoes {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.botoes > * {
+  flex: 1;
+  text-align: center;
+}
+
+.botao-como-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Foco sempre visivel para quem navega pelo teclado */
+:focus-visible {
+  outline: 3px solid var(--cor-dourado);
+  outline-offset: 2px;
+}
+
+/* Daltonismo: paletas que nao dependem de vermelho x verde / azul x amarelo
+   (cores do conjunto Okabe-Ito). O texto dos selos continua dizendo o status. */
+:root[data-daltonismo='vermelho-verde'] {
+  --cor-sucesso: #005a8c;
+  --cor-erro: #b34700;
+  --cor-bordo: #8a3800;
+  --cor-bordo-escuro: #6b2b00;
+}
+
+:root[data-daltonismo='vermelho-verde'] .selo.status-open,
+:root[data-daltonismo='vermelho-verde'] .selo.status-available {
+  background: #cfe3f3;
+  color: #003f63;
+}
+
+:root[data-daltonismo='vermelho-verde'] .selo.status-canceled {
+  background: #f6dcc4;
+  color: #6b2b00;
+  text-decoration: line-through;
+}
+
+:root[data-daltonismo='azul-amarelo'] {
+  --cor-dourado: #b0304f;
+  --cor-dourado-suave: #d98ea0;
+  --cor-sucesso: #1f7a5a;
+}
+
+:root[data-daltonismo='azul-amarelo'] .selo.status-scheduled {
+  background: #e4dcef;
+  color: #48306e;
+}
+
+:root[data-daltonismo='monocromatico'] {
+  filter: grayscale(1);
+}
+
+/* Modo dislexia: fonte propria para leitura + mais respiro entre letras,
+   palavras e linhas, sem texto justificado */
+:root[data-dislexia] {
+  --fonte-titulo: 'OpenDyslexic', sans-serif;
+  --fonte-elegante: 'OpenDyslexic', sans-serif;
+  --fonte-texto: 'OpenDyslexic', sans-serif;
+}
+
+:root[data-dislexia] body,
+:root[data-dislexia] input,
+:root[data-dislexia] select,
+:root[data-dislexia] textarea,
+:root[data-dislexia] button {
+  font-family: 'OpenDyslexic', sans-serif;
+}
+
+:root[data-dislexia] * {
+  letter-spacing: 0.05em;
+  word-spacing: 0.16em;
+  text-align: left;
+  font-style: normal;
+}
+
+:root[data-dislexia] body {
+  line-height: 1.8;
+}
+
+:root[data-dislexia] p {
+  max-width: 70ch;
+}
+
+/* Reduzir animacoes: comeca ligado se o sistema operacional pedir, e a
+   pessoa pode mudar no painel de acessibilidade */
+:root[data-sem-animacoes] *,
+:root[data-sem-animacoes] *::before,
+:root[data-sem-animacoes] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+:root[data-sem-animacoes] .cartao-clicavel:hover,
+:root[data-sem-animacoes] button.primario:hover:not(:disabled) {
+  transform: none;
+}
+
+/* Validacao visual dos formularios: borda vermelha (invalido) ou verde (valido) depois de tocar no campo */
+.campo input.ng-invalid.ng-touched,
+.campo select.ng-invalid.ng-touched,
+.campo textarea.ng-invalid.ng-touched {
+  border-color: var(--cor-erro);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cor-erro) 18%, transparent);
+}
+
+.campo input.ng-valid.ng-touched:not([readonly]),
+.campo select.ng-valid.ng-touched,
+.campo textarea.ng-valid.ng-touched {
+  border-color: var(--cor-sucesso);
+}

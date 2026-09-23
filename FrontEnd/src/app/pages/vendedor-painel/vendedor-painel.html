@@ -1,0 +1,172 @@
+<div class="pagina">
+  <div class="topo">
+    <div>
+      <h1>Meus leilões</h1>
+      <p class="subtitulo">Crie e acompanhe os leilões e itens que você colocou à venda.</p>
+    </div>
+    <button type="button" class="primario" (click)="abrirModal()">+ Novo leilão</button>
+  </div>
+
+  <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1rem">
+    <div class="campo" style="flex: 2; min-width: 220px; margin: 0">
+      <label for="busca-meus-leiloes">Buscar por título ou descrição</label>
+      <input
+        id="busca-meus-leiloes"
+        type="search"
+        placeholder="Digite parte do texto..."
+        maxlength="100"
+        [ngModel]="busca"
+        (ngModelChange)="aoDigitarBusca($event)"
+      />
+    </div>
+    <div class="campo" style="flex: 1; min-width: 160px; margin: 0">
+      <label for="status-meus-leiloes">Status</label>
+      <select id="status-meus-leiloes" [(ngModel)]="status" (ngModelChange)="aplicarFiltros()">
+        <option value="">Todos</option>
+        @for (opcao of statusOpcoes; track opcao[0]) {
+          <option [value]="opcao[0]">{{ opcao[1] }}</option>
+        }
+      </select>
+    </div>
+    <button type="button" class="secundario" (click)="limparFiltros()" [disabled]="!busca && !status">Limpar filtros</button>
+  </div>
+
+  @if (carregando()) {
+    <p class="lista-vazia">Carregando...</p>
+  } @else if (leiloes(); as l) {
+    @if (l.dados.length === 0 && (busca.trim() || status)) {
+      <p class="lista-vazia">Nenhum leilão encontrado para esses filtros.</p>
+    } @else if (l.dados.length === 0) {
+      <div class="cartao vazio">
+        <h3>Você ainda não criou nenhum leilão</h3>
+        <p class="lista-vazia">Cadastre o primeiro leilão junto com a foto do item que será vendido.</p>
+        <button type="button" class="primario" (click)="abrirModal()">Criar meu primeiro leilão</button>
+      </div>
+    } @else {
+      <div class="grade-cards">
+        @for (leilao of l.dados; track leilao.id) {
+          <a [routerLink]="['/vendedor/leiloes', leilao.id]" class="cartao cartao-clicavel leilao-card">
+            <div class="faixa" [class]="'faixa-' + leilao.status.toLowerCase()"></div>
+            <div class="conteudo">
+              <div class="linha-topo">
+                <span [class]="classeSeloLeilao(leilao.status)">{{ ROTULO_STATUS_LEILAO[leilao.status] }}</span>
+              </div>
+              <h3>{{ leilao.titulo }}</h3>
+              <p class="descricao">{{ leilao.descricao || 'Sem descrição.' }}</p>
+              <p class="periodo">
+                {{ leilao.dataInicio | date: 'dd/MM/yyyy' }} — {{ leilao.dataFim | date: 'dd/MM/yyyy' }}
+              </p>
+              <span class="gerenciar">Gerenciar →</span>
+            </div>
+          </a>
+        }
+      </div>
+
+      <app-paginacao
+        [pagina]="l.pagina"
+        [totalPaginas]="l.totalPaginas"
+        [total]="l.total"
+        [limite]="limite"
+        (mudarPagina)="mudarPagina($event)"
+        (mudarLimite)="mudarLimite($event)"
+      />
+    }
+  }
+</div>
+
+@if (modalAberto()) {
+  <app-modal titulo="Novo leilão" [largura]="760" (fechar)="modalAberto.set(false)">
+    <form #f="ngForm" (ngSubmit)="criar()" novalidate>
+      <p class="lista-vazia">Todos os campos são obrigatórios. O leilão nasce como rascunho.</p>
+
+      <h3>Dados do leilão</h3>
+      <div class="campo">
+        <label for="titulo">Título</label>
+        <input id="titulo" name="titulo" type="text" [(ngModel)]="titulo" #tituloCampo="ngModel" required [class.invalido]="tituloCampo.invalid && tituloCampo.touched" />
+        @if (tituloCampo.invalid && tituloCampo.touched) {
+          <small class="erro">Campo obrigatório.</small>
+        }
+      </div>
+      <div class="campo">
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao" rows="2" [(ngModel)]="descricao" #descCampo="ngModel" required [class.invalido]="descCampo.invalid && descCampo.touched"></textarea>
+        @if (descCampo.invalid && descCampo.touched) {
+          <small class="erro">Campo obrigatório.</small>
+        }
+      </div>
+      <div class="linha">
+        <div class="campo">
+          <label for="dataInicio">Início</label>
+          <input id="dataInicio" name="dataInicio" type="datetime-local" [(ngModel)]="dataInicio" required />
+        </div>
+        <div class="campo">
+          <label for="dataFim">Fim</label>
+          <input id="dataFim" name="dataFim" type="datetime-local" [(ngModel)]="dataFim" required />
+        </div>
+      </div>
+
+      <h3>Item a ser leiloado</h3>
+      <div class="campo">
+        <label for="itemTitulo">Título do item</label>
+        <input id="itemTitulo" name="itemTitulo" type="text" [(ngModel)]="itemTitulo" #itemTituloCampo="ngModel" required [class.invalido]="itemTituloCampo.invalid && itemTituloCampo.touched" />
+        @if (itemTituloCampo.invalid && itemTituloCampo.touched) {
+          <small class="erro">Campo obrigatório.</small>
+        }
+      </div>
+      <div class="campo">
+        <label for="itemDescricao">Descrição do item</label>
+        <textarea id="itemDescricao" name="itemDescricao" rows="2" [(ngModel)]="itemDescricao" required></textarea>
+      </div>
+      <div class="linha">
+        <div class="campo">
+          <label for="itemPreco">Preço inicial (R$)</label>
+          <input id="itemPreco" name="itemPreco" type="number" step="any" [(ngModel)]="itemPrecoInicial" required />
+        </div>
+        <div class="campo">
+          <label for="itemIncremento">Incremento mínimo (R$)</label>
+          <input id="itemIncremento" name="itemIncremento" type="number" step="any" [(ngModel)]="itemIncremento" required />
+        </div>
+      </div>
+      <div class="linha">
+        <div class="campo">
+          <label for="itemCep">CEP de retirada</label>
+          <input id="itemCep" name="itemCep" type="text" inputmode="numeric" placeholder="00000-000" [(ngModel)]="itemCep" (input)="mascararCep()" required />
+        </div>
+        <div class="campo">
+          <label for="itemCategoria">Categoria</label>
+          <select id="itemCategoria" name="itemCategoria" [(ngModel)]="itemCategoriaId" required>
+            <option value="" disabled>Selecione</option>
+            @for (categoria of categorias(); track categoria.id) {
+              <option [value]="categoria.id">{{ categoria.nome }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="foto">Foto do item</label>
+        <label class="area-foto" for="foto">
+          @if (fotoPreview(); as preview) {
+            <img [src]="preview" alt="Pré-visualização da foto do item" />
+            <span>Clique para trocar a foto</span>
+          } @else {
+            <span class="icone">🖼</span>
+            <span>Clique para escolher a foto do item</span>
+          }
+          <input id="foto" type="file" accept="image/*" (change)="aoEscolherFoto($event)" hidden />
+        </label>
+      </div>
+
+      @if (erroForm()) {
+        <p class="erro">{{ erroForm() }}</p>
+      }
+
+      <div class="botoes">
+        <button type="submit" class="primario" [disabled]="criando() || f.invalid || !foto">
+          {{ criando() ? 'Criando...' : 'Criar leilão' }}
+        </button>
+        <button type="button" class="secundario" (click)="modalAberto.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </app-modal>
+}
