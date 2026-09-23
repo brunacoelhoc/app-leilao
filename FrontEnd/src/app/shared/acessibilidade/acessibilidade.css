@@ -157,7 +157,9 @@
      espaco a esquerda para o botao hamburguer */
   .barra-a11y {
     margin-left: 0;
-    padding-left: 3.5rem;
+    /* altura minima: o botao hamburguer (fixo, 2.6rem) fica alinhado dentro da barra */
+    min-height: 3.2rem;
+    padding-left: 3.7rem;
   }
 }
 

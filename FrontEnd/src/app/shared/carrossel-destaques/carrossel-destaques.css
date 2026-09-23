@@ -4,6 +4,8 @@
 
 .carrossel {
   padding: 2.5rem 0 1rem;
+  /* Os cards das pontas saem da area em telas estreitas: corta sem criar rolagem horizontal */
+  overflow-x: clip;
 }
 
 .titulo {

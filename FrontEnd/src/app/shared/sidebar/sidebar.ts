@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, HostListener, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { Avatar } from '../avatar/avatar';
@@ -17,6 +17,11 @@ export class Sidebar {
 
   alternar(): void {
     this.aberta.update((v) => !v);
+  }
+
+  @HostListener('document:keydown.escape')
+  aoApertarEsc(): void {
+    this.fechar();
   }
 
   fechar(): void {

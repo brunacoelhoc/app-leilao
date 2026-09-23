@@ -10,7 +10,9 @@
           <a [routerLink]="['/leiloes', l.id]" class="voltar">← {{ l.titulo }}</a>
         }
         <h1>{{ it.titulo }}</h1>
-        <p class="lista-vazia">{{ it.logradouro }}, {{ it.cidade }}/{{ it.uf }}</p>
+        @if (it.cidade) {
+          <p class="lista-vazia">{{ it.logradouro ? it.logradouro + ', ' : '' }}{{ it.cidade }}/{{ it.uf }}</p>
+        }
       </div>
       <span [class]="classeSeloItem(it.status)">
         {{ it.situacao === 'ABERTO' ? 'Ao vivo' : it.situacao === 'VENDIDO' ? 'INDISPONÍVEL / VENDIDO' : it.status === 'AVAILABLE' ? ROTULO_STATUS_ITEM[it.status] : 'INDISPONÍVEL' }}

@@ -1,4 +1,4 @@
-<button type="button" class="botao-toggle" (click)="alternar()" [attr.aria-expanded]="aberta()" aria-label="Abrir menu">
+<button type="button" class="botao-toggle" (click)="alternar()" [attr.aria-expanded]="aberta()" [attr.aria-label]="aberta() ? 'Fechar menu' : 'Abrir menu'" aria-controls="menu-lateral">
   <span></span><span></span><span></span>
 </button>
 
@@ -6,7 +6,7 @@
   <div class="sobreposicao" (click)="fechar()"></div>
 }
 
-<aside class="sidebar" [class.aberta]="aberta()">
+<aside id="menu-lateral" class="sidebar" [class.aberta]="aberta()">
   <div class="marca">
     <img src="logo.svg" alt="" class="logo-menu" />
     <div>
