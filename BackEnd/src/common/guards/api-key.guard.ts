@@ -13,6 +13,10 @@ export class ApiKeyGuard implements CanActivate {
   constructor(private readonly configService: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // O WebSocket (sala de lances, so leitura de eventos publicos) nao envia
+    // cabecalhos; as acoes de escrita continuam sendo HTTP e exigem a chave
+    if (context.getType() !== 'http') return true;
+
     // Pega a requisicao HTTP que chegou
     const requisicao = context.switchToHttp().getRequest<Request>();
 

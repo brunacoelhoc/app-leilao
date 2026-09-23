@@ -17,3 +17,10 @@ export function transicaoEhValida(
 ): boolean {
   return TRANSICOES_PERMITIDAS[statusAtual].includes(statusNovo);
 }
+
+// Quais estados sao permitidos a partir de um estado. A API devolve isso em
+// cada leilao ("transicoesPermitidas") para o front so mostrar os botoes,
+// sem precisar conhecer a maquina de estados
+export function proximosStatus(statusAtual: AuctionStatus): AuctionStatus[] {
+  return TRANSICOES_PERMITIDAS[statusAtual];
+}

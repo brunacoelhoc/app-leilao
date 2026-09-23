@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ItemStatus } from '../../generated/prisma/client';
+import type { SituacaoItem } from '../situacao-item';
 
 // Formato real da resposta de um item -- so para o Swagger documentar o
 // schema. Os campos de dinheiro saem como STRING (nunca number), porque o
@@ -30,6 +31,23 @@ export class AuctionItemResposta {
   @ApiProperty({ example: 3, description: 'Indicador do dominio: quantidade total de lances recebidos por este item' })
   totalLances: number;
 
+  @ApiProperty({
+    enum: ['EM_BREVE', 'ABERTO', 'ENCERRANDO', 'VENDIDO', 'NAO_VENDIDO', 'CANCELADO'],
+    example: 'ABERTO',
+    description: 'Situacao calculada pelo servidor (a tela so exibe)',
+  })
+  situacao: SituacaoItem;
+
+  @ApiProperty({ example: '110.00', description: 'Menor lance aceito agora (preco inicial ou lance atual + incremento)' })
+  lanceMinimo: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 3600,
+    description: 'Segundos ate a proxima mudanca (abertura se EM_BREVE, encerramento se ABERTO); null nos demais casos',
+  })
+  segundosParaMudanca: number | null;
+
   @ApiProperty({ example: '01310100' })
   cep: string;
 
@@ -44,6 +62,9 @@ export class AuctionItemResposta {
 
   @ApiPropertyOptional({ nullable: true, description: 'Id de quem ganhou (so preenchido se status=SOLD)' })
   vencedorId: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Maria Silva', description: 'Nome de quem ganhou (so preenchido se status=SOLD)' })
+  vencedorNome: string | null;
 
   @ApiProperty({ description: 'Id do leilao a que este item pertence' })
   leilaoId: string;

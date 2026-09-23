@@ -19,6 +19,7 @@ import {
 import {
   AuctionStatus,
   AuditResult,
+  Prisma,
   type AuctionItem,
   type Role,
 } from '../generated/prisma/client';
@@ -26,18 +27,36 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { AtualizarAuctionItemDto } from './dto/atualizar-auction-item.dto';
 import type { AuctionItemResposta } from './dto/auction-item-resposta.dto';
 import type { CriarAuctionItemDto } from './dto/criar-auction-item.dto';
+import { calcularLanceMinimo, calcularSituacao } from './situacao-item';
 
 interface FiltrosListagem extends ParametrosPaginacao {
   leilaoId?: string;
   categoriaId?: string;
+  busca?: string;
 }
 
 // _count vem do Prisma quando a query pede "include: { _count: { select: { lances: true } } }"
-type ItemComContagem = AuctionItem & { _count?: { lances: number } };
+type ItemComContagem = AuctionItem & {
+  _count?: { lances: number };
+  vencedor?: { nome: string } | null;
+  leilao?: { status: AuctionStatus; dataInicio: Date; dataFim: Date };
+};
 
-function paraResposta(item: ItemComContagem): AuctionItemResposta {
+function paraResposta(itemComRelacoes: ItemComContagem): AuctionItemResposta {
+  // "vencedor" e "leilao" (objetos) nao saem na resposta: so o nome do
+  // vencedor e os valores calculados (situacao, lanceMinimo...)
+  const { vencedor, leilao, ...item } = itemComRelacoes;
+  const { situacao, segundosParaMudanca } = calcularSituacao(
+    item.status,
+    leilao,
+    new Date(),
+  );
   return {
     ...item,
+    situacao,
+    segundosParaMudanca,
+    lanceMinimo: calcularLanceMinimo(item).toString(),
+    vencedorNome: vencedor?.nome ?? null,
     precoInicial: decimalParaString(item.precoInicial)!,
     incrementoMinimo: decimalParaString(item.incrementoMinimo)!,
     lanceAtual: decimalParaString(item.lanceAtual),
@@ -135,9 +154,17 @@ export class AuctionItemsService {
     filtros: FiltrosListagem,
   ): Promise<RespostaPaginada<AuctionItemResposta>> {
     const paginacao = calcularPaginacao(filtros);
-    const where = {
+    const where: Prisma.AuctionItemWhereInput = {
       leilaoId: filtros.leilaoId,
       categoriaId: filtros.categoriaId,
+      ...(filtros.busca
+        ? {
+            OR: [
+              { titulo: { contains: filtros.busca, mode: 'insensitive' } },
+              { descricao: { contains: filtros.busca, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
     const [itens, total] = await Promise.all([
       this.prisma.auctionItem.findMany({
@@ -145,17 +172,29 @@ export class AuctionItemsService {
         orderBy: { criadoEm: 'desc' },
         skip: paginacao.skip,
         take: paginacao.take,
-        include: { _count: { select: { lances: true } } },
+        include: {
+          _count: { select: { lances: true } },
+          vencedor: { select: { nome: true } },
+          leilao: {
+            select: { status: true, dataInicio: true, dataFim: true },
+          },
+        },
       }),
       this.prisma.auctionItem.count({ where }),
     ]);
-    return paginar(itens.map(paraResposta), total, paginacao);
+    return paginar(itens.map((item) => paraResposta(item)), total, paginacao);
   }
 
   async buscarPorId(id: string): Promise<AuctionItemResposta> {
     const item = await this.prisma.auctionItem.findUnique({
       where: { id },
-      include: { _count: { select: { lances: true } } },
+      include: {
+          _count: { select: { lances: true } },
+          vencedor: { select: { nome: true } },
+          leilao: {
+            select: { status: true, dataInicio: true, dataFim: true },
+          },
+        },
     });
     if (!item) {
       throw new NotFoundException('Item nao encontrado');

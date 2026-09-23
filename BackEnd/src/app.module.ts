@@ -8,12 +8,14 @@ import { AuthModule } from './auth/auth.module';
 import { BidsModule } from './bids/bids.module';
 import { CategoriesModule } from './categories/categories.module';
 import { FiltroExcecoes } from './common/filters/filtro-excecoes';
+import { DestaquesModule } from './destaques/destaques.module';
 import { DocumentsModule } from './documents/documents.module';
 import { ApiKeyGuard } from './common/guards/api-key.guard';
 import { LogRequisicaoInterceptor } from './common/interceptors/log-requisicao.interceptor';
 import { IdRequisicaoMiddleware } from './common/middlewares/id-requisicao.middleware';
 import { validarVariaveisAmbiente } from './config/variaveis-ambiente';
 import { PrismaModule } from './prisma/prisma.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { SaudeModule } from './saude/saude.module';
 
 @Module({
@@ -50,6 +52,10 @@ import { SaudeModule } from './saude/saude.module';
     // Itens do leilao: leitura livre, escrita so do dono do leilao/ADMIN, so enquanto DRAFT
     AuctionItemsModule,
     // Lances: so BIDDER autenticado da lance; concorrencia protegida por lock pessimista
+    RealtimeModule,
+
+    DestaquesModule,
+
     BidsModule,
     // Upload de fotos/documentos do item: so o dono do leilao/ADMIN envia, leitura livre
     DocumentsModule,

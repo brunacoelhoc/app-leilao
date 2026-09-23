@@ -19,6 +19,9 @@ export class BidResposta {
   @ApiProperty({ description: 'Id de quem deu o lance' })
   licitanteId: string;
 
+  @ApiPropertyOptional({ example: 'Maria Silva', description: 'Nome de quem deu o lance (so na listagem por item)' })
+  licitanteNome?: string;
+
   @ApiPropertyOptional({ nullable: true, description: 'IP de quem deu o lance (auditoria)' })
   ipOrigem: string | null;
 

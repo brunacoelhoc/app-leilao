@@ -1,0 +1,73 @@
+import { Logger } from '@nestjs/common';
+import {
+  ConnectedSocket,
+  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
+import { SkipThrottle } from '@nestjs/throttler';
+import type { Server, Socket } from 'socket.io';
+import type { BidResposta } from '../bids/dto/bid-resposta.dto';
+
+// Dados enviados a todos que estao vendo o item quando chega um lance novo
+export interface LanceNovoEvento {
+  lance: BidResposta;
+  licitanteNome: string;
+  lanceAtual: string;
+  lanceMinimo: string; // menor lance aceito a partir de agora
+}
+
+// Dados enviados quando o item e finalizado (vendido ou sem lances)
+export interface ItemFinalizadoEvento {
+  itemId: string;
+  status: 'SOLD' | 'UNSOLD';
+  vencedorId: string | null;
+  vencedorNome: string | null;
+  valorFinal: string | null;
+}
+
+// 🔎 Gateway = "controller" do WebSocket. Cada item tem uma "sala" (room):
+// so quem abriu aquele item recebe os eventos dele
+@SkipThrottle() // o ThrottlerGuard global e so para HTTP
+@WebSocketGateway({ namespace: 'lances' })
+export class LancesGateway {
+  private readonly logger = new Logger(LancesGateway.name);
+
+  @WebSocketServer()
+  private servidor: Server;
+
+  // O front chama isso ao abrir a pagina do item
+  @SubscribeMessage('entrar-item')
+  entrarNoItem(
+    @MessageBody() itemId: string,
+    @ConnectedSocket() cliente: Socket,
+  ): void {
+    if (typeof itemId === 'string' && itemId.length > 0) {
+      void cliente.join(this.sala(itemId));
+    }
+  }
+
+  @SubscribeMessage('sair-item')
+  sairDoItem(
+    @MessageBody() itemId: string,
+    @ConnectedSocket() cliente: Socket,
+  ): void {
+    if (typeof itemId === 'string') {
+      void cliente.leave(this.sala(itemId));
+    }
+  }
+
+  emitirLanceNovo(itemId: string, evento: LanceNovoEvento): void {
+    this.servidor.to(this.sala(itemId)).emit('lance-novo', evento);
+  }
+
+  emitirItemFinalizado(evento: ItemFinalizadoEvento): void {
+    this.logger.log(`Item ${evento.itemId} finalizado: ${evento.status}`);
+    this.servidor.to(this.sala(evento.itemId)).emit('item-finalizado', evento);
+  }
+
+  private sala(itemId: string): string {
+    return `item:${itemId}`;
+  }
+}

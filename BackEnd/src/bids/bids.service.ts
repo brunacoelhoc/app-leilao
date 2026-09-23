@@ -22,13 +22,20 @@ import {
   type Bid,
   type Role,
 } from '../generated/prisma/client';
+import { calcularLanceMinimo } from '../auction-items/situacao-item';
 import { PrismaService } from '../prisma/prisma.service';
+import { LancesGateway } from '../realtime/lances.gateway';
 import type { BidResposta } from './dto/bid-resposta.dto';
 import type { CriarBidDto } from './dto/criar-bid.dto';
 
-function paraResposta(bid: Bid): BidResposta {
+function paraResposta(
+  bid: Bid & { licitante?: { nome: string } },
+): BidResposta {
+  // "licitante" (objeto) nao sai na resposta: so o nome
+  const { licitante, ...dados } = bid;
   return {
-    ...bid,
+    ...dados,
+    ...(licitante ? { licitanteNome: licitante.nome } : {}),
     valor: decimalParaString(bid.valor)!,
     lanceAnterior: decimalParaString(bid.lanceAnterior),
   };
@@ -48,6 +55,7 @@ export class BidsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly lancesGateway: LancesGateway,
   ) {}
 
   async darLance(
@@ -57,7 +65,7 @@ export class BidsService {
     contexto: ContextoRequisicao,
   ): Promise<BidResposta> {
     try {
-      const bid = await this.prisma.$transaction(async (tx) => {
+      const { bid, proximoMinimo } = await this.prisma.$transaction(async (tx) => {
         // Trava a linha do item ate o fim desta transacao: um lance
         // concorrente no MESMO item espera aqui, e so ve o valor ja atualizado
         // (evita dois lances "vencerem" ao mesmo tempo)
@@ -104,9 +112,7 @@ export class BidsService {
 
         // Regra obrigatoria: supera o lance atual + incremento (ou o preco
         // inicial, se ainda nao houver lance)
-        const minimoAceito = item.lanceAtual
-          ? item.lanceAtual.plus(item.incrementoMinimo)
-          : item.precoInicial;
+        const minimoAceito = calcularLanceMinimo(item);
         if (minimoAceito.greaterThan(dto.valor)) {
           throw new ConflictException(
             `O lance deve ser de pelo menos ${minimoAceito.toString()}`,
@@ -118,7 +124,7 @@ export class BidsService {
           data: { lanceAtual: dto.valor },
         });
 
-        return tx.bid.create({
+        const criado = await tx.bid.create({
           data: {
             valor: dto.valor,
             lanceAnterior: item.lanceAtual,
@@ -129,6 +135,13 @@ export class BidsService {
             idRequisicao: contexto.idRequisicao,
           },
         });
+        // Depois deste lance, o proximo precisa superar ele + incremento
+        return {
+          bid: criado,
+          proximoMinimo: new Prisma.Decimal(dto.valor).plus(
+            item.incrementoMinimo,
+          ),
+        };
       });
 
       // Sucesso: audita FORA da transacao (que ja foi commitada). Se a
@@ -145,7 +158,20 @@ export class BidsService {
         ...contexto,
       });
 
-      return paraResposta(bid);
+      // Tempo real: avisa quem esta vendo este item (nao pode derrubar o lance se falhar)
+      const resposta = paraResposta(bid);
+      const licitante = await this.prisma.user.findUnique({
+        where: { id: usuario.id },
+        select: { nome: true },
+      });
+      this.lancesGateway.emitirLanceNovo(itemId, {
+        lance: resposta,
+        licitanteNome: licitante?.nome ?? 'Licitante',
+        lanceAtual: resposta.valor,
+        lanceMinimo: proximoMinimo.toString(),
+      });
+
+      return resposta;
     } catch (erro) {
       // Qualquer rejeicao (item/leilao inexistente, dono, fora do periodo,
       // valor abaixo do minimo...): audita FORA de qualquer transacao,
@@ -183,6 +209,7 @@ export class BidsService {
     const [lances, total] = await Promise.all([
       this.prisma.bid.findMany({
         where: { itemId },
+        include: { licitante: { select: { nome: true } } },
         orderBy: { valor: 'desc' },
         skip: paginacao.skip,
         take: paginacao.take,
