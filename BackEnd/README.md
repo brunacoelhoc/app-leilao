@@ -1,124 +1,514 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Belle Époque Leilões — API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend de uma plataforma de leilões online: cadastro/autenticação, categorias,
+leilões, itens, lances (com concorrência segura), upload de fotos/documentos e
+integração real com o ViaCEP. Feito em NestJS + Prisma + PostgreSQL para a
+avaliação **AV-08 — Plataforma de Leilões**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Sumário
 
-## Description
+- [Stack](#stack)
+- [Requisitos](#requisitos)
+- [Documentação interativa (Swagger)](#documentação-interativa-swagger)
+- [Instalação](#instalação)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Banco de dados e migrations](#banco-de-dados-e-migrations)
+- [Rodando a aplicação](#rodando-a-aplicação)
+- [Rodando com Docker](#rodando-com-docker)
+- [Testes](#testes)
+- [Autenticação e segurança](#autenticação-e-segurança)
+- [Matriz de permissões](#matriz-de-permissões)
+- [Endpoints](#endpoints)
+- [Exemplos de requisição](#exemplos-de-requisição)
+- [Formato de erro padrão](#formato-de-erro-padrão)
+- [Interceptor de log](#interceptor-de-log)
+- [Decisões de arquitetura](#decisões-de-arquitetura)
+- [Estrutura de pastas](#estrutura-de-pastas)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Stack
 
-## Project setup
+- **NestJS 12** + **TypeScript** (strict, CommonJS)
+- **PostgreSQL 18**
+- **Prisma 7.10.0** (versão travada, driver adapter `@prisma/adapter-pg`)
+- `class-validator` / `class-transformer` (DTOs e serialização)
+- **JWT** (`@nestjs/jwt` + `passport-jwt`) para autenticação
+- **Helmet**, **compression**, **`@nestjs/throttler`** (rate limiting)
+- **`@nestjs/axios`** (integração externa com o ViaCEP)
+- **Multer** (upload de arquivos)
+- **Jest** (testes unitários e e2e)
+- **`@nestjs/swagger`** (documentação interativa da API)
 
-```bash
-$ npm install
-```
+## Requisitos
 
-## Compile and run the project
+- Node.js 20+ (testado com Node 24)
+- PostgreSQL 18 (ou compatível) rodando localmente ou acessível pela rede
+- npm
 
-```bash
-# development
-$ npm run start
+## Documentação interativa (Swagger)
 
-# watch mode
-$ npm run start:dev
+Com a API rodando, abra **`http://localhost:<PORT>/docs`** no navegador
+(fora do prefixo `/api`, de propósito — ver abaixo). É possível testar
+qualquer rota direto pela página:
 
-# production mode
-$ npm run start:prod
-```
+1. Clique em **Authorize** (canto superior direito).
+2. Em **api-key**, cole o valor de `API_KEY` do seu `.env`.
+3. Em **jwt**, cole o `accessToken` obtido em `POST /auth/login` (sem o
+   prefixo `Bearer`, o Swagger adiciona sozinho).
+4. Clique em **Authorize** e depois **Close**. A partir daí, todo "Try it
+   out" já sai com os dois cabeçalhos certos.
 
-## Run tests
+🔎 **Por que `/docs` funciona sem enviar o `X-API-KEY`, se o guard é
+global e sem exceções?** Porque o Swagger UI é montado direto no Express
+(fora do pipeline de rotas/guards do Nest) — a página de documentação nunca
+passa pelo `ApiKeyGuard`. **Nenhuma rota de negócio real ganhou exceção**:
+o guard continua exatamente como estava, sem nenhum `if` novo; é uma
+característica de como o `@nestjs/swagger` se monta, não uma abertura que
+escrevemos. Provado em `test/swagger.e2e-spec.ts`: `/docs` responde `200`
+sem cabeçalho nenhum, e `/api/saude` continua respondendo `401` sem a
+chave, no mesmo teste.
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Observability
-
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
+## Instalação
 
 ```bash
-$ npm install @nestjs/observe
+cd BackEnd
+npm install
+cp .env.example .env
+# edite o .env com as suas credenciais (ver seção abaixo)
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+## Variáveis de ambiente
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+Todas são obrigatórias e validadas na inicialização (a API não sobe se
+alguma estiver ausente ou em formato inválido — ver `src/config/variaveis-ambiente.ts`).
 
-## Resources
+| Variável              | Descrição                                                              | Exemplo                                          |
+| --------------------- | ------------------------------------------------------------------------ | ------------------------------------------------- |
+| `DATABASE_URL`        | String de conexão do PostgreSQL                                          | `postgresql://postgres:senha@localhost:5432/leiloes` |
+| `JWT_SECRET`          | Segredo para assinar o JWT (mínimo 32 caracteres, não pode ser o exemplo) | um valor longo e aleatório                        |
+| `JWT_EXPIRES_IN`      | Validade do token                                                       | `1d`                                              |
+| `PORT`                | Porta HTTP da API                                                       | `3000`                                            |
+| `CEP_API_URL`         | URL base do ViaCEP (integração externa, seção 7 do enunciado)           | `https://viacep.com.br/ws`                        |
+| `CEP_API_TIMEOUT_MS`  | Timeout da chamada ao ViaCEP                                            | `5000`                                            |
+| `UPLOAD_MAX_SIZE_MB`  | Tamanho máximo de arquivo aceito no upload                              | `5`                                               |
+| `FRONTEND_URL`        | Origem liberada no CORS                                                 | `http://localhost:4200`                           |
+| `API_KEY`             | Chave exigida no cabeçalho `X-API-KEY` em **toda** requisição            | um valor longo e aleatório                        |
+| `RATE_LIMIT_MAX`      | Máximo de requisições por IP dentro da janela                          | `100`                                             |
+| `RATE_LIMIT_JANELA_MS`| Duração da janela de rate limit, em ms                                  | `60000`                                           |
 
-Check out a few resources that may come in handy when working with NestJS:
+`JWT_SECRET` e `API_KEY` nunca podem ser o texto de exemplo do
+`.env.example` — a validação recusa a inicialização se forem.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Banco de dados e migrations
 
-## Support
+O schema (`prisma/schema.prisma`) e as migrations (`prisma/migrations/`) já
+estão versionados no repositório. A migration inicial inclui, além das
+tabelas, `CHECK` constraints (datas, valores positivos, formato de CEP/UF,
+coerência vencedor↔status) e *triggers* que impedem `UPDATE`/`DELETE` nas
+tabelas de auditoria (`Bid`, `AuditLog`, `AuctionStatusHistory`).
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+# Cria o banco (uma vez, se ainda não existir)
+createdb leiloes   # ou: psql -U postgres -c "CREATE DATABASE leiloes;"
 
-## Stay in touch
+# Aplica as migrations existentes (ambiente de produção/CI, não pede confirmação)
+npx prisma migrate deploy
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# Gera o client do Prisma (necessário após clonar o repo ou trocar de branch)
+npx prisma generate
+```
 
-## License
+> `migrate dev` é o comando usado durante o **desenvolvimento**, quando o
+> schema muda: ele cria uma migration nova e a aplica, e pode pedir para
+> resetar o banco em caso de divergência. `migrate deploy` é o comando de
+> **produção/CI**: só aplica as migrations já existentes na pasta, sem gerar
+> nada novo e sem interação — é o que se usa aqui, já que o schema desta
+> entrega está fechado.
+>
+> ⚠️ **Nunca** editar a migration `20260921184557_criacao_inicial` depois de
+> aplicada. Qualquer mudança de schema precisa de uma migration nova
+> (`prisma migrate dev --create-only` seguido de revisão manual do SQL).
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Seed (dados de exemplo)
+
+```bash
+npm run seed        # ou: npx prisma db seed
+```
+
+Cria (ou reaproveita, se já existirem) 3 contas de exemplo, 5 categorias e 3
+leilões — um em `DRAFT`, um `OPEN` com um lance já dado, e um `CLOSED` com um
+item `SOLD` (com vencedor) e outro `UNSOLD`. **Idempotente**: pode ser
+rodado várias vezes sem duplicar nada (usa ids fixos com `upsert`; os
+registros das tabelas imutáveis — `Bid`, `AuctionStatusHistory` — só são
+criados na primeira vez, nunca alterados depois).
+
+| Papel  | E-mail                     | Senha           |
+| ------ | -------------------------- | --------------- |
+| ADMIN  | `admin@belleepoque.com`    | `Admin@123!`     |
+| SELLER | `vendedor@belleepoque.com` | `Vendedor@123!`  |
+| BIDDER | `comprador@belleepoque.com`| `Comprador@123!` |
+
+## Rodando a aplicação
+
+```bash
+npm run start:dev    # desenvolvimento, com reload automático
+npm run build        # build de produção (compila para dist/)
+npm run start:prod    # roda o build (node dist/main)
+```
+
+A API sobe em `http://localhost:<PORT>`, com todas as rotas sob o prefixo
+`/api` (ex.: `http://localhost:3000/api/saude`).
+
+## Rodando com Docker
+
+Sobe a API **e** um Postgres próprio (separado do seu Postgres local, se
+tiver um), tudo isolado em containers. Os comandos abaixo rodam a partir da
+**raiz do projeto** (não da pasta `BackEnd/`).
+
+```bash
+cp .env.example .env   # so a senha do Postgres do Docker; edite se quiser
+docker compose up --build
+```
+
+Isso builda a imagem da API (multi-stage: compila em uma etapa, roda numa
+imagem final enxuta, sem devDependencies nem código TypeScript) e sobe dois
+serviços:
+
+| Serviço    | Container                       | Porta no host | Observação                                                  |
+| ---------- | -------------------------------- | -------------- | ------------------------------------------------------------ |
+| `postgres` | `avaliacao-bimestral-postgres-1` | `5433` (não `5432`, para não brigar com um Postgres local já instalado) | Dados persistidos em um volume nomeado |
+| `api`      | `avaliacao-bimestral-api-1`      | `3000`          | Roda `prisma migrate deploy` automaticamente antes de subir |
+
+A API dentro do container reaproveita o `BackEnd/.env` que você já tem
+configurado (mesmo `JWT_SECRET`, `API_KEY` etc.) — só o `DATABASE_URL` é
+sobrescrito no `docker-compose.yml`, porque dentro da rede do Docker o banco
+se chama `postgres`, não `localhost`.
+
+```bash
+docker compose ps                # ve o status dos containers
+docker compose logs -f api       # acompanha o log da API
+docker compose down              # para e remove os containers (mantem os dados)
+docker compose down -v           # para e APAGA os dados (banco do zero)
+```
+
+Pra popular o banco do Docker com o [seed](#seed-dados-de-exemplo), rode a
+partir de `BackEnd/`, apontando pra porta `5433`:
+
+```bash
+DATABASE_URL="postgresql://leiloes:<sua senha do .env raiz>@localhost:5433/leiloes" npm run seed
+```
+
+🔎 **Achado real ao montar isso:** a imagem oficial do Postgres 18+ mudou a
+convenção do volume de dados — agora é `/var/lib/postgresql` (não mais
+`/var/lib/postgresql/data`, usado até a versão 17). Usar o caminho antigo
+faz o container recusar iniciar (`Error: ... these Docker images are
+configured to store database data in a format...`). O `docker-compose.yml`
+já usa o caminho certo.
+
+## Testes
+
+```bash
+npm run test         # unitários (Jest) -- 5 suítes / 30 testes
+npm run test:e2e      # end-to-end, contra o banco real (--runInBand: ver nota)
+npm run lint          # oxlint --type-aware
+```
+
+- Os testes e2e usam o **banco real** configurado no `.env` (não há mock de
+  banco) e chamam a **API real** com `configurarAplicacao`, incluindo Helmet,
+  CORS, `ValidationPipe` e o prefixo `/api` — ou seja, testam exatamente o
+  que roda em produção.
+- `test:e2e` roda com `--runInBand` (sequencial, um arquivo por vez): cada
+  suíte sobe uma instância completa do Nest com seu próprio pool de conexões
+  do Prisma contra o mesmo Postgres local; em paralelo isso pode saturar
+  conexões/locks (agravado pelo `SELECT ... FOR UPDATE` dos lances) e gerar
+  falhas intermitentes. Sequencial é mais lento, mas 100% estável.
+- Algumas tabelas (`Bid`, `AuditLog`, `AuctionStatusHistory`) são
+  **imutáveis por trigger** — não podem ser `UPDATE`/`DELETE` nem pela
+  própria aplicação. Por isso, alguns registros de teste (leilões que
+  mudaram de status, usuários que já fizeram login, itens com lance) ficam
+  permanentemente no banco após rodar a suíte — é o comportamento esperado
+  e prova, na prática, a imutabilidade da trilha de auditoria.
+
+## Autenticação e segurança
+
+- **`X-API-KEY`**: cabeçalho obrigatório em **toda e qualquer rota**
+  (inclusive `/auth/registrar` e `/auth/login`), sem exceção. É um guard
+  global e roda antes de qualquer outra verificação. Sem ele, ou com o
+  valor errado, a resposta é sempre `401`.
+- **JWT** (`Authorization: Bearer <token>`): exigido nas rotas que precisam
+  de um usuário logado. Obtido em `POST /auth/login`. O token carrega
+  `{ sub: id, papel }`, mas a cada requisição autenticada a API **reconsulta
+  o usuário no banco** — se a conta foi desativada ou apagada depois do
+  login, o acesso é cortado imediatamente, sem esperar o token expirar.
+- **Papéis** (`BIDDER`, `SELLER`, `ADMIN`): verificados por `@Roles()` +
+  `RolesGuard`, sempre depois do `JwtAuthGuard` (`@UseGuards(JwtAuthGuard, RolesGuard)` —
+  nessa ordem; invertida, um usuário não-logado recebe `403` em vez do `401` correto).
+- **Rate limiting**: por padrão, `RATE_LIMIT_MAX` requisições por IP a cada
+  `RATE_LIMIT_JANELA_MS`; excedido, responde `429` com `Retry-After`.
+  `POST /auth/login` e `POST /auth/registrar` têm um limite **próprio e mais
+  baixo** (10/min cada), independente do geral — são os alvos clássicos de
+  força bruta e cadastro em massa.
+- **JWT com algoritmo travado** (`HS256`, explícito na assinatura e na
+  verificação) — defesa em profundidade contra ataques de confusão de
+  algoritmo.
+- **Senha**: hash `bcrypt` (custo 12), nunca retornada em nenhuma resposta
+  (`@Exclude()` + `ClassSerializerInterceptor` global, como rede de
+  segurança adicional).
+- **Timing attack neutralizado no login**: o `bcrypt.compare` roda sempre,
+  mesmo se o e-mail não existir (contra um hash fictício), para o tempo de
+  resposta não denunciar quais e-mails estão cadastrados.
+
+## Matriz de permissões
+
+`Livre` = não exige token (só o `X-API-KEY` global). `Autenticado` = qualquer
+papel logado. As demais colunas indicam quem pode acessar; "dono" significa
+que, além do papel, o service confere se o recurso pertence a quem fez a
+requisição (nunca manipulável trocando um ID no corpo/URL).
+
+| Recurso                     | Livre | BIDDER | SELLER (dono) | ADMIN |
+| ---------------------------- | :---: | :----: | :------------: | :---: |
+| Registrar / Login            |  ✅   |   ✅   |       ✅        |  ✅   |
+| Ver o próprio perfil (`/me`) |       |   ✅   |       ✅        |  ✅   |
+| Listar / (des)ativar usuários |      |        |                 |  ✅   |
+| Ler categorias/leilões/itens/lances/documentos | ✅ | ✅ | ✅ | ✅ |
+| Criar/editar/remover categoria |      |        |                 |  ✅   |
+| Criar leilão                 |       |        |       ✅        |  ✅¹  |
+| Editar/remover/mudar status do leilão |       |        |       ✅        |  ✅   |
+| Criar/editar/remover item do leilão |       |        |       ✅        |  ✅   |
+| Dar lance                    |       |   ✅   |                 |       |
+| Ver os próprios lances (`/bids/meus`) |       |   ✅   |                 |       |
+| Enviar foto/documento do item |       |        |       ✅        |  ✅   |
+
+¹ O `ADMIN` pode **editar/mudar status/remover** qualquer leilão como
+override administrativo, mas **não cria** leilão (criação é só do `SELLER`,
+que passa a ser automaticamente o dono).
+
+## Endpoints
+
+Todas as rotas abaixo estão sob o prefixo `/api` (omitido na tabela por
+brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
+`Authorization: Bearer <token>` e qual papel.
+
+### Auth (`/auth`)
+
+| Método | Rota | Auth | Body | Respostas |
+| --- | --- | --- | --- | --- |
+| POST | `/auth/registrar` | Livre | `{ nome, email, senha }` | `201` usuário criado (BIDDER, sem senha) · `400` inválido · `409` e-mail já cadastrado |
+| POST | `/auth/login` | Livre | `{ email, senha }` | `200` `{ accessToken, usuario }` · `400` inválido · `401` credenciais inválidas · `403` conta desativada |
+
+### Users (`/users`)
+
+| Método | Rota | Auth | Body | Respostas |
+| --- | --- | --- | --- | --- |
+| GET | `/users/me` | Autenticado | — | `200` o próprio perfil · `401` |
+| GET | `/users` | ADMIN | — | `200` lista de usuários (sem senha) · `401` · `403` |
+| PATCH | `/users/:id/desativar` | ADMIN | — | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação) |
+| PATCH | `/users/:id/reativar` | ADMIN | — | `200` · `400` · `401` · `403` · `404` |
+
+### Categories (`/categories`)
+
+| Método | Rota | Auth | Body | Respostas |
+| --- | --- | --- | --- | --- |
+| POST | `/categories` | ADMIN | `{ nome, descricao? }` | `201` · `400` · `401` · `403` |
+| GET | `/categories` | Livre | — | `200` lista |
+| GET | `/categories/:id` | Livre | — | `200` · `400` id inválido · `404` |
+| PATCH | `/categories/:id` | ADMIN | campos parciais | `200` · `400` · `401` · `403` · `404` |
+| DELETE | `/categories/:id` | ADMIN | — | `204` · `401` · `403` · `404` · `409` (categoria em uso por um item) |
+
+### Auctions (`/auctions`)
+
+| Método | Rota | Auth | Body | Respostas |
+| --- | --- | --- | --- | --- |
+| POST | `/auctions` | SELLER | `{ titulo, descricao?, dataInicio, dataFim }` (ISO 8601; `dataFim` > `dataInicio`) | `201` (nasce `DRAFT`) · `400` · `401` · `403` |
+| GET | `/auctions` | Livre | — | `200` lista |
+| GET | `/auctions/:id` | Livre | — | `200` · `400` · `404` |
+| PATCH | `/auctions/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` (não é o dono) · `404` · `409` (fora de `DRAFT`) |
+| PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` · `404` · `409` (transição inválida) |
+| DELETE | `/auctions/:id` | SELLER dono / ADMIN | — | `204` · `401` · `403` · `404` · `409` (fora de `DRAFT`) |
+
+Máquina de estados: `DRAFT → SCHEDULED → OPEN → CLOSED`; `CANCELED` alcançável
+de qualquer estado não-final. Ao fechar (`CLOSED`), cada item do leilão vira
+`SOLD` (com o vencedor = maior lance) ou `UNSOLD` (sem nenhum lance).
+
+### Auction Items (`/auction-items`)
+
+| Método | Rota | Auth | Body | Respostas |
+| --- | --- | --- | --- | --- |
+| POST | `/auction-items` | SELLER dono do leilão / ADMIN | `{ titulo, descricao?, precoInicial, incrementoMinimo, cep, leilaoId, categoriaId }` | `201` (endereço preenchido via ViaCEP) · `400` · `401` · `403` · `404` (leilão/categoria/CEP inexistente) · `409` (leilão fora de `DRAFT`) · `503` (ViaCEP fora do ar) |
+| GET | `/auction-items?leilaoId=&categoriaId=` | Livre | — | `200` lista (filtros opcionais, por relacionamento) |
+| GET | `/auction-items/:id` | Livre | — | `200` · `400` · `404` |
+| PATCH | `/auction-items/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` · `404` · `409` (leilão fora de `DRAFT`) |
+| DELETE | `/auction-items/:id` | SELLER dono / ADMIN | — | `204` · `401` · `403` · `404` · `409` (leilão fora de `DRAFT`) |
+
+Campos de dinheiro (`precoInicial`, `incrementoMinimo`, `lanceAtual`) sempre
+voltam como **string** na resposta (ex.: `"150.50"`), nunca como número —
+evita perda de precisão do `Decimal` do Postgres em JSON.
+
+### Bids (lances)
+
+| Método | Rota | Auth | Body | Respostas |
+| --- | --- | --- | --- | --- |
+| POST | `/auction-items/:itemId/bids` | BIDDER | `{ valor }` | `201` · `400` · `401` · `403` (não é BIDDER, ou é o vendedor do item) · `404` · `409` (leilão fechado/fora do período, valor abaixo do mínimo) |
+| GET | `/auction-items/:itemId/bids` | Livre | — | `200` lista, do maior lance para o menor |
+| GET | `/bids/meus` | BIDDER | — | `200` os lances do próprio usuário logado · `401` |
+
+Concorrência: cada lance é processado dentro de uma transação com
+`SELECT ... FOR UPDATE` na linha do item — dois lances simultâneos no mesmo
+item nunca "vencem" juntos; o segundo é sempre avaliado contra o valor já
+atualizado pelo primeiro.
+
+### Documents (upload)
+
+| Método | Rota | Auth | Body | Respostas |
+| --- | --- | --- | --- | --- |
+| POST | `/auction-items/:itemId/documents` | SELLER dono / ADMIN | `multipart/form-data`: campo `arquivo` (jpeg/png/pdf) + campo `tipo` (`PHOTO` ou `DOCUMENT`) | `201` · `400` (sem arquivo, tipo não aceito, maior que `UPLOAD_MAX_SIZE_MB`) · `401` · `403` · `404` |
+| GET | `/auction-items/:itemId/documents` | Livre | — | `200` lista |
+| GET | `/documents/:id/download` | Livre | — | `200` (stream do arquivo) · `404` |
+
+### Saúde
+
+| Método | Rota | Auth | Respostas |
+| --- | --- | --- | --- |
+| GET | `/saude` | Livre (só `X-API-KEY`) | `200` `{ status, banco, dataHora }` · `503` banco fora do ar |
+
+## Exemplos de requisição
+
+Substitua `SUA_API_KEY` pelo valor de `API_KEY` do seu `.env`.
+
+**Registrar e logar:**
+
+```bash
+curl -X POST http://localhost:3000/api/auth/registrar \
+  -H "X-API-KEY: SUA_API_KEY" -H "Content-Type: application/json" \
+  -d '{"nome":"Ana Compradora","email":"ana@teste.com","senha":"Abc12345!"}'
+
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "X-API-KEY: SUA_API_KEY" -H "Content-Type: application/json" \
+  -d '{"email":"ana@teste.com","senha":"Abc12345!"}'
+# -> { "accessToken": "...", "usuario": { ... } }
+```
+
+**Criar um leilão (SELLER) e um item dentro dele:**
+
+```bash
+TOKEN="o accessToken do login de um usuário SELLER"
+
+curl -X POST http://localhost:3000/api/auctions \
+  -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"titulo":"Leilão de Arte","dataInicio":"2027-01-01T00:00:00.000Z","dataFim":"2027-01-10T00:00:00.000Z"}'
+
+curl -X POST http://localhost:3000/api/auction-items \
+  -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"titulo":"Quadro raro","precoInicial":100,"incrementoMinimo":10,"cep":"01310100","leilaoId":"<id-do-leilao>","categoriaId":"<id-da-categoria>"}'
+```
+
+**Abrir o leilão e dar um lance (BIDDER):**
+
+```bash
+curl -X PATCH http://localhost:3000/api/auctions/<id>/status \
+  -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" -H "Content-Type: application/json" \
+  -d '{"status":"SCHEDULED"}'
+curl -X PATCH http://localhost:3000/api/auctions/<id>/status \
+  -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" -H "Content-Type: application/json" \
+  -d '{"status":"OPEN"}'
+
+curl -X POST http://localhost:3000/api/auction-items/<itemId>/bids \
+  -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_BIDDER" -H "Content-Type: application/json" \
+  -d '{"valor":100}'
+```
+
+**Enviar uma foto do item:**
+
+```bash
+curl -X POST http://localhost:3000/api/auction-items/<itemId>/documents \
+  -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" \
+  -F "tipo=PHOTO" -F "arquivo=@/caminho/para/foto.jpg"
+```
+
+## Formato de erro padrão
+
+Todo erro da API sai no mesmo formato, em português:
+
+```json
+{
+  "statusCode": 409,
+  "erro": "Conflito",
+  "mensagem": "Este registro esta em uso por outros registros e nao pode ser removido",
+  "caminho": "/api/categories/1b2c3d4e-...",
+  "dataHora": "2026-09-22T18:00:00.000Z"
+}
+```
+
+`mensagem` é uma `string` para a maioria dos erros e um array de `string`
+(uma mensagem por campo) quando vem da validação do corpo (`400`). Erros do
+Prisma são traduzidos (`P2002` → `409`, FK `Restrict` → `409`, FK ausente →
+`404`, `P2025` → `404`, violação de `CHECK` → `400`, banco fora do ar →
+`503`); qualquer outro erro vira um `500` genérico — os detalhes reais vão
+só para o log do servidor, nunca para a resposta.
+
+## Interceptor de log
+
+`LogRequisicaoInterceptor` (global) grava uma linha de log estruturado
+(JSON) por requisição — `idRequisicao`, `método`, `rota`, `status` e o
+tempo de execução em ms — no momento em que a resposta termina de ser
+enviada (por isso também captura o status final de erros tratados pelo
+filtro global). **Finalidade: observabilidade** (auditoria de performance e
+tráfego), sem nenhuma regra de negócio. Nunca registra cabeçalhos, corpo ou
+query string, para não vazar segredos (token, senha, chave de API) no log.
+
+## Decisões de arquitetura
+
+- **Nomenclatura:** nomes de model/enum em inglês (conforme o enunciado);
+  campos, mensagens de resposta, comentários e nomes de método em português.
+- **Leilão × item × lance:** o `Auction` é o evento (período + status); o
+  `AuctionItem` é o que se vende; o `Bid` pertence ao item.
+- **Checagem de dono sempre no service**, nunca no guard — o guard não tem
+  acesso ao dado ainda; o service compara o `id` do dono com
+  `@CurrentUser()`, com um bypass para `ADMIN`. É isso que impede manipular
+  o recurso de outra pessoa só trocando o ID na URL/corpo.
+- **Auditoria (`AuditLog`)**: toda ação de escrita (registro, login,
+  categorias, leilões, itens, lances, documentos) grava uma linha de
+  sucesso **ou** de rejeição (com o motivo e o status HTTP reais), sempre
+  gravada **fora** de qualquer transação de negócio que possa sofrer
+  rollback — senão a auditoria de uma rejeição seria desfeita junto.
+- **Imutabilidade de trilha de auditoria**: `Bid`, `AuditLog` e
+  `AuctionStatusHistory` têm um trigger no banco que bloqueia `UPDATE` e
+  `DELETE`, e suas chaves estrangeiras usam `onDelete: Restrict`. Isso
+  significa que qualquer leilão que já mudou de estado, item que já recebeu
+  lance, ou usuário que já fez login, fica protegido contra remoção **para
+  sempre** — mesmo pelo `ADMIN`. É uma escolha deliberada de integridade de
+  auditoria, não um bug.
+- **Concorrência nos lances**: lock pessimista (`SELECT ... FOR UPDATE`)
+  dentro de uma transação, em vez de otimista — garante que dois lances
+  simultâneos no mesmo item nunca sejam avaliados contra o mesmo valor
+  desatualizado.
+- **Dinheiro sempre em `Decimal(12,2)`**, nunca `Float`; sempre convertido
+  para `string` nas respostas (`class-transformer` não serializa `Decimal`
+  do Prisma corretamente).
+
+A revisão de segurança feita antes da entrega (achados corrigidos, pontos já
+adequados e riscos aceitos, com evidência de cada um) está em
+[`REVISAO-SEGURANCA.md`](../REVISAO-SEGURANCA.md), na raiz do projeto.
+
+## Estrutura de pastas
+
+```
+src/
+  auth/              autenticação, JWT, DTOs de registro/login
+  users/             perfil (/me) e gestão de usuários pelo ADMIN
+  audit/              AuditLogService (log de auditoria)
+  categories/         CRUD de categorias (ADMIN)
+  auctions/           leilões, máquina de estados, fechamento com vencedor
+  auction-items/      itens do leilão, integração com o CEP
+  bids/               lances, concorrência
+  documents/          upload de fotos/documentos
+  cep/                integração externa (ViaCEP) via HttpService
+  saude/              health check
+  prisma/             PrismaService (driver adapter)
+  common/             guards, decorators, filtros, interceptors, pipes, utils
+  generated/prisma/   client do Prisma gerado (fora do Git)
+prisma/
+  schema.prisma
+  migrations/
+test/
+  *.e2e-spec.ts       testes end-to-end permanentes, por módulo
+```

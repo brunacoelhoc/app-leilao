@@ -25,7 +25,7 @@ describe('Infraestrutura da API (e2e)', () => {
     const config = app.get(ConfigService);
     chaveCorreta = config.getOrThrow<string>('API_KEY');
     origemDoFront = config.getOrThrow<string>('FRONTEND_URL');
-  });
+  }, 15_000);
 
   describe('X-API-KEY', () => {
     it('bloqueia (401) quando nao envia a chave, no formato padrao de erro', async () => {

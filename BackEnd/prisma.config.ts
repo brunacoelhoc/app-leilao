@@ -7,6 +7,9 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // Roda com "npx prisma db seed" (ou "npm run seed"). E idempotente:
+    // pode ser rodado varias vezes sem duplicar nada
+    seed: "node -r ./prisma/corrigir-resolucao-js.js prisma/seed.ts",
   },
   datasource: {
     url: process.env["DATABASE_URL"],

@@ -2,9 +2,13 @@ import { ClassSerializerInterceptor, MiddlewareConsumer, Module, NestModule } fr
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AuctionItemsModule } from './auction-items/auction-items.module';
+import { AuctionsModule } from './auctions/auctions.module';
 import { AuthModule } from './auth/auth.module';
+import { BidsModule } from './bids/bids.module';
 import { CategoriesModule } from './categories/categories.module';
 import { FiltroExcecoes } from './common/filters/filtro-excecoes';
+import { DocumentsModule } from './documents/documents.module';
 import { ApiKeyGuard } from './common/guards/api-key.guard';
 import { LogRequisicaoInterceptor } from './common/interceptors/log-requisicao.interceptor';
 import { IdRequisicaoMiddleware } from './common/middlewares/id-requisicao.middleware';
@@ -41,6 +45,14 @@ import { SaudeModule } from './saude/saude.module';
     AuthModule,
     // CRUD de categorias (leitura livre, escrita so para ADMIN)
     CategoriesModule,
+    // Leiloes: criacao, edicao, fluxo de estados (leitura livre, escrita so do dono/ADMIN)
+    AuctionsModule,
+    // Itens do leilao: leitura livre, escrita so do dono do leilao/ADMIN, so enquanto DRAFT
+    AuctionItemsModule,
+    // Lances: so BIDDER autenticado da lance; concorrencia protegida por lock pessimista
+    BidsModule,
+    // Upload de fotos/documentos do item: so o dono do leilao/ADMIN envia, leitura livre
+    DocumentsModule,
   ],
   providers: [
     // Limite de requisicoes. Vem ANTES do guard da chave, para tambem

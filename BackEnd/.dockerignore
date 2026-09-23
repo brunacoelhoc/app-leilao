@@ -1,0 +1,17 @@
+node_modules
+dist
+src/generated
+uploads
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+coverage
+.git
+.gitignore
+.vscode
+.idea
+Thumbs.db
+*.tsbuildinfo
+thunder-tests

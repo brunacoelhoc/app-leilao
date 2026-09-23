@@ -12,7 +12,10 @@ describe('Auth (e2e)', () => {
   let chave: string;
   let prisma: PrismaService;
 
-  const EMAIL_TESTE = 'auth.e2e@teste.com';
+  // Precisa ser unico a cada execucao: como o login grava auditoria (nunca
+  // apagavel), o usuario de um teste anterior pode ficar preso no banco, e um
+  // e-mail fixo faria o "registrar" desta rodada falhar com 409 (duplicado)
+  const EMAIL_TESTE = `auth.e2e.${Date.now()}@teste.com`;
   const SENHA_TESTE = 'Abc12345!';
 
   beforeAll(async () => {
@@ -26,10 +29,16 @@ describe('Auth (e2e)', () => {
 
     chave = app.get(ConfigService).getOrThrow<string>('API_KEY');
     prisma = app.get(PrismaService);
-  });
+  }, 30_000);
 
   afterAll(async () => {
-    await prisma.user.deleteMany({ where: { email: EMAIL_TESTE } });
+    // Todo login grava uma linha em AuditLog (auditoria), que nunca pode ser
+    // apagada -- por isso este usuario, que fez login varias vezes neste
+    // teste, provavelmente ficou "preso" para sempre (onDelete: Restrict).
+    // Tentativa best-effort, sem quebrar o teste se nao der
+    await prisma.user
+      .deleteMany({ where: { email: EMAIL_TESTE } })
+      .catch(() => undefined);
     await app.close();
   });
 

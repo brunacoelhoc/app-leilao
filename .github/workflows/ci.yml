@@ -1,0 +1,86 @@
+name: CI
+
+# Roda a cada push/PR na main: garante que o backend continua buildando,
+# passando no lint e nos testes antes de qualquer coisa ser mesclada
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: BackEnd
+
+env:
+  # Valores fixos, so para o banco/API subirem durante o CI -- nunca sao
+  # usados em producao (o deploy real usa o .env de verdade, fora do Git).
+  # JWT_SECRET/API_KEY precisam ter 32+ caracteres (regra do validador em
+  # src/config/variaveis-ambiente.ts)
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/leiloes_ci
+  JWT_SECRET: chave-de-teste-do-ci-nao-usar-em-producao-123
+  JWT_EXPIRES_IN: 1d
+  PORT: 3000
+  CEP_API_URL: https://viacep.com.br/ws
+  CEP_API_TIMEOUT_MS: 5000
+  UPLOAD_MAX_SIZE_MB: 5
+  FRONTEND_URL: http://localhost:4200
+  API_KEY: chave-de-api-do-ci-nao-usar-em-producao-456
+  RATE_LIMIT_MAX: 100
+  RATE_LIMIT_JANELA_MS: 60000
+
+jobs:
+  build-e-testes:
+    runs-on: ubuntu-latest
+
+    # Postgres real (mesma versao do docker-compose.yml), so para esta
+    # execucao do CI -- efemero, sobe e morre junto com o job
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: leiloes_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Baixa o codigo do repositorio
+        uses: actions/checkout@v4
+
+      - name: Configura o Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: BackEnd/package-lock.json
+
+      - name: Instala as dependencias (versoes travadas do package-lock.json)
+        run: npm ci
+
+      # Prisma 7 usa client sem engine nativa (@prisma/adapter-pg) -- so
+      # precisa gerar o codigo TypeScript, sem baixar nenhum binario
+      - name: Gera o client do Prisma
+        run: npx prisma generate
+
+      - name: Aplica as migrations no banco do CI
+        run: npx prisma migrate deploy
+
+      - name: Lint (oxlint --type-aware)
+        run: npm run lint
+
+      - name: Build (nest build)
+        run: npm run build
+
+      - name: Testes unitarios
+        run: npm run test
+
+      - name: Testes e2e
+        run: npm run test:e2e

@@ -1,0 +1,1023 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Belle Epoque Leiloes - API",
+  "dateExported": "2026-09-22T18:23:25.134Z",
+  "version": "1.2",
+  "folders": [
+    {
+      "_id": "2b23d6dd-fec5-4d45-bbd6-3cb548d42b32",
+      "name": "Auth",
+      "containerId": "",
+      "created": "2026-09-22T18:23:25.134Z",
+      "sortNum": 20000
+    },
+    {
+      "_id": "fc51ac71-c599-412e-b195-d8e8814c5a6c",
+      "name": "Users",
+      "containerId": "",
+      "created": "2026-09-22T18:23:25.134Z",
+      "sortNum": 80000
+    },
+    {
+      "_id": "980aec44-62a3-41aa-a91e-00082d43b5b5",
+      "name": "Categories",
+      "containerId": "",
+      "created": "2026-09-22T18:23:25.134Z",
+      "sortNum": 130000
+    },
+    {
+      "_id": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Auctions",
+      "containerId": "",
+      "created": "2026-09-22T18:23:25.134Z",
+      "sortNum": 190000
+    },
+    {
+      "_id": "70e07708-4c25-4cc7-b84e-819c1b3c1eb3",
+      "name": "Auction Items",
+      "containerId": "",
+      "created": "2026-09-22T18:23:25.134Z",
+      "sortNum": 290000
+    },
+    {
+      "_id": "629ced4e-ca16-43c2-abd0-48baa2cdbcee",
+      "name": "Bids",
+      "containerId": "",
+      "created": "2026-09-22T18:23:25.134Z",
+      "sortNum": 350000
+    },
+    {
+      "_id": "1adb21b8-9827-49dd-bb78-f62c5af7f342",
+      "name": "Documents",
+      "containerId": "",
+      "created": "2026-09-22T18:23:25.134Z",
+      "sortNum": 390000
+    },
+    {
+      "_id": "5eac9ac5-db87-41b4-95f9-fe4b12d7378e",
+      "name": "Saude",
+      "containerId": "",
+      "created": "2026-09-22T18:23:25.134Z",
+      "sortNum": 430000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "a909d8a4-0f2f-4284-b26a-43066f9bc223",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "2b23d6dd-fec5-4d45-bbd6-3cb548d42b32",
+      "name": "Registrar SELLER",
+      "url": "{{baseUrl}}/auth/registrar",
+      "method": "POST",
+      "sortNum": 30000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nome\": \"Seller Exemplo\",\n  \"email\": \"seller.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\"\n}"
+      },
+      "tests": [],
+      "docs": "Cria uma conta (nasce sempre BIDDER). Depois de criar, promova para SELLER direto no banco (papel=SELLER) se quiser testar rotas de vendedor, ou use um usuario que ja seja SELLER."
+    },
+    {
+      "_id": "85abe7a8-bf36-4605-bdb1-72b3d007e66c",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "2b23d6dd-fec5-4d45-bbd6-3cb548d42b32",
+      "name": "Registrar BIDDER",
+      "url": "{{baseUrl}}/auth/registrar",
+      "method": "POST",
+      "sortNum": 40000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nome\": \"Bidder Exemplo\",\n  \"email\": \"bidder.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "11eb6f84-a13d-43d2-a96a-32043119427f",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "2b23d6dd-fec5-4d45-bbd6-3cb548d42b32",
+      "name": "Login SELLER",
+      "url": "{{baseUrl}}/auth/login",
+      "method": "POST",
+      "sortNum": 50000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"seller.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\"\n}"
+      },
+      "tests": [],
+      "docs": "Copie o accessToken da resposta para a variavel de ambiente tokenSeller."
+    },
+    {
+      "_id": "addbae64-86a5-48e8-a507-74ca9fed9c12",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "2b23d6dd-fec5-4d45-bbd6-3cb548d42b32",
+      "name": "Login BIDDER",
+      "url": "{{baseUrl}}/auth/login",
+      "method": "POST",
+      "sortNum": 60000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"bidder.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\"\n}"
+      },
+      "tests": [],
+      "docs": "Copie o accessToken da resposta para a variavel de ambiente tokenBidder."
+    },
+    {
+      "_id": "ffd89ae1-7fb4-4050-9f74-34918ee7f9fe",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "2b23d6dd-fec5-4d45-bbd6-3cb548d42b32",
+      "name": "Login ADMIN",
+      "url": "{{baseUrl}}/auth/login",
+      "method": "POST",
+      "sortNum": 70000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"admin.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\"\n}"
+      },
+      "tests": [],
+      "docs": "Precisa existir um usuario com papel=ADMIN (promovido direto no banco -- nao ha registro publico de ADMIN, de proposito). Copie o token para tokenAdmin."
+    },
+    {
+      "_id": "68c6c29a-5291-4ff6-9980-feebff49240d",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "fc51ac71-c599-412e-b195-d8e8814c5a6c",
+      "name": "Meu perfil (me)",
+      "url": "{{baseUrl}}/users/me",
+      "method": "GET",
+      "sortNum": 90000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenBidder}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "d3e372d5-bb09-4a82-94c2-e58c7c2df2a1",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "fc51ac71-c599-412e-b195-d8e8814c5a6c",
+      "name": "Listar usuarios (ADMIN)",
+      "url": "{{baseUrl}}/users",
+      "method": "GET",
+      "sortNum": 100000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenAdmin}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "66656fc6-131e-499a-9d91-f0f76e37237c",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "fc51ac71-c599-412e-b195-d8e8814c5a6c",
+      "name": "Desativar usuario (ADMIN)",
+      "url": "{{baseUrl}}/users/{{userIdAlvo}}/desativar",
+      "method": "PATCH",
+      "sortNum": 110000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenAdmin}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": [],
+      "docs": "Preencha userIdAlvo com o id de um usuario (nao pode ser o proprio ADMIN logado -- vira 409)."
+    },
+    {
+      "_id": "e65ccb4b-310c-4cee-92f7-d0f2a49ee9d4",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "fc51ac71-c599-412e-b195-d8e8814c5a6c",
+      "name": "Reativar usuario (ADMIN)",
+      "url": "{{baseUrl}}/users/{{userIdAlvo}}/reativar",
+      "method": "PATCH",
+      "sortNum": 120000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenAdmin}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "448e2b89-4263-46ce-ba68-4e15c1ecb051",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "980aec44-62a3-41aa-a91e-00082d43b5b5",
+      "name": "Criar categoria (ADMIN)",
+      "url": "{{baseUrl}}/categories",
+      "method": "POST",
+      "sortNum": 140000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenAdmin}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nome\": \"Arte e Antiguidades\",\n  \"descricao\": \"Quadros, esculturas e pecas raras\"\n}"
+      },
+      "tests": [],
+      "docs": "Copie o id da resposta para a variavel categoriaId."
+    },
+    {
+      "_id": "6eb96e69-6a2f-4d5e-b85a-030b2ff598f9",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "980aec44-62a3-41aa-a91e-00082d43b5b5",
+      "name": "Listar categorias",
+      "url": "{{baseUrl}}/categories",
+      "method": "GET",
+      "sortNum": 150000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "40f2637e-2651-46c9-b004-71485f687073",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "980aec44-62a3-41aa-a91e-00082d43b5b5",
+      "name": "Buscar categoria por id",
+      "url": "{{baseUrl}}/categories/{{categoriaId}}",
+      "method": "GET",
+      "sortNum": 160000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "e219f675-07e9-4e4e-90cd-832d44a40d8a",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "980aec44-62a3-41aa-a91e-00082d43b5b5",
+      "name": "Atualizar categoria (ADMIN)",
+      "url": "{{baseUrl}}/categories/{{categoriaId}}",
+      "method": "PATCH",
+      "sortNum": 170000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenAdmin}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"descricao\": \"Descricao atualizada\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "2272e8af-3482-4846-94f5-2d188ad272ab",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "980aec44-62a3-41aa-a91e-00082d43b5b5",
+      "name": "Remover categoria (ADMIN)",
+      "url": "{{baseUrl}}/categories/{{categoriaId}}",
+      "method": "DELETE",
+      "sortNum": 180000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenAdmin}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": [],
+      "docs": "Se a categoria tiver algum item, retorna 409 (em uso) -- comportamento esperado."
+    },
+    {
+      "_id": "7cd0cc3c-81ed-44f7-b025-afa1382b7067",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Criar leilao (SELLER)",
+      "url": "{{baseUrl}}/auctions",
+      "method": "POST",
+      "sortNum": 200000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Leilao de Arte\",\n  \"descricao\": \"Pecas selecionadas de um colecionador\",\n  \"dataInicio\": \"2020-01-01T00:00:00.000Z\",\n  \"dataFim\": \"2030-01-01T00:00:00.000Z\"\n}"
+      },
+      "tests": [],
+      "docs": "Datas bem largas de proposito, para o leilao estar sempre dentro do periodo quando voce for testar lances. Copie o id da resposta para leilaoId."
+    },
+    {
+      "_id": "a552db35-4832-437d-beec-8ad90cf0cea2",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Listar leiloes",
+      "url": "{{baseUrl}}/auctions",
+      "method": "GET",
+      "sortNum": 210000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "83e4ff78-ce71-43a6-ade2-852d2275ed4e",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Buscar leilao por id",
+      "url": "{{baseUrl}}/auctions/{{leilaoId}}",
+      "method": "GET",
+      "sortNum": 220000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "bfcaff94-0926-4a95-bdcd-260c8050100a",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Atualizar leilao (so em DRAFT)",
+      "url": "{{baseUrl}}/auctions/{{leilaoId}}",
+      "method": "PATCH",
+      "sortNum": 230000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Leilao de Arte (editado)\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "5c3e7234-f1ab-4864-aac6-55f173eb769f",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Mudar status -> SCHEDULED",
+      "url": "{{baseUrl}}/auctions/{{leilaoId}}/status",
+      "method": "PATCH",
+      "sortNum": 240000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"status\": \"SCHEDULED\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "ba919c3f-a70c-4a78-a078-5a053aa89c32",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Mudar status -> OPEN",
+      "url": "{{baseUrl}}/auctions/{{leilaoId}}/status",
+      "method": "PATCH",
+      "sortNum": 250000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"status\": \"OPEN\"\n}"
+      },
+      "tests": [],
+      "docs": "So depois de SCHEDULED (a maquina de estados nao deixa pular etapa)."
+    },
+    {
+      "_id": "29847c69-361f-4be3-9f01-65b7d1f3dfa1",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Mudar status -> CLOSED (fecha e define vencedor)",
+      "url": "{{baseUrl}}/auctions/{{leilaoId}}/status",
+      "method": "PATCH",
+      "sortNum": 260000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"status\": \"CLOSED\"\n}"
+      },
+      "tests": [],
+      "docs": "Cada item do leilao vira SOLD (com o vencedor = maior lance) ou UNSOLD (sem nenhum lance)."
+    },
+    {
+      "_id": "47e5e40d-cf37-43d9-a4a5-0113dce9f389",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Mudar status -> CANCELED (com motivo)",
+      "url": "{{baseUrl}}/auctions/{{leilaoId}}/status",
+      "method": "PATCH",
+      "sortNum": 270000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"status\": \"CANCELED\",\n  \"motivo\": \"Item retirado do leilao pelo vendedor\"\n}"
+      },
+      "tests": [],
+      "docs": "Sem motivo -> 400. So use este request se NAO for usar o mesmo leilao para testar CLOSED (sao caminhos exclusivos)."
+    },
+    {
+      "_id": "bd7559ff-0f82-4d1e-9eff-8cc2dcfdb786",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "44f42961-5528-478d-8620-b411543dca27",
+      "name": "Remover leilao (so em DRAFT)",
+      "url": "{{baseUrl}}/auctions/{{leilaoId}}",
+      "method": "DELETE",
+      "sortNum": 280000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "fcddeed5-4103-4a29-8ef8-2b4dc34b982d",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "70e07708-4c25-4cc7-b84e-819c1b3c1eb3",
+      "name": "Criar item (SELLER dono do leilao)",
+      "url": "{{baseUrl}}/auction-items",
+      "method": "POST",
+      "sortNum": 300000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Quadro raro\",\n  \"descricao\": \"Oleo sobre tela, seculo XIX\",\n  \"precoInicial\": 100,\n  \"incrementoMinimo\": 10,\n  \"cep\": \"01310100\",\n  \"leilaoId\": \"{{leilaoId}}\",\n  \"categoriaId\": \"{{categoriaId}}\"\n}"
+      },
+      "tests": [],
+      "docs": "O leilao precisa estar em DRAFT. O cep 01310100 e real (Avenida Paulista, SP) -- o endereco e preenchido de verdade via ViaCEP. Copie o id da resposta para itemId."
+    },
+    {
+      "_id": "2bc0ce98-be3a-441e-8883-d2d0413aa676",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "70e07708-4c25-4cc7-b84e-819c1b3c1eb3",
+      "name": "Listar itens (com filtros opcionais)",
+      "url": "{{baseUrl}}/auction-items?leilaoId={{leilaoId}}&categoriaId={{categoriaId}}",
+      "method": "GET",
+      "sortNum": 310000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": [],
+      "docs": "Os dois parametros de query sao opcionais (consulta por relacionamento)."
+    },
+    {
+      "_id": "39b204a1-9c7c-4acf-8668-7465a6dd66bc",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "70e07708-4c25-4cc7-b84e-819c1b3c1eb3",
+      "name": "Buscar item por id",
+      "url": "{{baseUrl}}/auction-items/{{itemId}}",
+      "method": "GET",
+      "sortNum": 320000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "0b3fc355-b537-47a4-acc0-abe0807f5994",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "70e07708-4c25-4cc7-b84e-819c1b3c1eb3",
+      "name": "Atualizar item (so com leilao em DRAFT)",
+      "url": "{{baseUrl}}/auction-items/{{itemId}}",
+      "method": "PATCH",
+      "sortNum": 330000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Quadro raro (editado)\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "55e006e2-4578-4d2a-b387-d9a1814994e6",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "70e07708-4c25-4cc7-b84e-819c1b3c1eb3",
+      "name": "Remover item (so com leilao em DRAFT)",
+      "url": "{{baseUrl}}/auction-items/{{itemId}}",
+      "method": "DELETE",
+      "sortNum": 340000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "e9d3ab07-fc54-46a0-b1f4-ba38dde5bd90",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "629ced4e-ca16-43c2-abd0-48baa2cdbcee",
+      "name": "Dar lance (BIDDER)",
+      "url": "{{baseUrl}}/auction-items/{{itemId}}/bids",
+      "method": "POST",
+      "sortNum": 360000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenBidder}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"valor\": 100\n}"
+      },
+      "tests": [],
+      "docs": "O leilao precisa estar OPEN. O valor precisa ser maior ou igual ao precoInicial (ou lanceAtual + incrementoMinimo, se ja houver lance). Quem e dono do leilao nao pode dar lance no proprio item."
+    },
+    {
+      "_id": "3eeedd1c-3b89-4f5f-bcfd-f4dd1495ce15",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "629ced4e-ca16-43c2-abd0-48baa2cdbcee",
+      "name": "Listar lances de um item",
+      "url": "{{baseUrl}}/auction-items/{{itemId}}/bids",
+      "method": "GET",
+      "sortNum": 370000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "8bfa932b-87bf-4393-989f-f6ac116f6b9d",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "629ced4e-ca16-43c2-abd0-48baa2cdbcee",
+      "name": "Meus lances",
+      "url": "{{baseUrl}}/bids/meus",
+      "method": "GET",
+      "sortNum": 380000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenBidder}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "4fb9ef6f-500a-401f-b033-6b4076e3075a",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "1adb21b8-9827-49dd-bb78-f62c5af7f342",
+      "name": "Enviar documento ou foto (SELLER dono)",
+      "url": "{{baseUrl}}/auction-items/{{itemId}}/documents",
+      "method": "POST",
+      "sortNum": 400000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{tokenSeller}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "formdata",
+        "form": [
+          {
+            "name": "tipo",
+            "value": "PHOTO",
+            "type": "text"
+          },
+          {
+            "name": "arquivo",
+            "value": "",
+            "type": "file"
+          }
+        ]
+      },
+      "tests": [],
+      "docs": "No campo arquivo, clique e selecione um arquivo .jpg/.png/.pdf no seu computador (a exportacao do Thunder Client nao guarda o arquivo em si, so o nome do campo). Tipos aceitos: image/jpeg, image/png, application/pdf. Tamanho maximo: variavel UPLOAD_MAX_SIZE_MB do .env (padrao 5MB)."
+    },
+    {
+      "_id": "26a5fb30-220e-4ad5-86e4-b168ddafb9d6",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "1adb21b8-9827-49dd-bb78-f62c5af7f342",
+      "name": "Listar documentos de um item",
+      "url": "{{baseUrl}}/auction-items/{{itemId}}/documents",
+      "method": "GET",
+      "sortNum": 410000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "7bdabf24-8e7a-41cd-9380-12cf58c6fc33",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "1adb21b8-9827-49dd-bb78-f62c5af7f342",
+      "name": "Baixar documento",
+      "url": "{{baseUrl}}/documents/{{documentoId}}/download",
+      "method": "GET",
+      "sortNum": 420000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    },
+    {
+      "_id": "38edf186-f036-4f72-9a06-d4c275344f93",
+      "colId": "1edba8ef-259b-4555-afdb-392e4c69ec0a",
+      "containerId": "5eac9ac5-db87-41b4-95f9-fe4b12d7378e",
+      "name": "Health check",
+      "url": "{{baseUrl}}/saude",
+      "method": "GET",
+      "sortNum": 440000,
+      "created": "2026-09-22T18:23:25.134Z",
+      "modified": "2026-09-22T18:23:25.134Z",
+      "headers": [
+        {
+          "name": "X-API-KEY",
+          "value": "{{apiKey}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none"
+      },
+      "tests": []
+    }
+  ]
+}

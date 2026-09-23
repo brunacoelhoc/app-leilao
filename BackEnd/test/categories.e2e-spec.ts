@@ -54,15 +54,18 @@ describe('Categories (e2e)', () => {
       .set('X-API-KEY', chave)
       .send({ email: EMAIL_ADMIN, senha: SENHA_TESTE });
     tokenAdmin = (loginAdmin.body as { accessToken: string }).accessToken;
-  });
+  }, 30_000);
 
   afterAll(async () => {
     await prisma.category.deleteMany({
       where: { nome: { startsWith: 'Categories E2E' } },
     });
-    await prisma.user.deleteMany({
-      where: { email: { in: [EMAIL_BIDDER, EMAIL_ADMIN] } },
-    });
+    // Todo login grava uma linha em AuditLog (auditoria), que nunca pode ser
+    // apagada -- por isso um usuario que ja logou pode ficar "preso" para
+    // sempre (onDelete: Restrict). Tentativa best-effort, sem quebrar o teste
+    await prisma.user
+      .deleteMany({ where: { email: { in: [EMAIL_BIDDER, EMAIL_ADMIN] } } })
+      .catch(() => undefined);
     await app.close();
   });
 
@@ -94,34 +97,41 @@ describe('Categories (e2e)', () => {
   });
 
   describe('fluxo principal: ADMIN cria, atualiza e remove', () => {
+    let idCategoriaPintura: string;
+
     it('ADMIN cria uma categoria (201)', async () => {
       const resposta = await rota('post', '', tokenAdmin)
         .send({ nome: 'Categories E2E Pintura', descricao: 'Quadros e telas' })
         .expect(201);
 
       expect(resposta.body.nome).toBe('Categories E2E Pintura');
+      idCategoriaPintura = resposta.body.id as string;
     });
 
-    it('qualquer um LISTA, mesmo sem token (200)', async () => {
+    it('qualquer um LISTA, mesmo sem token (200), formato paginado', async () => {
       const resposta = await rota('get', '').expect(200);
 
-      expect(Array.isArray(resposta.body)).toBe(true);
+      const corpo = resposta.body as {
+        dados: unknown[];
+        total: number;
+        pagina: number;
+        limite: number;
+        totalPaginas: number;
+      };
+      expect(Array.isArray(corpo.dados)).toBe(true);
+      expect(corpo.pagina).toBe(1);
+      expect(corpo.limite).toBe(20); // padrao, ninguem pediu ?limite=
+      expect(corpo.dados.length).toBeLessThanOrEqual(20);
+      expect(corpo.total).toBeGreaterThanOrEqual(corpo.dados.length);
+      expect(corpo.totalPaginas).toBe(Math.ceil(corpo.total / corpo.limite));
     });
 
-    it('BIDDER consegue LER o detalhe (200)', async () => {
-      const lista = await rota('get', '', tokenAdmin);
-      const id = (lista.body as { id: string }[])[0].id;
-
-      await rota('get', `/${id}`, tokenBidder).expect(200);
+    it('BIDDER consegue LER o detalhe da categoria recem-criada (200)', async () => {
+      await rota('get', `/${idCategoriaPintura}`, tokenBidder).expect(200);
     });
 
-    it('ADMIN atualiza (200)', async () => {
-      const lista = await rota('get', '', tokenAdmin);
-      const id = (lista.body as { id: string; nome: string }[]).find(
-        (c) => c.nome === 'Categories E2E Pintura',
-      )!.id;
-
-      const resposta = await rota('patch', `/${id}`, tokenAdmin)
+    it('ADMIN atualiza a categoria recem-criada (200)', async () => {
+      const resposta = await rota('patch', `/${idCategoriaPintura}`, tokenAdmin)
         .send({ descricao: 'Nova descricao' })
         .expect(200);
 
@@ -140,6 +150,34 @@ describe('Categories (e2e)', () => {
       ).expect(204);
 
       expect(resposta.body).toEqual({});
+    });
+  });
+
+  describe('paginacao', () => {
+    it('?limite=2 devolve no maximo 2 itens', async () => {
+      const resposta = await rota('get', '?limite=2').expect(200);
+
+      expect(resposta.body.dados.length).toBeLessThanOrEqual(2);
+      expect(resposta.body.limite).toBe(2);
+    });
+
+    it('paginas diferentes devolvem itens diferentes', async () => {
+      const pagina1 = await rota('get', '?limite=2&pagina=1').expect(200);
+      const pagina2 = await rota('get', '?limite=2&pagina=2').expect(200);
+
+      const idsPagina1 = (pagina1.body.dados as { id: string }[]).map((c) => c.id);
+      const idsPagina2 = (pagina2.body.dados as { id: string }[]).map((c) => c.id);
+      expect(idsPagina1).not.toEqual(idsPagina2);
+    });
+
+    it('?pagina=0 -> 400 (pagina comeca em 1)', async () => {
+      const resposta = await rota('get', '?pagina=0');
+      expect(resposta.status).toBe(400);
+    });
+
+    it('?limite=101 -> 400 (maximo e 100)', async () => {
+      const resposta = await rota('get', '?limite=101');
+      expect(resposta.status).toBe(400);
     });
   });
 

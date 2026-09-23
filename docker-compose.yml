@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: leiloes
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: leiloes
+    # Porta diferente da padrao (5433, nao 5432) para nao brigar com um
+    # Postgres local ja instalado na maquina (ex.: o usado no dia a dia fora do Docker)
+    ports:
+      - '5433:5432'
+    volumes:
+      # Postgres 18+ mudou a convencao: o volume agora fica em
+      # /var/lib/postgresql (nao mais /var/lib/postgresql/data)
+      - leiloes_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U leiloes -d leiloes']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./BackEnd
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Reaproveita o .env que ja existe no BackEnd (mesmo JWT_SECRET, API_KEY
+    # etc. usados fora do Docker) -- so o DATABASE_URL e sobrescrito abaixo,
+    # porque dentro da rede do Docker o banco se chama "postgres", nao "localhost"
+    env_file:
+      - ./BackEnd/.env
+    environment:
+      DATABASE_URL: postgresql://leiloes:${POSTGRES_PASSWORD}@postgres:5432/leiloes
+    ports:
+      - '3000:3000'
+    volumes:
+      - leiloes_uploads:/app/uploads
+
+volumes:
+  leiloes_postgres_data:
+  leiloes_uploads:

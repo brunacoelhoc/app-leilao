@@ -42,7 +42,7 @@ describe('Rate limiting (e2e)', () => {
     await app.init();
 
     chaveCorreta = app.get(ConfigService).getOrThrow<string>('API_KEY');
-  });
+  }, 15_000);
 
   afterEach(async () => {
     jest.restoreAllMocks();

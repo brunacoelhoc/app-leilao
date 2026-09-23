@@ -3,3 +3,9 @@
 /CONTEXTO.md
 /GLOSSARIO.md
 /INSUMOS-APRESENTACAO.md
+
+# Senha do Postgres usada pelo docker-compose.yml (nunca vai pro Git)
+/.env
+
+# Configuracao local do Claude Code (nao e parte do projeto)
+/.claude/

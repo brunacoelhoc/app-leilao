@@ -3,12 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configurarAplicacao } from './configurar-aplicacao';
+import { configurarSwagger } from './configurar-swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Prefixo /api, Helmet, compressao, CORS e validacao dos DTOs
   configurarAplicacao(app);
+
+  // Documentacao interativa em /docs (fora do prefixo /api, de proposito)
+  configurarSwagger(app);
 
   // Ao receber um sinal de encerramento (Ctrl+C, deploy), fecha a conexao com o banco antes de sair
   app.enableShutdownHooks();

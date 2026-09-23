@@ -5,6 +5,9 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { AuditLogService } from '../audit/audit-log.service';
+import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
+import { AuditResult, Prisma } from '../generated/prisma/client';
 import { UsersService } from '../users/users.service';
 import { UsuarioEntity } from '../users/usuario.entity';
 import type { LoginDto } from './dto/login.dto';
@@ -28,24 +31,60 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
-  async registrar(dto: RegistrarUsuarioDto): Promise<UsuarioEntity> {
+  async registrar(
+    dto: RegistrarUsuarioDto,
+    contexto: ContextoRequisicao = {},
+  ): Promise<UsuarioEntity> {
     // Nunca guardamos a senha pura, so o hash
     const senhaComHash = await bcrypt.hash(dto.senha, CUSTO_DO_HASH);
 
-    // Se o e-mail ja existir, o banco recusa (P2002) e o filtro global
-    // ja traduz isso para 409 -- nao precisamos checar isso aqui
-    const usuario = await this.usersService.criar({
-      nome: dto.nome,
-      email: dto.email,
-      senha: senhaComHash,
-    });
+    try {
+      // Se o e-mail ja existir, o banco recusa (P2002) e o filtro global
+      // ja traduz isso para 409 -- so precisamos capturar aqui para auditar
+      const usuario = await this.usersService.criar({
+        nome: dto.nome,
+        email: dto.email,
+        senha: senhaComHash,
+      });
 
-    return new UsuarioEntity(usuario);
+      await this.auditLogService.registrar({
+        usuarioId: usuario.id,
+        papel: usuario.papel,
+        acao: 'REGISTRO',
+        resultado: AuditResult.SUCCESS,
+        statusHttp: 201,
+        ...contexto,
+      });
+
+      return new UsuarioEntity(usuario);
+    } catch (erro) {
+      // So sabemos dizer com certeza o motivo no caso mais comum (e-mail
+      // duplicado, P2002); qualquer outro erro e auditado de forma generica,
+      // sem inventar um motivo ou status que talvez nao seja o real
+      const duplicado =
+        erro instanceof Prisma.PrismaClientKnownRequestError &&
+        erro.code === 'P2002';
+
+      await this.auditLogService.registrar({
+        acao: 'REGISTRO',
+        resultado: AuditResult.REJECTED,
+        motivo: duplicado
+          ? `E-mail ja cadastrado: ${dto.email}`
+          : 'Falha ao registrar novo usuario',
+        statusHttp: duplicado ? 409 : 500,
+        ...contexto,
+      });
+      throw erro;
+    }
   }
 
-  async login(dto: LoginDto): Promise<RespostaLogin> {
+  async login(
+    dto: LoginDto,
+    contexto: ContextoRequisicao = {},
+  ): Promise<RespostaLogin> {
     const usuario = await this.usersService.buscarPorEmail(dto.email);
 
     // Sempre compara com ALGUM hash, exista o usuario ou nao -- senao o tempo
@@ -56,12 +95,29 @@ export class AuthService {
     );
 
     if (!usuario || !senhaConfere) {
+      await this.auditLogService.registrar({
+        usuarioId: usuario?.id,
+        acao: 'LOGIN',
+        resultado: AuditResult.REJECTED,
+        motivo: 'Credenciais invalidas',
+        statusHttp: 401,
+        ...contexto,
+      });
       throw new UnauthorizedException('Credenciais invalidas');
     }
 
     // So avisamos que a conta esta desativada DEPOIS de confirmar a senha:
     // assim so quem realmente sabe a senha (o dono) fica sabendo do motivo
     if (!usuario.ativo) {
+      await this.auditLogService.registrar({
+        usuarioId: usuario.id,
+        papel: usuario.papel,
+        acao: 'LOGIN',
+        resultado: AuditResult.REJECTED,
+        motivo: 'Conta desativada',
+        statusHttp: 403,
+        ...contexto,
+      });
       throw new ForbiddenException(
         'Sua conta foi desativada. Entre em contato com o suporte.',
       );
@@ -70,6 +126,15 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: usuario.id,
       papel: usuario.papel,
+    });
+
+    await this.auditLogService.registrar({
+      usuarioId: usuario.id,
+      papel: usuario.papel,
+      acao: 'LOGIN',
+      resultado: AuditResult.SUCCESS,
+      statusHttp: 200,
+      ...contexto,
     });
 
     return { accessToken, usuario: new UsuarioEntity(usuario) };
