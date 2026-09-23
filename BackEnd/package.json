@@ -18,7 +18,8 @@
     "test:cov": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --inspect-brk --experimental-vm-modules -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand",
-    "seed": "node -r ./prisma/corrigir-resolucao-js.js prisma/seed.ts"
+    "seed": "node -r ./prisma/corrigir-resolucao-js.js prisma/seed.ts",
+    "fotos:demo": "node -r ./prisma/corrigir-resolucao-js.js prisma/anexar-fotos-demo.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^12.0.1",

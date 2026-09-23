@@ -13,12 +13,13 @@ import { CategoriasService } from '../../services/categorias.service';
 import { DocumentosService } from '../../services/documentos.service';
 import { ItensService } from '../../services/itens.service';
 import { LeiloesService } from '../../services/leiloes.service';
+import { AcervoFotos } from '../../shared/acervo-fotos/acervo-fotos';
 import { Modal } from '../../shared/modal/modal';
 import { Paginacao } from '../../shared/paginacao/paginacao';
 
 @Component({
   selector: 'app-vendedor-painel',
-  imports: [RouterLink, DatePipe, FormsModule, Modal, Paginacao],
+  imports: [AcervoFotos, RouterLink, DatePipe, FormsModule, Modal, Paginacao],
   templateUrl: './vendedor-painel.html',
   styleUrl: './vendedor-painel.css',
 })
@@ -130,6 +131,12 @@ export class VendedorPainel {
 
   mascararCep(): void {
     this.itemCep = formatarCep(this.itemCep);
+  }
+
+  // Foto escolhida no acervo: segue o mesmo caminho de um arquivo do computador
+  usarFotoDoAcervo(arquivo: File): void {
+    this.foto = arquivo;
+    this.fotoPreview.set(URL.createObjectURL(arquivo));
   }
 
   aoEscolherFoto(evento: Event): void {

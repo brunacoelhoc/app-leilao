@@ -132,6 +132,7 @@
           }
           <input id="foto" type="file" accept="image/*" (change)="aoEscolherFoto($event)" hidden />
         </label>
+        <app-acervo-fotos (escolher)="usarFotoDoAcervo($event)" />
       </div>
 
       @if (erroItem()) {

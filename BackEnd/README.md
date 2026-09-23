@@ -129,6 +129,13 @@ npx prisma generate
 > aplicada. Qualquer mudança de schema precisa de uma migration nova
 > (`prisma migrate dev --create-only` seguido de revisão manual do SQL).
 
+### Fotos de demonstração
+
+`npm run fotos:demo` anexa uma obra de domínio público (de `FrontEnd/public/acervo/`) a cada
+item que ainda não tem foto, pelo mesmo caminho do upload (arquivo em `uploads/` + registro em
+`Document`). É idempotente e faz o carrossel, a página do item e o quadro 3D mostrarem imagens.
+Os créditos das obras estão em `FrontEnd/public/acervo/CREDITOS.md`.
+
 ### Seed (dados de exemplo)
 
 ```bash
@@ -325,6 +332,7 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | POST | `/auctions` | SELLER | `{ titulo, descricao?, dataInicio, dataFim }` (ISO 8601; `dataFim` > `dataInicio`) | `201` (nasce `DRAFT`) · `400` · `401` · `403` |
 | GET | `/auctions?busca=&status=&vendedorId=` | Livre | — | `200` lista paginada (filtros opcionais) |
 | GET | `/auctions/:id` | Livre | — | `200` · `400` · `404` |
+| GET | `/auctions/:id/indicadores` | Livre | — | `200` `{ totalItens, totalLances, maiorLance, itensVendidos, itensNaoVendidos, itensDisponiveis, arrecadadoTotal }` · `400` · `404` |
 | PATCH | `/auctions/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` (não é o dono) · `404` · `409` (fora de `DRAFT`) |
 | PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` · `404` · `409` (transição inválida) |
 | DELETE | `/auctions/:id` | SELLER dono / ADMIN | — | `204` · `401` · `403` · `404` · `409` (fora de `DRAFT`) |
@@ -347,7 +355,7 @@ e deve rodar em **uma única instância** da API.
 
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
-| POST | `/auction-items` | SELLER dono do leilão / ADMIN | `{ titulo, descricao?, precoInicial, incrementoMinimo, cep, leilaoId, categoriaId }` | `201` (endereço preenchido via ViaCEP) · `400` · `401` · `403` · `404` (leilão/categoria/CEP inexistente) · `409` (leilão fora de `DRAFT`) · `503` (ViaCEP fora do ar) |
+| POST | `/auction-items` | SELLER dono do leilão / ADMIN | `{ titulo, descricao?, precoInicial, incrementoMinimo, cep, leilaoId, categoriaId }` | `201` (endereço preenchido via ViaCEP) · `400` · `401` · `403` · `400` também para CEP inexistente · `404` (leilão/categoria inexistente) · `409` (leilão fora de `DRAFT`) · `503` (ViaCEP fora do ar) |
 | GET | `/auction-items?leilaoId=&categoriaId=` | Livre | — | `200` lista (filtros opcionais, por relacionamento) |
 | GET | `/auction-items/:id` | Livre | — | `200` · `400` · `404` |
 | PATCH | `/auction-items/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` · `404` · `409` (leilão fora de `DRAFT`) |
@@ -366,7 +374,7 @@ evita perda de precisão do `Decimal` do Postgres em JSON.
 
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
-| POST | `/auction-items/:itemId/bids` | BIDDER | `{ valor }` | `201` · `400` · `401` · `403` (não é BIDDER, ou é o vendedor do item) · `404` · `409` (leilão fechado/fora do período, valor abaixo do mínimo) |
+| POST | `/auction-items/:itemId/bids` | BIDDER | `{ valor }` | `201` · `400` · `401` · `403` (não é BIDDER) · `404` · `409` (é o vendedor do item, leilão fechado/fora do período, valor abaixo do mínimo) |
 | GET | `/auction-items/:itemId/bids` | Livre | — | `200` lista, do maior lance para o menor (com `licitanteNome`) |
 | GET | `/bids/meus` | BIDDER | — | `200` os lances do próprio usuário logado · `401` |
 

@@ -1,0 +1,86 @@
+[
+  {
+    "arquivo": "noite-estrelada.jpg",
+    "titulo": "A Noite Estrelada",
+    "autor": "Vincent van Gogh",
+    "ano": "1889",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg"
+  },
+  {
+    "arquivo": "moca-brinco-perola.jpg",
+    "titulo": "Moça com Brinco de Pérola",
+    "autor": "Johannes Vermeer",
+    "ano": "c. 1665",
+    "fonte": "https://commons.wikimedia.org/wiki/File:1665_Girl_with_a_Pearl_Earring.jpg"
+  },
+  {
+    "arquivo": "impressao-nascer-do-sol.jpg",
+    "titulo": "Impressão, Nascer do Sol",
+    "autor": "Claude Monet",
+    "ano": "1872",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Claude_Monet%2C_Impression%2C_soleil_levant.jpg"
+  },
+  {
+    "arquivo": "girassois.jpg",
+    "titulo": "Os Girassóis",
+    "autor": "Vincent van Gogh",
+    "ano": "1889",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Vincent_van_Gogh_-_Sunflowers_-_VGM_F458.jpg"
+  },
+  {
+    "arquivo": "grande-onda.jpg",
+    "titulo": "A Grande Onda de Kanagawa",
+    "autor": "Katsushika Hokusai",
+    "ano": "c. 1831",
+    "fonte": "https://commons.wikimedia.org/wiki/File:The_Great_Wave_off_Kanagawa.jpg"
+  },
+  {
+    "arquivo": "nascimento-venus.jpg",
+    "titulo": "O Nascimento de Vênus",
+    "autor": "Sandro Botticelli",
+    "ano": "c. 1485",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg"
+  },
+  {
+    "arquivo": "o-beijo.jpg",
+    "titulo": "O Beijo",
+    "autor": "Gustav Klimt",
+    "ano": "1908",
+    "fonte": "https://commons.wikimedia.org/wiki/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg"
+  },
+  {
+    "arquivo": "autorretrato-rembrandt.jpg",
+    "titulo": "Autorretrato",
+    "autor": "Rembrandt van Rijn",
+    "ano": "1659",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Rembrandt_van_Rijn_-_Self-Portrait_-_Google_Art_Project.jpg"
+  },
+  {
+    "arquivo": "leiteira.jpg",
+    "titulo": "A Leiteira",
+    "autor": "Johannes Vermeer",
+    "ano": "c. 1658",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Johannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg"
+  },
+  {
+    "arquivo": "domingo-grande-jatte.jpg",
+    "titulo": "Um Domingo na Grande Jatte",
+    "autor": "Georges Seurat",
+    "ano": "1886",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Georges_Seurat_-_A_Sunday_on_La_Grande_Jatte_--_1884_-_Google_Art_Project.jpg"
+  },
+  {
+    "arquivo": "mona-lisa.jpg",
+    "titulo": "Mona Lisa",
+    "autor": "Leonardo da Vinci",
+    "ano": "c. 1503",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg"
+  },
+  {
+    "arquivo": "venus-de-milo.jpg",
+    "titulo": "Vênus de Milo (escultura)",
+    "autor": "Alexandros de Antioquia",
+    "ano": "c. 100 a.C.",
+    "fonte": "https://commons.wikimedia.org/wiki/File:Venus_de_Milo_Louvre_Ma399_n4.jpg"
+  }
+]

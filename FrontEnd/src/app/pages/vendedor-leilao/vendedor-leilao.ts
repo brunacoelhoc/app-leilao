@@ -17,12 +17,13 @@ import { CategoriasService } from '../../services/categorias.service';
 import { DocumentosService } from '../../services/documentos.service';
 import { ItensService } from '../../services/itens.service';
 import { LeiloesService } from '../../services/leiloes.service';
+import { AcervoFotos } from '../../shared/acervo-fotos/acervo-fotos';
 import { Modal } from '../../shared/modal/modal';
 import { Paginacao } from '../../shared/paginacao/paginacao';
 
 @Component({
   selector: 'app-vendedor-leilao',
-  imports: [DatePipe, FormsModule, RouterLink, Modal, Paginacao],
+  imports: [AcervoFotos, DatePipe, FormsModule, RouterLink, Modal, Paginacao],
   templateUrl: './vendedor-leilao.html',
   styleUrl: './vendedor-leilao.css',
 })
@@ -190,6 +191,12 @@ export class VendedorLeilao {
 
   mascararCep(): void {
     this.itemCep = formatarCep(this.itemCep);
+  }
+
+  // Foto escolhida no acervo: segue o mesmo caminho de um arquivo do computador
+  usarFotoDoAcervo(arquivo: File): void {
+    this.foto = arquivo;
+    this.fotoPreview.set(URL.createObjectURL(arquivo));
   }
 
   aoEscolherFoto(evento: Event): void {

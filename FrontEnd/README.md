@@ -46,7 +46,8 @@ src/app/
   pages/      uma pasta por tela
   shared/     hero, carrossel-destaques, visualizador-3d, sidebar, footer, modal,
               paginacao, avatar, acessibilidade, recuperar-senha
-public/       logo, cena de galeria do Hero e ilustrações de avatares (SVG)
+public/       logo, cena de galeria do Hero, ilustrações de avatares (SVG) e acervo/
+              (12 obras de domínio público para os lotes de demonstração; ver acervo/CREDITOS.md)
 ```
 
 ## Destaques técnicos
