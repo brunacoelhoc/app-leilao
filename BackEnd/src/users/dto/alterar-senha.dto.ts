@@ -1,0 +1,16 @@
+import { IsNotEmpty, Matches, MinLength } from 'class-validator';
+
+// PATCH /users/me/senha -- exige a senha atual (confere no service via
+// bcrypt.compare) para trocar, mesma regra de forca da senha do registro
+export class AlterarSenhaDto {
+  @IsNotEmpty({ message: 'senhaAtual e obrigatoria' })
+  senhaAtual: string;
+
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/, {
+    message:
+      'A nova senha nao segue o padrao exigido: use letra maiuscula, minuscula, numero e caractere especial',
+  })
+  @MinLength(8, { message: 'novaSenha deve ter no minimo 8 caracteres' })
+  @IsNotEmpty({ message: 'novaSenha e obrigatoria' })
+  novaSenha: string;
+}

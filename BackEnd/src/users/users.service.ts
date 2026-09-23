@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import {
@@ -8,11 +14,17 @@ import {
   type RespostaPaginada,
 } from '../common/utils/paginacao.util';
 import type { Role, User } from '../generated/prisma/client';
+import type { AlterarSenhaDto } from './dto/alterar-senha.dto';
+import type { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 
 interface FiltrosListagemUsuarios extends ParametrosPaginacao {
   papel?: Role;
   ativo?: boolean;
 }
+
+// Mesmo custo usado no registro/login (src/auth/auth.service.ts) -- duplicado
+// aqui de proposito, para o UsersService nao depender do AuthModule
+const CUSTO_DO_HASH = 12;
 
 // Fala com a tabela User. A maior parte e so acesso ao banco (usado pelo
 // AuthService no login/registro); (des)ativar e gestao pelo ADMIN moram aqui
@@ -84,5 +96,43 @@ export class UsersService {
   async reativar(id: string): Promise<User> {
     await this.buscarPorIdOuFalhar(id);
     return this.prisma.user.update({ where: { id }, data: { ativo: true } });
+  }
+
+  // Autoedicao do proprio perfil (nunca mexe em papel/ativo/senha por aqui)
+  async atualizarPerfil(id: string, dto: AtualizarPerfilDto): Promise<User> {
+    const usuario = await this.buscarPorIdOuFalhar(id);
+    // "senhaAtual" so serve para conferir; nunca vai para o banco
+    const { senhaAtual, ...dados } = dto;
+
+    if (dados.email && dados.email !== usuario.email) {
+      // Trocar o e-mail (login) exige provar quem e: senha atual correta
+      if (!senhaAtual || !(await bcrypt.compare(senhaAtual, usuario.senha))) {
+        throw new BadRequestException(
+          'Para trocar o e-mail, informe a senha atual correta',
+        );
+      }
+      const emUso = await this.prisma.user.findUnique({
+        where: { email: dados.email },
+      });
+      if (emUso) {
+        throw new ConflictException(`E-mail ja cadastrado: ${dados.email}`);
+      }
+    }
+
+    return this.prisma.user.update({ where: { id }, data: dados });
+  }
+
+  // So troca a senha se a senha ATUAL bater (confere com o hash gravado)
+  async alterarSenha(id: string, dto: AlterarSenhaDto): Promise<void> {
+    const usuario = await this.buscarPorIdOuFalhar(id);
+
+    const senhaConfere = await bcrypt.compare(dto.senhaAtual, usuario.senha);
+    if (!senhaConfere) {
+      // 400 (nao 401): quem chama JA esta autenticado, so errou a senha atual
+      throw new BadRequestException('Senha atual incorreta');
+    }
+
+    const novoHash = await bcrypt.hash(dto.novaSenha, CUSTO_DO_HASH);
+    await this.prisma.user.update({ where: { id }, data: { senha: novoHash } });
   }
 }

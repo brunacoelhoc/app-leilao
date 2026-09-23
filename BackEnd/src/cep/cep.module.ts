@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CepController } from './cep.controller';
 import { CepService } from './cep.service';
 
 @Module({
@@ -15,6 +16,7 @@ import { CepService } from './cep.service';
       }),
     }),
   ],
+  controllers: [CepController],
   providers: [CepService],
   exports: [CepService],
 })

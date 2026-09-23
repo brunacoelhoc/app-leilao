@@ -55,6 +55,10 @@ model User {
   senha              String // guarda o HASH bcrypt, nunca a senha pura
   papel              Role                   @default(BIDDER) // perfil do usuario; todo cadastro comeca como BIDDER
   ativo              Boolean                @default(true) // false = usuario desativado (nao consegue entrar)
+  telefone           String? // opcional, so exibicao no perfil
+  endereco           String? // opcional, texto livre (nao usado em nenhuma regra de negocio)
+  cpf                String? // opcional, so numeros (11 digitos); mascarado nas telas do front
+  avatarUrl          String? // opcional: identificador de um avatar pronto (ex.: "raposa") ou uma imagem pequena em base64
   criadoEm           DateTime               @default(now()) // data de criacao, preenchida sozinha
   atualizadoEm       DateTime               @updatedAt // o Prisma atualiza a cada alteracao
   leiloes            Auction[] // lista dos leiloes que este usuario criou
