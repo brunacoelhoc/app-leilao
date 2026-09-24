@@ -1,8 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -31,6 +32,8 @@ import type { RespostaPaginada } from '../common/utils/paginacao.util';
 import { AuditResult, Role, type User } from '../generated/prisma/client';
 import { AlterarSenhaDto } from './dto/alterar-senha.dto';
 import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
+import { CriarUsuarioAdminDto } from './dto/criar-usuario-admin.dto';
+import { RequisitosVendedorResposta } from './dto/requisitos-vendedor-resposta.dto';
 import { ListarUsuariosQueryDto } from './dto/listar-usuarios-query.dto';
 import { UsersService } from './users.service';
 import { UsuarioEntity } from './usuario.entity';
@@ -90,6 +93,63 @@ export class UsersController {
     return new UsuarioEntity(atualizado);
   }
 
+  @Get('me/vendedor')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'O que falta para eu virar vendedor? (a lista de requisitos e decidida pelo servidor)',
+  })
+  @ApiOkResponse({ type: RequisitosVendedorResposta })
+  async requisitosVendedor(@CurrentUser() usuario: UsuarioAutenticado): Promise<RequisitosVendedorResposta> {
+    const eu = await this.usersService.buscarPorIdOuFalhar(usuario.id);
+    const r = await this.usersService.avaliarRequisitosVendedor(eu);
+    const requisitos = [
+      { campo: 'telefone', rotulo: 'Telefone', ok: !r.faltando.includes('telefone'), ajuda: 'Informe seu telefone no perfil' },
+      {
+        campo: 'cpf',
+        rotulo: 'CPF válido',
+        ok: !r.faltando.includes('CPF') && !r.cpfInvalido && !r.cpfEmOutraConta,
+        ajuda: r.cpfInvalido ? 'O CPF informado é inválido' : r.cpfEmOutraConta ? 'Este CPF já está em outra conta de vendedor' : 'Informe seu CPF no perfil',
+      },
+      { campo: 'endereco', rotulo: 'Endereço', ok: !r.faltando.includes('endereco'), ajuda: 'Informe seu endereço no perfil' },
+    ];
+    return {
+      jaEVendedor: eu.papel === 'SELLER',
+      podeSolicitar: eu.papel === 'BIDDER' && requisitos.every((x) => x.ok),
+      requisitos,
+    };
+  }
+
+  @Post('me/vendedor')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Quero vender: o proprio COMPRADOR passa a VENDEDOR (perfil completo exigido)',
+    description:
+      'Exige telefone, CPF valido e endereco no perfil; o CPF nao pode estar em outra conta de vendedor. ' +
+      'Depois disso a mesma conta continua podendo comprar (nunca no proprio leilao). Efeito imediato.',
+  })
+  @ApiOkResponse({ description: 'Conta agora e SELLER', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Perfil incompleto ou CPF invalido', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'ADMIN nao vira vendedor', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Ja e vendedor, ou o CPF ja esta em outra conta de vendedor', type: ErroResposta })
+  async tornarVendedor(
+    @CurrentUser() usuario: UsuarioAutenticado,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<UsuarioEntity> {
+    const atualizado = await this.usersService.tornarVendedor(usuario.id);
+    await this.auditLogService.registrar({
+      usuarioId: usuario.id,
+      papel: 'SELLER' as Role,
+      acao: 'USUARIO_TORNOU_VENDEDOR',
+      entidade: 'User',
+      entidadeId: usuario.id,
+      resultado: AuditResult.SUCCESS,
+      statusHttp: 200,
+      ...contexto,
+    });
+    return new UsuarioEntity(atualizado);
+  }
+
   @Patch('me/senha')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -106,6 +166,36 @@ export class UsersController {
     await this.usersService.alterarSenha(usuario.id, dto);
   }
 
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({
+    summary: 'Cria um usuario ja com o papel escolhido (so ADMIN)',
+    description: 'Diferente do cadastro publico (sempre BIDDER), aqui o ADMIN escolhe BIDDER (comprador) ou SELLER (vendedor). A senha segue a mesma regra do cadastro.',
+  })
+  @ApiCreatedResponse({ description: 'Usuario criado (sem a senha na resposta)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Corpo invalido (nome curto, e-mail invalido, senha fora do padrao, papel diferente de BIDDER/SELLER)', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Ja existe uma conta com este e-mail', type: ErroResposta })
+  async criar(
+    @Body() dto: CriarUsuarioAdminDto,
+    @CurrentUser() admin: UsuarioAutenticado,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<UsuarioEntity> {
+    const usuario = await this.usersService.criarPeloAdmin(dto);
+    await this.auditLogService.registrar({
+      usuarioId: admin.id,
+      papel: admin.papel as Role,
+      acao: 'USUARIO_CRIADO_PELO_ADMIN',
+      entidade: 'User',
+      entidadeId: usuario.id,
+      resultado: AuditResult.SUCCESS,
+      statusHttp: 201,
+      ...contexto,
+    });
+    return new UsuarioEntity(usuario);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
@@ -116,6 +206,7 @@ export class UsersController {
   @ApiPaginacaoQuery()
   @ApiQuery({ name: 'papel', enum: Role, required: false, description: 'Filtra por papel' })
   @ApiQuery({ name: 'ativo', type: 'boolean', required: false, description: 'Filtra por conta ativa/desativada' })
+  @ApiQuery({ name: 'busca', required: false, description: 'Trecho do nome ou do e-mail' })
   @ApiRespostaPaginada(UsuarioEntity)
   @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
   async listarTodos(
@@ -126,6 +217,7 @@ export class UsersController {
       limite: query.limite,
       papel: query.papel,
       ativo: query.ativo === undefined ? undefined : query.ativo === 'true',
+      busca: query.busca?.trim() || undefined,
     });
     return {
       ...resultado,
@@ -181,6 +273,38 @@ export class UsersController {
   ): Promise<UsuarioEntity> {
     const atualizado = await this.usersService.desativar(id, usuarioLogado);
     return mascarado(atualizado);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Remove um usuario SEM historico (so ADMIN)',
+    description: 'Quem ja tem leiloes, lances ou arquivos nao pode ser apagado (o banco protege): use PATCH /users/:id/desativar.',
+  })
+  @ApiParam({ name: 'id', description: 'Id (uuid) do usuario', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
+  @ApiNoContentResponse({ description: 'Usuario removido' })
+  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Usuario inexistente', type: ErroResposta })
+  @ApiConflictResponse({ description: 'O usuario tem historico (ou e o proprio ADMIN): desative em vez de remover', type: ErroResposta })
+  async remover(
+    @Param('id', ParseUuidPipePt) id: string,
+    @CurrentUser() admin: UsuarioAutenticado,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<void> {
+    await this.usersService.remover(id, admin);
+    await this.auditLogService.registrar({
+      usuarioId: admin.id,
+      papel: admin.papel as Role,
+      acao: 'USUARIO_REMOVIDO',
+      entidade: 'User',
+      entidadeId: id,
+      resultado: AuditResult.SUCCESS,
+      statusHttp: 204,
+      ...contexto,
+    });
   }
 
   @Patch(':id/reativar')

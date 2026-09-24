@@ -48,6 +48,24 @@ export class AuctionItemResposta {
   })
   segundosParaMudanca: number | null;
 
+  @ApiPropertyOptional({ nullable: true, example: 'Vincent van Gogh', description: 'Ficha tecnica: Artista, autor ou fabricante' })
+  autor: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'c. 1880', description: 'Ficha tecnica: Epoca ou ano da peca' })
+  periodo: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Óleo sobre tela', description: 'Ficha tecnica: Tecnica e material' })
+  tecnica: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: '60 x 80 cm', description: 'Ficha tecnica: Medidas da peca' })
+  dimensoes: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Excelente', description: 'Ficha tecnica: Estado de conservacao' })
+  conservacao: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Coleção particular europeia', description: 'Ficha tecnica: Origem e historico da peca' })
+  procedencia: string | null;
+
   @ApiProperty({ example: '01310100' })
   cep: string;
 
@@ -65,6 +83,18 @@ export class AuctionItemResposta {
 
   @ApiPropertyOptional({ nullable: true, example: 'Maria Silva', description: 'Nome de quem ganhou (so preenchido se status=SOLD)' })
   vencedorNome: string | null;
+
+  @ApiProperty({ type: [String], example: ['110.00', '120.00', '130.00', '160.00'], description: 'Valores prontos para o campo de lance (minimo, +1, +2 e +5 incrementos); vazio quando o lote nao recebe lances' })
+  lancesSugeridos: string[];
+
+  @ApiProperty({ example: 'Participar', description: 'Texto do botao do card, decidido pelo servidor' })
+  rotuloAcao: string;
+
+  @ApiProperty({ description: 'Caminho de uma obra do acervo para usar quando nao ha foto enviada' })
+  capaPadrao: string;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Id da primeira foto (so na listagem); baixe em GET /documents/:id/download' })
+  capaDocumentoId?: string | null;
 
   @ApiProperty({ description: 'Id do leilao a que este item pertence' })
   leilaoId: string;

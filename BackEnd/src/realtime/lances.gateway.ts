@@ -8,6 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Server, Socket } from 'socket.io';
+import type { MensagemResposta } from '../chat/dto/mensagem-resposta.dto';
 import type { BidResposta } from '../bids/dto/bid-resposta.dto';
 
 // Dados enviados a todos que estao vendo o item quando chega um lance novo
@@ -16,6 +17,7 @@ export interface LanceNovoEvento {
   licitanteNome: string;
   lanceAtual: string;
   lanceMinimo: string; // menor lance aceito a partir de agora
+  lancesSugeridos: string[]; // atalhos prontos para o campo de lance (calculados aqui)
 }
 
 // Dados enviados quando o item e finalizado (vendido ou sem lances)
@@ -58,6 +60,31 @@ export class LancesGateway {
     }
   }
 
+  // Chat: a sala do leilao recebe as mensagens novas
+  @SubscribeMessage('entrar-leilao')
+  entrarNoLeilao(
+    @MessageBody() leilaoId: string,
+    @ConnectedSocket() cliente: Socket,
+  ): void {
+    if (typeof leilaoId === 'string' && leilaoId.length > 0) {
+      void cliente.join(this.salaLeilao(leilaoId));
+    }
+  }
+
+  @SubscribeMessage('sair-leilao')
+  sairDoLeilao(
+    @MessageBody() leilaoId: string,
+    @ConnectedSocket() cliente: Socket,
+  ): void {
+    if (typeof leilaoId === 'string') {
+      void cliente.leave(this.salaLeilao(leilaoId));
+    }
+  }
+
+  emitirMensagemNova(leilaoId: string, mensagem: MensagemResposta): void {
+    this.servidor.to(this.salaLeilao(leilaoId)).emit('mensagem-nova', mensagem);
+  }
+
   emitirLanceNovo(itemId: string, evento: LanceNovoEvento): void {
     this.servidor.to(this.sala(itemId)).emit('lance-novo', evento);
   }
@@ -65,6 +92,10 @@ export class LancesGateway {
   emitirItemFinalizado(evento: ItemFinalizadoEvento): void {
     this.logger.log(`Item ${evento.itemId} finalizado: ${evento.status}`);
     this.servidor.to(this.sala(evento.itemId)).emit('item-finalizado', evento);
+  }
+
+  private salaLeilao(leilaoId: string): string {
+    return `leilao:${leilaoId}`;
   }
 
   private sala(itemId: string): string {

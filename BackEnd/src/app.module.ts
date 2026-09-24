@@ -2,10 +2,12 @@ import { ClassSerializerInterceptor, MiddlewareConsumer, Module, NestModule } fr
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AdminModule } from './admin/admin.module';
 import { AuctionItemsModule } from './auction-items/auction-items.module';
 import { AuctionsModule } from './auctions/auctions.module';
 import { AuthModule } from './auth/auth.module';
 import { BidsModule } from './bids/bids.module';
+import { ChatModule } from './chat/chat.module';
 import { CategoriesModule } from './categories/categories.module';
 import { FiltroExcecoes } from './common/filters/filtro-excecoes';
 import { DestaquesModule } from './destaques/destaques.module';
@@ -14,7 +16,10 @@ import { ApiKeyGuard } from './common/guards/api-key.guard';
 import { LogRequisicaoInterceptor } from './common/interceptors/log-requisicao.interceptor';
 import { IdRequisicaoMiddleware } from './common/middlewares/id-requisicao.middleware';
 import { validarVariaveisAmbiente } from './config/variaveis-ambiente';
+import { InstitucionalModule } from './institucional/institucional.module';
+import { ObrasModule } from './obras/obras.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RankingModule } from './ranking/ranking.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { SaudeModule } from './saude/saude.module';
 
@@ -57,6 +62,15 @@ import { SaudeModule } from './saude/saude.module';
     DestaquesModule,
 
     BidsModule,
+    // Chat ao vivo dos leiloes (ler livre, escrever logado, so com o leilao aberto)
+    ChatModule,
+    // Ranking publico dos melhores vendedores
+    RankingModule,
+    // Totais para o painel do admin e dados institucionais do rodape
+    AdminModule,
+    // Historia das obras (contexto da epoca) para a tela de pecas adquiridas
+    ObrasModule,
+    InstitucionalModule,
     // Upload de fotos/documentos do item: so o dono do leilao/ADMIN envia, leitura livre
     DocumentsModule,
   ],

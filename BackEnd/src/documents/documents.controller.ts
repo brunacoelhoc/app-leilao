@@ -10,6 +10,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -28,6 +29,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { SemChaveApi } from '../common/decorators/sem-chave-api.decorator';
+import { DocumentType } from '../generated/prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiPaginacaoQuery, ApiRespostaPaginada } from '../common/dto/api-resposta-paginada.decorator';
 import { ContextoDaRequisicao } from '../common/decorators/contexto-requisicao.decorator';
@@ -118,6 +121,33 @@ export class DocumentsController {
     @Query() query: PaginacaoQueryDto,
   ): Promise<RespostaPaginada<Document>> {
     return this.documentsService.listarPorItem(itemId, query);
+  }
+
+  // 🔎 Foto da peca para a tag <img> (o front so aponta a URL; quem serve, valida e faz cache e o
+  // servidor). So PHOTO: certificados e laudos continuam exigindo a chave em /download
+  @Get('documents/:id/foto')
+  @SemChaveApi()
+  @ApiOperation({
+    summary: 'Foto de uma peca, para exibir direto no navegador (livre, sem chave nem login)',
+    description: 'So documentos do tipo PHOTO. Documentos (certificados, laudos) NAO saem por aqui.',
+  })
+  @ApiParam({ name: 'id', description: 'Id (uuid) do documento do tipo PHOTO' })
+  @ApiNotFoundResponse({ description: 'Nao existe, nao e foto, ou o arquivo sumiu do disco', type: ErroResposta })
+  async foto(
+    @Param('id', ParseUuidPipePt) id: string,
+    @Res() resposta: Response,
+  ): Promise<void> {
+    const { documento, caminhoArquivo } = await this.documentsService.buscarParaDownload(id);
+    if (documento.tipo !== DocumentType.PHOTO) {
+      throw new NotFoundException('Foto nao encontrada');
+    }
+    resposta.setHeader('Content-Type', documento.mimeType);
+    // O front (outra origem) precisa poder exibir a imagem; o Helmet, por padrao, bloqueia
+    resposta.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    resposta.setHeader('Cache-Control', 'public, max-age=300');
+    resposta.sendFile(caminhoArquivo, (erro) => {
+      if (erro) this.logger.error(`Falha ao enviar foto ${id}: ${erro.message}`);
+    });
   }
 
   @Get('documents/:id/download')

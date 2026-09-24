@@ -31,6 +31,14 @@ export function calcularLanceMinimo(item: {
     : item.precoInicial;
 }
 
+// Atalhos de lance para a tela: o minimo aceito e mais 1, 2 e 5 incrementos
+export function lancesSugeridosDe(
+  minimo: Prisma.Decimal,
+  incremento: Prisma.Decimal,
+): string[] {
+  return [0, 1, 2, 5].map((n) => minimo.plus(incremento.times(n)).toFixed(2));
+}
+
 export function calcularSituacao(
   itemStatus: ItemStatus,
   leilao: DadosLeilao | undefined,

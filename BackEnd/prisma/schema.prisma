@@ -65,6 +65,7 @@ model User {
   alteracoes         AuctionStatusHistory[] // mudancas de estado feitas por este usuario
   itensGanhos        AuctionItem[] // itens que este usuario venceu
   lances             Bid[] // lances dados por este usuario
+  mensagens          ChatMessage[] // mensagens que este usuario escreveu no chat dos leiloes
   documentosEnviados Document[] // arquivos enviados por este usuario
   auditorias         AuditLog[] // acoes registradas na auditoria feitas por este usuario
 }
@@ -93,6 +94,7 @@ model Auction {
   atualizadoEm DateTime               @updatedAt
   historico    AuctionStatusHistory[] // todas as mudancas de estado deste leilao
   itens        AuctionItem[] // itens que fazem parte deste leilao
+  mensagens    ChatMessage[] // conversa ao vivo deste leilao
 
   @@index([vendedorId]) // deixa mais rapido buscar os leiloes de um vendedor
   @@index([status, dataFim]) // deixa rapido listar leiloes por estado, ordenados pelo termino
@@ -123,6 +125,12 @@ model AuctionItem {
   precoInicial     Decimal    @db.Decimal(12, 2) // preco de partida do item
   incrementoMinimo Decimal    @db.Decimal(12, 2) // quanto cada lance precisa superar o lance atual
   lanceAtual       Decimal?   @db.Decimal(12, 2) // maior lance ate agora (vazio se ninguem deu lance)
+  autor            String? // ficha tecnica: artista/autor/fabricante (opcional)
+  periodo          String? // ficha tecnica: epoca ou ano (ex.: "c. 1880", "Século XVIII")
+  tecnica          String? // ficha tecnica: tecnica e material (ex.: "Óleo sobre tela")
+  dimensoes        String? // ficha tecnica: medidas (ex.: "60 x 80 cm")
+  conservacao      String? // ficha tecnica: estado de conservacao (ex.: "Excelente")
+  procedencia      String? // ficha tecnica: origem/historico da peca
   cep              String // cep de onde o item sera retirado (so numeros)
   logradouro       String? // rua, preenchida pela consulta de CEP
   cidade           String? // cidade, preenchida pela consulta de CEP
@@ -200,4 +208,17 @@ model AuditLog {
   @@index([usuarioId]) // deixa rapido buscar o que um usuario fez
   @@index([entidade, entidadeId]) // deixa rapido buscar tudo o que aconteceu com um recurso
   @@index([criadoEm]) // deixa rapido buscar por periodo
+}
+
+// Chat do leilao: conversa ao vivo entre quem acompanha o leilao (como o chat das lives)
+model ChatMessage {
+  id       String   @id @default(uuid())
+  texto    String // ate 300 caracteres (validado na API)
+  leilaoId String
+  leilao   Auction  @relation(fields: [leilaoId], references: [id], onDelete: Restrict)
+  autorId  String
+  autor    User     @relation(fields: [autorId], references: [id], onDelete: Restrict)
+  criadoEm DateTime @default(now())
+
+  @@index([leilaoId, criadoEm]) // deixa rapido buscar a conversa de um leilao em ordem
 }

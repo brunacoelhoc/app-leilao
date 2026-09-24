@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { decimalParaString } from '../common/utils/decimal.util';
 import { AuctionStatus, DocumentType, Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -74,6 +75,8 @@ export class DestaquesService {
         maiorLance: decimalParaString(maior),
         capaDocumentoId: leilao.itens.find((item) => item.documentos.length > 0)?.documentos[0].id ?? null,
         itemUnicoId: leilao.itens.length === 1 ? leilao.itens[0].id : null,
+        capaPadrao: capaPadrao(leilao.id),
+        rotuloAcao: leilao.status === AuctionStatus.CLOSED ? 'Ver resultado' : 'Participar',
       };
     });
   }

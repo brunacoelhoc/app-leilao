@@ -22,6 +22,37 @@ export class CriarAuctionItemDto {
   @IsOptional()
   descricao?: string;
 
+  // Ficha tecnica (todos opcionais)
+  @MaxLength(120, { message: 'autor deve ter no maximo 120 caracteres' })
+  @IsString({ message: 'autor deve ser um texto' })
+  @IsOptional()
+  autor?: string;
+
+  @MaxLength(80, { message: 'periodo deve ter no maximo 80 caracteres' })
+  @IsString({ message: 'periodo deve ser um texto' })
+  @IsOptional()
+  periodo?: string;
+
+  @MaxLength(120, { message: 'tecnica deve ter no maximo 120 caracteres' })
+  @IsString({ message: 'tecnica deve ser um texto' })
+  @IsOptional()
+  tecnica?: string;
+
+  @MaxLength(80, { message: 'dimensoes deve ter no maximo 80 caracteres' })
+  @IsString({ message: 'dimensoes deve ser um texto' })
+  @IsOptional()
+  dimensoes?: string;
+
+  @MaxLength(80, { message: 'conservacao deve ter no maximo 80 caracteres' })
+  @IsString({ message: 'conservacao deve ser um texto' })
+  @IsOptional()
+  conservacao?: string;
+
+  @MaxLength(300, { message: 'procedencia deve ter no maximo 300 caracteres' })
+  @IsString({ message: 'procedencia deve ser um texto' })
+  @IsOptional()
+  procedencia?: string;
+
   // O valor de partida do item. Positivo (o banco tambem confere isso com um CHECK)
   @IsPositive({ message: 'precoInicial deve ser maior que zero' })
   @IsNumber(

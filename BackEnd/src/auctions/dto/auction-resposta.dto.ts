@@ -31,6 +31,12 @@ export class AuctionResposta {
   @ApiProperty({ description: 'true quando o leilao ainda pode ser editado, ter itens alterados e ser removido (so em rascunho). Decidido pelo backend' })
   editavel: boolean;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Id da foto de capa (so na listagem); baixe em GET /documents/:id/download' })
+  capaDocumentoId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Caminho de uma obra do acervo para usar quando nao ha foto enviada (escolhida pelo servidor)' })
+  capaPadrao?: string;
+
   @ApiProperty()
   criadoEm: Date;
 

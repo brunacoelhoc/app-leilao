@@ -9,6 +9,7 @@ import {
 import { AuditLogService } from '../audit/audit-log.service';
 import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { decimalParaString } from '../common/utils/decimal.util';
 import {
   calcularPaginacao,
@@ -19,6 +20,7 @@ import {
 import {
   AuctionStatus,
   AuditResult,
+  DocumentType,
   ItemStatus,
   Prisma,
   type Auction,
@@ -31,6 +33,11 @@ import type { CriarAuctionDto } from './dto/criar-auction.dto';
 import type { IndicadoresAuctionResposta } from './dto/indicadores-auction-resposta.dto';
 import type { MudarStatusDto } from './dto/mudar-status.dto';
 import { transicaoEhValida } from './transicoes-status';
+
+// Percentual com uma casa decimal (0 quando nao ha itens)
+function percentual(parte: number, total: number): number {
+  return total === 0 ? 0 : Math.round((parte / total) * 1000) / 10;
+}
 
 @Injectable()
 export class AuctionsService {
@@ -93,7 +100,7 @@ export class AuctionsService {
       busca?: string;
       status?: AuctionStatus;
     },
-  ): Promise<RespostaPaginada<Auction>> {
+  ): Promise<RespostaPaginada<Auction & { capaDocumentoId: string | null; capaPadrao: string }>> {
     const paginacao = calcularPaginacao(params);
     const where: Prisma.AuctionWhereInput = {
       vendedorId: params.vendedorId,
@@ -116,7 +123,53 @@ export class AuctionsService {
       }),
       this.prisma.auction.count({ where }),
     ]);
-    return paginar(dados, total, paginacao);
+
+    // Capa do card: a primeira foto de qualquer item do leilao (uma consulta so)
+    const fotos = await this.prisma.document.findMany({
+      where: { tipo: DocumentType.PHOTO, item: { leilaoId: { in: dados.map((l) => l.id) } } },
+      orderBy: { criadoEm: 'asc' },
+      select: { id: true, item: { select: { leilaoId: true } } },
+    });
+    const capas = new Map<string, string>();
+    for (const foto of fotos) {
+      if (!capas.has(foto.item.leilaoId)) capas.set(foto.item.leilaoId, foto.id);
+    }
+
+    return paginar(
+      dados.map((leilao) => ({
+        ...leilao,
+        capaDocumentoId: capas.get(leilao.id) ?? null,
+        capaPadrao: capaPadrao(leilao.id),
+      })),
+      total,
+      paginacao,
+    );
+  }
+
+  // Quantos leiloes existem em cada status (opcionalmente so de um vendedor).
+  // Alimenta os paineis: a tela nao precisa mais somar listagens
+  async resumoPorStatus(vendedorId?: string): Promise<Record<AuctionStatus | 'total', number>> {
+    const grupos = await this.prisma.auction.groupBy({
+      by: ['status'],
+      where: { vendedorId },
+      _count: { _all: true },
+    });
+    const resumo = { DRAFT: 0, SCHEDULED: 0, OPEN: 0, CLOSED: 0, CANCELED: 0, total: 0 };
+    for (const g of grupos) {
+      resumo[g.status] = g._count._all;
+      resumo.total += g._count._all;
+    }
+    return resumo;
+  }
+
+  // Foto de capa do leilao: a primeira foto de qualquer item dele
+  async capaDoLeilao(leilaoId: string): Promise<string | null> {
+    const foto = await this.prisma.document.findFirst({
+      where: { tipo: DocumentType.PHOTO, item: { leilaoId } },
+      orderBy: { criadoEm: 'asc' },
+      select: { id: true },
+    });
+    return foto?.id ?? null;
   }
 
   async buscarPorId(id: string): Promise<Auction> {
@@ -166,6 +219,11 @@ export class AuctionsService {
         (item) => item.status === ItemStatus.AVAILABLE,
       ).length,
       arrecadadoTotal: decimalParaString(arrecadadoTotal)!,
+      percentuais: {
+        vendidos: percentual(itensVendidos.length, itens.length),
+        disponiveis: percentual(itens.filter((i) => i.status === ItemStatus.AVAILABLE).length, itens.length),
+        naoVendidos: percentual(itens.filter((i) => i.status === ItemStatus.UNSOLD).length, itens.length),
+      },
     };
   }
 

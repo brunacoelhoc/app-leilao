@@ -19,6 +19,7 @@ import {
 import {
   AuctionStatus,
   AuditResult,
+  DocumentType,
   Prisma,
   type AuctionItem,
   type Role,
@@ -27,7 +28,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { AtualizarAuctionItemDto } from './dto/atualizar-auction-item.dto';
 import type { AuctionItemResposta } from './dto/auction-item-resposta.dto';
 import type { CriarAuctionItemDto } from './dto/criar-auction-item.dto';
-import { calcularLanceMinimo, calcularSituacao } from './situacao-item';
+import { capaPadrao } from '../common/utils/capa-padrao.util';
+import { calcularLanceMinimo, calcularSituacao, lancesSugeridosDe } from './situacao-item';
 
 interface FiltrosListagem extends ParametrosPaginacao {
   leilaoId?: string;
@@ -40,23 +42,38 @@ type ItemComContagem = AuctionItem & {
   _count?: { lances: number };
   vencedor?: { nome: string } | null;
   leilao?: { status: AuctionStatus; dataInicio: Date; dataFim: Date };
+  documentos?: { id: string }[]; // so na listagem: a primeira foto vira a capa
 };
 
 function paraResposta(itemComRelacoes: ItemComContagem): AuctionItemResposta {
   // "vencedor" e "leilao" (objetos) nao saem na resposta: so o nome do
   // vencedor e os valores calculados (situacao, lanceMinimo...)
-  const { vencedor, leilao, ...item } = itemComRelacoes;
+  const { vencedor, leilao, documentos, ...item } = itemComRelacoes;
   const { situacao, segundosParaMudanca } = calcularSituacao(
     item.status,
     leilao,
     new Date(),
   );
+  const lanceMinimo = calcularLanceMinimo(item);
+  const abertoParaLance = situacao === 'ABERTO';
   return {
     ...item,
+    // 🔎 Atalhos de lance: o servidor calcula (minimo e mais 1, 2 e 5 incrementos).
+    // So existem enquanto o lote recebe lances; a tela apenas exibe
+    lancesSugeridos: abertoParaLance ? lancesSugeridosDe(lanceMinimo, item.incrementoMinimo) : [],
+    // Texto do botao do card, decidido aqui (a tela nao interpreta situacao)
+    rotuloAcao:
+      abertoParaLance || situacao === 'ENCERRANDO'
+        ? 'Participar'
+        : item.status === 'AVAILABLE'
+          ? 'Ver peça'
+          : 'Ver resultado',
+    capaPadrao: capaPadrao(item.id),
     situacao,
     segundosParaMudanca,
-    lanceMinimo: calcularLanceMinimo(item).toString(),
+    lanceMinimo: lanceMinimo.toString(),
     vencedorNome: vencedor?.nome ?? null,
+    capaDocumentoId: documentos?.[0]?.id ?? null,
     precoInicial: decimalParaString(item.precoInicial)!,
     incrementoMinimo: decimalParaString(item.incrementoMinimo)!,
     lanceAtual: decimalParaString(item.lanceAtual),
@@ -118,6 +135,12 @@ export class AuctionItemsService {
           descricao: dto.descricao,
           precoInicial: dto.precoInicial,
           incrementoMinimo: dto.incrementoMinimo,
+          autor: dto.autor,
+          periodo: dto.periodo,
+          tecnica: dto.tecnica,
+          dimensoes: dto.dimensoes,
+          conservacao: dto.conservacao,
+          procedencia: dto.procedencia,
           cep: dto.cep,
           logradouro: endereco.logradouro,
           cidade: endereco.cidade,
@@ -177,6 +200,12 @@ export class AuctionItemsService {
           vencedor: { select: { nome: true } },
           leilao: {
             select: { status: true, dataInicio: true, dataFim: true },
+          },
+          documentos: {
+            where: { tipo: DocumentType.PHOTO },
+            orderBy: { criadoEm: 'asc' },
+            take: 1,
+            select: { id: true },
           },
         },
       }),
@@ -265,6 +294,12 @@ export class AuctionItemsService {
           descricao: dto.descricao,
           precoInicial: dto.precoInicial,
           incrementoMinimo: dto.incrementoMinimo,
+          autor: dto.autor,
+          periodo: dto.periodo,
+          tecnica: dto.tecnica,
+          dimensoes: dto.dimensoes,
+          conservacao: dto.conservacao,
+          procedencia: dto.procedencia,
           cep: dto.cep,
           logradouro: endereco?.logradouro,
           cidade: endereco?.cidade,
