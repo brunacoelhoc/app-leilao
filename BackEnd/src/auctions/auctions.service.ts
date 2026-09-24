@@ -266,13 +266,21 @@ export class AuctionsService {
         );
       }
 
+      // Numa edicao parcial so uma das datas pode vir: compara com a que ja esta
+      // gravada, para nunca sobrar um periodo invertido (o CHECK do banco e so a ultima defesa)
+      const novoInicio = dto.dataInicio ? new Date(dto.dataInicio) : leilao.dataInicio;
+      const novoFim = dto.dataFim ? new Date(dto.dataFim) : leilao.dataFim;
+      if (novoFim <= novoInicio) {
+        throw new ConflictException('dataFim deve ser depois de dataInicio');
+      }
+
       const atualizado = await this.prisma.auction.update({
         where: { id },
         data: {
           titulo: dto.titulo,
           descricao: dto.descricao,
-          dataInicio: dto.dataInicio ? new Date(dto.dataInicio) : undefined,
-          dataFim: dto.dataFim ? new Date(dto.dataFim) : undefined,
+          dataInicio: dto.dataInicio ? novoInicio : undefined,
+          dataFim: dto.dataFim ? novoFim : undefined,
         },
       });
       await this.registrarAuditoria(
@@ -315,6 +323,8 @@ export class AuctionsService {
         );
       }
 
+      await this.conferirCoerenciaDaPublicacao(leilao, dto.status);
+
       const atualizado = await this.aplicarMudancaStatus(
         leilao,
         dto.status,
@@ -349,6 +359,25 @@ export class AuctionsService {
     }
   }
 
+  // 🔎 Publicar (agendar/abrir) so faz sentido com o leilao pronto: nao se agenda um leilao
+  // vazio nem um que ja deveria ter terminado (ele ficaria preso, sem nunca fechar)
+  private async conferirCoerenciaDaPublicacao(
+    leilao: Auction,
+    novoStatus: AuctionStatus,
+  ): Promise<void> {
+    if (novoStatus !== AuctionStatus.SCHEDULED && novoStatus !== AuctionStatus.OPEN) return;
+
+    if (leilao.dataFim <= new Date()) {
+      throw new ConflictException('A data de fim deste leilao ja passou');
+    }
+    if (novoStatus === AuctionStatus.SCHEDULED) {
+      const itens = await this.prisma.auctionItem.count({ where: { leilaoId: leilao.id } });
+      if (itens === 0) {
+        throw new ConflictException('Adicione ao menos um item antes de agendar o leilao');
+      }
+    }
+  }
+
   // Grava o novo estado + historico na mesma transacao. Usado pela mudanca
   // manual (mudarStatus) e pelo encerramento automatico por horario
   async aplicarMudancaStatus(
@@ -367,10 +396,17 @@ export class AuctionsService {
         `;
       }
 
-      const resultado = await tx.auction.update({
-        where: { id: leilao.id },
+      // 🔎 Troca "compare-and-swap": so muda se o leilao AINDA esta no estado que lemos.
+      // Se outra requisicao (ou o robo de encerramento) mudou antes, nada e gravado
+      // e devolvemos 409 -- assim nunca ha historico duplicado nem CANCELED depois de CLOSED
+      const { count } = await tx.auction.updateMany({
+        where: { id: leilao.id, status: leilao.status },
         data: { status: novoStatus },
       });
+      if (count === 0) {
+        throw new ConflictException('O leilao mudou de estado enquanto voce agia; recarregue e tente de novo');
+      }
+      const resultado = await tx.auction.findUniqueOrThrow({ where: { id: leilao.id } });
 
       await tx.auctionStatusHistory.create({
         data: {

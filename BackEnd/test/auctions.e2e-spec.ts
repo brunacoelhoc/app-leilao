@@ -83,9 +83,9 @@ describe('Auctions (e2e)', () => {
     // de auditoria a prova de exclusao). Por isso so limpamos aqui os leiloes
     // que ainda estao em DRAFT (nunca tiveram historico); os que passaram por
     // alguma mudanca de status ficam para sempre no banco, de proposito
-    await prisma.auction.deleteMany({
-      where: { titulo: { startsWith: 'Auctions E2E' }, status: 'DRAFT' },
-    });
+    const rascunhos = { titulo: { startsWith: 'Auctions E2E' }, status: 'DRAFT' as const };
+    await prisma.auctionItem.deleteMany({ where: { leilao: rascunhos } }); // itens de apoio dos testes
+    await prisma.auction.deleteMany({ where: rascunhos });
 
     // Todo login grava uma linha em AuditLog (auditoria), que nunca pode ser
     // apagada -- por isso qualquer usuario que ja logou (todos aqui) pode
@@ -219,6 +219,7 @@ describe('Auctions (e2e)', () => {
       const criado = await rota('post', '', tokenSeller).send(
         dadosValidos('Auctions E2E Editar Depois'),
       );
+      await adicionarItem(criado.body.id as string);
       await rota('patch', `/${criado.body.id}/status`, tokenSeller).send({
         status: 'SCHEDULED',
       });
@@ -236,6 +237,7 @@ describe('Auctions (e2e)', () => {
       const criado = await rota('post', '', tokenSeller).send(
         dadosValidos('Auctions E2E Remover Depois'),
       );
+      await adicionarItem(criado.body.id as string);
       await rota('patch', `/${criado.body.id}/status`, tokenSeller).send({
         status: 'SCHEDULED',
       });
@@ -270,6 +272,7 @@ describe('Auctions (e2e)', () => {
         dadosValidos('Auctions E2E Fluxo Completo'),
       );
       const id = criado.body.id as string;
+      await adicionarItem(id);
 
       await rota('patch', `/${id}/status`, tokenSeller)
         .send({ status: 'SCHEDULED' })
@@ -308,6 +311,49 @@ describe('Auctions (e2e)', () => {
       expect(resposta.status).toBe(409);
     });
 
+    it('agendar leilao SEM itens -> 409', async () => {
+      const criado = await rota('post', '', tokenSeller).send(
+        dadosValidos('Auctions E2E Agendar Vazio'),
+      );
+
+      const resposta = await rota('patch', `/${criado.body.id}/status`, tokenSeller)
+        .send({ status: 'SCHEDULED' });
+
+      expect(resposta.status).toBe(409);
+      expect(resposta.body.mensagem).toContain('ao menos um item');
+    });
+
+    it('agendar leilao cuja dataFim ja passou -> 409', async () => {
+      const agora = Date.now();
+      const criado = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Agendar Vencido',
+        dataInicio: new Date(agora - 2 * 86400000).toISOString(),
+        dataFim: new Date(agora - 86400000).toISOString(),
+      });
+      await adicionarItem(criado.body.id as string);
+
+      const resposta = await rota('patch', `/${criado.body.id}/status`, tokenSeller)
+        .send({ status: 'SCHEDULED' });
+
+      expect(resposta.status).toBe(409);
+      expect(resposta.body.mensagem).toContain('data de fim');
+    });
+
+    it('duas mudancas de estado ao mesmo tempo (fechar x cancelar): so uma vence, a outra -> 409, historico sem duplicata', async () => {
+      const { leilaoId } = await criarLeilaoAbertoComItem('Auctions E2E Corrida Status');
+
+      const [fechar, cancelar] = await Promise.all([
+        rota('patch', `/${leilaoId}/status`, tokenSeller).send({ status: 'CLOSED' }),
+        rota('patch', `/${leilaoId}/status`, tokenSeller).send({ status: 'CANCELED', motivo: 'Corrida' }),
+      ]);
+
+      expect([fechar.status, cancelar.status].sort((a, b) => a - b)).toEqual([200, 409]);
+      const finais = await prisma.auctionStatusHistory.count({
+        where: { leilaoId, statusNovo: { in: ['CLOSED', 'CANCELED'] } },
+      });
+      expect(finais).toBe(1);
+    });
+
     it('cancelar sem motivo -> 400', async () => {
       const criado = await rota('post', '', tokenSeller).send(
         dadosValidos('Auctions E2E Cancelar Sem Motivo'),
@@ -338,6 +384,20 @@ describe('Auctions (e2e)', () => {
     });
   });
 
+  describe('edicao parcial de datas', () => {
+    it('so dataInicio, depois da dataFim ja gravada -> 409', async () => {
+      const criado = await rota('post', '', tokenSeller).send(
+        dadosValidos('Auctions E2E Data Parcial'),
+      );
+
+      const resposta = await rota('patch', `/${criado.body.id}`, tokenSeller)
+        .send({ dataInicio: '2027-02-01T00:00:00.000Z' }); // dataFim gravada: 2027-01-10
+
+      expect(resposta.status).toBe(409);
+      expect(resposta.body.mensagem).toContain('dataFim deve ser depois de dataInicio');
+    });
+  });
+
   describe('validacao do corpo -> 400', () => {
     it('dataFim antes de dataInicio -> 400', async () => {
       const resposta = await rota('post', '', tokenSeller).send({
@@ -352,6 +412,16 @@ describe('Auctions (e2e)', () => {
       ]);
     });
   });
+
+  // Um leilao so pode ser agendado com ao menos um item
+  async function adicionarItem(leilaoId: string) {
+    await request(app.getHttpServer())
+      .post('/api/auction-items')
+      .set('X-API-KEY', chave)
+      .set('Authorization', `Bearer ${tokenSeller}`)
+      .send({ titulo: 'Item de apoio', precoInicial: 50, incrementoMinimo: 5, cep: '01310100', leilaoId, categoriaId })
+      .expect(201);
+  }
 
   // Cria um leilao ja no periodo (dataInicio no passado, dataFim no futuro)
   // com um item, e avanca ate OPEN -- pronto para receber lances. Usado tanto
@@ -437,6 +507,7 @@ describe('Auctions (e2e)', () => {
       const criado = await rota('post', '', tokenSeller).send(
         dadosValidos('Auctions E2E Transicoes'),
       );
+      await adicionarItem(criado.body.id as string);
       expect(criado.body.transicoesPermitidas).toEqual(['SCHEDULED', 'CANCELED']);
       expect(criado.body.editavel).toBe(true); // rascunho pode ser editado
 

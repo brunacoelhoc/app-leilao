@@ -40,13 +40,18 @@ export class EncerramentoAutomaticoService implements OnModuleInit, OnModuleDest
         where: { status: AuctionStatus.OPEN, dataFim: { lte: agora } },
       });
       for (const leilao of paraFechar) {
-        await this.auctionsService.aplicarMudancaStatus(
-          leilao,
-          AuctionStatus.CLOSED,
-          leilao.vendedorId,
-          'Encerrado automaticamente ao fim do prazo',
-        );
-        this.logger.log(`Leilao ${leilao.id} encerrado automaticamente`);
+        // Um leilao que falha (ex.: alguem mudou o estado antes, 409) nao pode abortar os demais
+        try {
+          await this.auctionsService.aplicarMudancaStatus(
+            leilao,
+            AuctionStatus.CLOSED,
+            leilao.vendedorId,
+            'Encerrado automaticamente ao fim do prazo',
+          );
+          this.logger.log(`Leilao ${leilao.id} encerrado automaticamente`);
+        } catch (erro) {
+          this.logger.warn(`Leilao ${leilao.id} nao encerrado agora: ${(erro as Error).message}`);
+        }
       }
 
       const paraAbrir = await this.prisma.auction.findMany({
@@ -57,13 +62,17 @@ export class EncerramentoAutomaticoService implements OnModuleInit, OnModuleDest
         },
       });
       for (const leilao of paraAbrir) {
-        await this.auctionsService.aplicarMudancaStatus(
-          leilao,
-          AuctionStatus.OPEN,
-          leilao.vendedorId,
-          'Aberto automaticamente na data de inicio',
-        );
-        this.logger.log(`Leilao ${leilao.id} aberto automaticamente`);
+        try {
+          await this.auctionsService.aplicarMudancaStatus(
+            leilao,
+            AuctionStatus.OPEN,
+            leilao.vendedorId,
+            'Aberto automaticamente na data de inicio',
+          );
+          this.logger.log(`Leilao ${leilao.id} aberto automaticamente`);
+        } catch (erro) {
+          this.logger.warn(`Leilao ${leilao.id} nao aberto agora: ${(erro as Error).message}`);
+        }
       }
     } catch (erro) {
       this.logger.error(`Falha na verificacao automatica: ${(erro as Error).message}`);
