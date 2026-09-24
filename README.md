@@ -107,7 +107,7 @@ Requisitos: Node.js 20+, PostgreSQL 18, npm.
 # Back-end
 cd BackEnd
 npm install
-cp .env.example .env            # ajuste DATABASE_URL, JWT_SECRET, API_KEY
+cp .env.example .env            # ajuste DATABASE_URL, DATABASE_URL_TESTE (só para os testes), JWT_SECRET, API_KEY
 npx prisma migrate deploy
 npx prisma generate
 npm run seed                    # dados de exemplo (idempotente)
@@ -130,7 +130,7 @@ cd BackEnd
 npm run lint
 npm run build
 npm test            # unitários
-npm run test:e2e    # e2e contra um PostgreSQL real
+npm run test:e2e    # e2e contra um PostgreSQL real e SEPARADO (DATABASE_URL_TESTE), recriado a cada execução
 ```
 
 O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda em cada push/PR para `main`: sobe um

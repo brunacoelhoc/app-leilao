@@ -90,6 +90,7 @@ alguma estiver ausente ou em formato inválido — ver `src/config/variaveis-amb
 | `PORT`                | Porta HTTP da API                                                       | `3000`                                            |
 | `CEP_API_URL`         | URL base do ViaCEP (integração externa, seção 7 do enunciado)           | `https://viacep.com.br/ws`                        |
 | `CEP_API_TIMEOUT_MS`  | Timeout da chamada ao ViaCEP                                            | `5000`                                            |
+| `DATABASE_URL_TESTE`  | Banco separado só para os testes e2e (apagado e recriado a cada execução; o nome precisa conter `test`) | `postgresql://postgres:senha@localhost:5432/leiloes_teste` |
 | `UPLOAD_MAX_SIZE_MB`  | Tamanho máximo de arquivo aceito no upload                              | `5`                                               |
 | `FRONTEND_URL`        | Origem liberada no CORS                                                 | `http://localhost:4200`                           |
 | `API_KEY`             | Chave exigida no cabeçalho `X-API-KEY` em **toda** requisição            | um valor longo e aleatório                        |
@@ -216,12 +217,16 @@ já usa o caminho certo.
 
 ```bash
 npm run test         # unitários (Jest) -- 6 suítes / 32 testes (e2e: 16 suítes / 225 testes)
-npm run test:e2e      # end-to-end, contra o banco real (--runInBand: ver nota)
+npm run test:e2e      # end-to-end, contra um banco de TESTE separado (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
 
-- Os testes e2e usam o **banco real** configurado no `.env` (não há mock de
-  banco) e chamam a **API real** com `configurarAplicacao`, incluindo Helmet,
+- Os testes e2e usam um **banco PostgreSQL real** (não há mock de banco), mas **separado do
+  banco de desenvolvimento**: defina `DATABASE_URL_TESTE` no `.env` (o nome do banco precisa
+  conter `test`, ex.: `leiloes_teste`). A cada execução o `test/setup-banco-teste.js` **apaga e
+  recria** esse banco e aplica as migrations do zero; sem essa variável o e2e **se recusa a rodar**
+  (proteção para nunca sujar o banco de dev). No CI (`CI=true`) usa o banco efêmero do próprio job.
+  Os testes chamam a **API real** com `configurarAplicacao`, incluindo Helmet,
   CORS, `ValidationPipe` e o prefixo `/api` — ou seja, testam exatamente o
   que roda em produção.
 - `test:e2e` roda com `--runInBand` (sequencial, um arquivo por vez): cada
@@ -231,10 +236,10 @@ npm run lint          # oxlint --type-aware
   falhas intermitentes. Sequencial é mais lento, mas 100% estável.
 - Algumas tabelas (`Bid`, `AuditLog`, `AuctionStatusHistory`) são
   **imutáveis por trigger** — não podem ser `UPDATE`/`DELETE` nem pela
-  própria aplicação. Por isso, alguns registros de teste (leilões que
-  mudaram de status, usuários que já fizeram login, itens com lance) ficam
-  permanentemente no banco após rodar a suíte — é o comportamento esperado
-  e prova, na prática, a imutabilidade da trilha de auditoria.
+  própria aplicação. Por isso, registros de teste (leilões que mudaram de
+  status, usuários que já fizeram login, itens com lance) não podem ser apagados
+  um a um: a solução é o banco de teste descartável acima, recriado a cada
+  execução (e isso também prova a imutabilidade da trilha de auditoria).
 
 ## Autenticação e segurança
 
