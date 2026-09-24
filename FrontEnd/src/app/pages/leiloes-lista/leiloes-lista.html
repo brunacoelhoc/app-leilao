@@ -1,0 +1,77 @@
+<app-hero />
+
+<div class="pagina">
+  <app-carrossel-destaques />
+
+  <app-ranking-vendedores id="ranking" />
+
+  <h2 id="todos-leiloes">Todos os leilões</h2>
+  <p class="subtitulo">Peças raras, obras de arte e antiguidades à espera do seu lance.</p>
+
+  <div class="cartao" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end">
+    <div class="campo" style="flex: 2; min-width: 220px; margin: 0">
+      <label for="busca">Buscar por título ou descrição</label>
+      <input
+        id="busca"
+        type="search"
+        placeholder="Digite parte do texto..."
+        maxlength="100"
+        [ngModel]="busca"
+        (ngModelChange)="aoDigitarBusca($event)"
+      />
+    </div>
+    <div class="campo" style="flex: 1; min-width: 160px; margin: 0">
+      <label for="status">Status</label>
+      <select id="status" [(ngModel)]="status" (ngModelChange)="aplicarFiltros()">
+        <option value="">Todos</option>
+        @for (opcao of statusOpcoes; track opcao[0]) {
+          <option [value]="opcao[0]">{{ opcao[1] }}</option>
+        }
+      </select>
+    </div>
+    <button type="button" (click)="limparFiltros()" [disabled]="!busca && !status">Limpar filtros</button>
+  </div>
+
+  @if (carregando()) {
+    <p class="lista-vazia">Carregando...</p>
+  } @else if (erro()) {
+    <p class="erro">{{ erro() }}</p>
+  } @else if (resposta(); as r) {
+    @if (r.dados.length === 0) {
+      <p class="lista-vazia">Nenhum leilão encontrado.</p>
+    } @else {
+      @for (leilao of r.dados; track leilao.id) {
+        <a [routerLink]="['/leiloes', leilao.id]" class="cartao cartao-clicavel leilao-card">
+          <span class="capa">
+            @if (capaDe(leilao); as capa) {
+              <img [src]="capa" alt="" loading="lazy" />
+            } @else {
+              <span class="sem-capa" aria-hidden="true">⚜</span>
+            }
+          </span>
+          <span class="corpo">
+            <span class="topo">
+              <h3>{{ leilao.titulo }}</h3>
+              <span [class]="classeSeloLeilao(leilao.status)">{{ ROTULO_STATUS_LEILAO[leilao.status] }}</span>
+            </span>
+            @if (leilao.descricao) {
+              <span class="descricao">{{ leilao.descricao }}</span>
+            }
+            <span class="datas">
+              {{ leilao.dataInicio | date: 'dd/MM/yyyy' }} — {{ leilao.dataFim | date: 'dd/MM/yyyy' }}
+            </span>
+          </span>
+        </a>
+      }
+
+      <app-paginacao
+        [pagina]="r.pagina"
+        [totalPaginas]="r.totalPaginas"
+        [total]="r.total"
+        [limite]="limite"
+        (mudarPagina)="mudarPagina($event)"
+        (mudarLimite)="mudarLimite($event)"
+      />
+    }
+  }
+</div>

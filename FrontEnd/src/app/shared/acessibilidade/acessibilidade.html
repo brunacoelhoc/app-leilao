@@ -1,0 +1,107 @@
+<a class="pular-conteudo" href="#conteudo-principal">Pular para o conteúdo</a>
+
+<div class="barra-a11y" role="toolbar" aria-label="Acessibilidade">
+  <span class="rotulo">Acessibilidade:</span>
+  <button type="button" (click)="prefs.diminuirFonte()" aria-label="Diminuir tamanho da fonte" aria-keyshortcuts="Alt+Minus" title="Alt + -">A-</button>
+  <button type="button" (click)="prefs.aumentarFonte()" aria-label="Aumentar tamanho da fonte" aria-keyshortcuts="Alt+Equal" title="Alt + +">A+</button>
+  <button
+    type="button"
+    (click)="prefs.definirTema(prefs.tema() === 'alto-contraste' ? 'claro' : 'alto-contraste')"
+    [attr.aria-pressed]="prefs.tema() === 'alto-contraste'"
+    aria-keyshortcuts="Alt+C"
+    title="Alt + C"
+  >
+    Alto contraste
+  </button>
+  <button
+    type="button"
+    class="btn-painel"
+    (click)="alternarPainel()"
+    [attr.aria-expanded]="painelAberto()"
+    aria-controls="painel-a11y"
+    aria-keyshortcuts="Alt+0"
+    title="Alt + 0"
+  >
+    Mais opções
+  </button>
+</div>
+
+@if (painelAberto()) {
+  <section
+    id="painel-a11y"
+    class="painel-a11y"
+    role="dialog"
+    aria-label="Opções de acessibilidade"
+    (keydown.escape)="fecharPainel()"
+  >
+    <header>
+      <h2>Acessibilidade</h2>
+      <button type="button" class="fechar" (click)="fecharPainel()" aria-label="Fechar opções de acessibilidade">✕</button>
+    </header>
+
+    <div class="grupo">
+      <label for="a11y-tema">Tema e contraste</label>
+      <select id="a11y-tema" [value]="prefs.tema()" (change)="escolherTema($event)">
+        <option value="claro">Claro</option>
+        <option value="escuro">Escuro</option>
+        <option value="alto-contraste">Alto contraste (preto e amarelo)</option>
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label for="a11y-daltonismo">Daltonismo</label>
+      <select id="a11y-daltonismo" [value]="prefs.daltonismo()" (change)="escolherDaltonismo($event)">
+        @for (modo of modosDaltonismo; track modo.valor) {
+          <option [value]="modo.valor" [selected]="modo.valor === prefs.daltonismo()">{{ modo.rotulo }}</option>
+        }
+      </select>
+    </div>
+
+    <label class="interruptor">
+      <input type="checkbox" [checked]="prefs.dislexia()" (change)="prefs.alternarDislexia()" />
+      <span>
+        Modo dislexia
+        <small>Fonte OpenDyslexic e mais espaço entre letras, palavras e linhas.</small>
+      </span>
+    </label>
+
+    <label class="interruptor">
+      <input type="checkbox" [checked]="prefs.reduzirAnimacoes()" (change)="prefs.alternarAnimacoes()" />
+      <span>
+        Reduzir animações e transições
+        <small>Desliga movimentos, pulsos e a rotação automática da peça 3D.</small>
+      </span>
+    </label>
+
+    <label class="interruptor">
+      <input type="checkbox" [checked]="prefs.libras()" (change)="prefs.alternarLibras()" />
+      <span>
+        Tradutor de Libras (VLibras)
+        <small>Mostra o botão do tradutor do governo federal.</small>
+      </span>
+    </label>
+
+    <div class="grupo">
+      <h3>Atalhos de teclado</h3>
+      <dl class="atalhos">
+        @for (a of atalhos; track a.teclas) {
+          <div><dt><kbd>{{ a.teclas }}</kbd></dt><dd>{{ a.acao }}</dd></div>
+        }
+      </dl>
+    </div>
+
+    <p class="aviso-lgpd">
+      Suas escolhas ficam salvas apenas neste navegador e não são enviadas ao servidor.
+    </p>
+
+    <button type="button" class="restaurar" (click)="prefs.restaurarPadrao()">Restaurar padrão</button>
+  </section>
+}
+
+<!-- Widget oficial do VLibras (gov.br): o script troca este bloco pelo tradutor -->
+<div vw class="enabled" [class.vlibras-oculto]="!prefs.libras()">
+  <div vw-access-button class="active"></div>
+  <div vw-plugin-wrapper>
+    <div class="vw-plugin-top-wrapper"></div>
+  </div>
+</div>

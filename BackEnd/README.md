@@ -19,6 +19,7 @@ avaliação **AV-08 — Plataforma de Leilões**.
 - [Autenticação e segurança](#autenticação-e-segurança)
 - [Matriz de permissões](#matriz-de-permissões)
 - [Endpoints](#endpoints)
+- [Tempo real (WebSocket)](#tempo-real-websocket)
 - [Exemplos de requisição](#exemplos-de-requisição)
 - [Formato de erro padrão](#formato-de-erro-padrão)
 - [Interceptor de log](#interceptor-de-log)
@@ -128,6 +129,13 @@ npx prisma generate
 > aplicada. Qualquer mudança de schema precisa de uma migration nova
 > (`prisma migrate dev --create-only` seguido de revisão manual do SQL).
 
+### Fotos de demonstração
+
+`npm run fotos:demo` anexa uma obra de domínio público (de `FrontEnd/public/acervo/`) a cada
+item que ainda não tem foto, pelo mesmo caminho do upload (arquivo em `uploads/` + registro em
+`Document`). É idempotente e faz o carrossel, a página do item e o quadro 3D mostrarem imagens.
+Os créditos das obras estão em `FrontEnd/public/acervo/CREDITOS.md`.
+
 ### Seed (dados de exemplo)
 
 ```bash
@@ -207,7 +215,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 5 suítes / 30 testes
+npm run test         # unitários (Jest) -- 5 suítes / 30 testes (e2e: 15 suítes / 207 testes)
 npm run test:e2e      # end-to-end, contra o banco real (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -300,7 +308,13 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
 | GET | `/users/me` | Autenticado | — | `200` o próprio perfil · `401` |
-| GET | `/users` | ADMIN | — | `200` lista de usuários (sem senha) · `401` · `403` |
+| PATCH | `/users/me` | Autenticado | `{ nome?, email?, telefone?, endereco?, cpf?, avatarUrl?, senhaAtual? }` | `200` · `400` (formato inválido; **trocar o e-mail exige `senhaAtual` correta**) · `401` · `409` (e-mail já cadastrado) |
+| PATCH | `/users/me/senha` | Autenticado | `{ senhaAtual, novaSenha }` | `204` · `400` (senha atual errada ou nova fraca) · `401` |
+| GET | `/users/me/vendedor` | Autenticado | — | `200` lista de requisitos que faltam para virar vendedor (calculada pelo servidor) · `401` |
+| POST | `/users/me/vendedor` | Autenticado | — | `200` o comprador passa a SELLER (exige perfil completo e **CPF único**) · `400` perfil incompleto ou CPF inválido · `401` · `403` ADMIN não vira vendedor · `409` já é vendedor ou CPF em uso |
+| POST | `/users` | ADMIN | `{ nome, email, senha, papel }` | `201` cria usuário já com o papel escolhido · `400` · `401` · `403` · `409` |
+| GET | `/users/:id` | ADMIN | — | `200` dados **completos** (a consulta é auditada) · `400` · `401` · `403` · `404` |
+| GET | `/users` | ADMIN | — | `200` lista de usuários (sem senha; e-mail, telefone, CPF e endereço **mascarados** pelo backend) · `401` · `403` |
 | PATCH | `/users/:id/desativar` | ADMIN | — | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação) |
 | PATCH | `/users/:id/reativar` | ADMIN | — | `200` · `400` · `401` · `403` · `404` |
 
@@ -319,8 +333,9 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
 | POST | `/auctions` | SELLER | `{ titulo, descricao?, dataInicio, dataFim }` (ISO 8601; `dataFim` > `dataInicio`) | `201` (nasce `DRAFT`) · `400` · `401` · `403` |
-| GET | `/auctions` | Livre | — | `200` lista |
+| GET | `/auctions?busca=&status=&vendedorId=` | Livre | — | `200` lista paginada (filtros opcionais) |
 | GET | `/auctions/:id` | Livre | — | `200` · `400` · `404` |
+| GET | `/auctions/:id/indicadores` | Livre | — | `200` `{ totalItens, totalLances, maiorLance, itensVendidos, itensNaoVendidos, itensDisponiveis, arrecadadoTotal }` · `400` · `404` |
 | PATCH | `/auctions/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` (não é o dono) · `404` · `409` (fora de `DRAFT`) |
 | PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` · `404` · `409` (transição inválida) |
 | DELETE | `/auctions/:id` | SELLER dono / ADMIN | — | `204` · `401` · `403` · `404` · `409` (fora de `DRAFT`) |
@@ -329,15 +344,30 @@ Máquina de estados: `DRAFT → SCHEDULED → OPEN → CLOSED`; `CANCELED` alcan
 de qualquer estado não-final. Ao fechar (`CLOSED`), cada item do leilão vira
 `SOLD` (com o vencedor = maior lance) ou `UNSOLD` (sem nenhum lance).
 
+Cada leilão volta com `transicoesPermitidas` (para onde ele pode ir agora) e
+`editavel` (`true` só em `DRAFT`): a tela apenas exibe, quem decide é o backend.
+
+**Abertura e encerramento automáticos:** um serviço interno
+(`EncerramentoAutomaticoService`) confere o relógio a cada 5 s. Leilão
+`SCHEDULED` que chegou na `dataInicio` vira `OPEN`; leilão `OPEN` que passou da
+`dataFim` vira `CLOSED`, com o vencedor de cada item definido e o evento
+`item-finalizado` enviado aos clientes. Fica desligado quando `NODE_ENV=test`
+e deve rodar em **uma única instância** da API.
+
 ### Auction Items (`/auction-items`)
 
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
-| POST | `/auction-items` | SELLER dono do leilão / ADMIN | `{ titulo, descricao?, precoInicial, incrementoMinimo, cep, leilaoId, categoriaId }` | `201` (endereço preenchido via ViaCEP) · `400` · `401` · `403` · `404` (leilão/categoria/CEP inexistente) · `409` (leilão fora de `DRAFT`) · `503` (ViaCEP fora do ar) |
+| POST | `/auction-items` | SELLER dono do leilão / ADMIN | `{ titulo, descricao?, precoInicial, incrementoMinimo, cep, leilaoId, categoriaId }` | `201` (endereço preenchido via ViaCEP) · `400` · `401` · `403` · `400` também para CEP inexistente · `404` (leilão/categoria inexistente) · `409` (leilão fora de `DRAFT`) · `503` (ViaCEP fora do ar) |
 | GET | `/auction-items?leilaoId=&categoriaId=` | Livre | — | `200` lista (filtros opcionais, por relacionamento) |
 | GET | `/auction-items/:id` | Livre | — | `200` · `400` · `404` |
 | PATCH | `/auction-items/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` · `404` · `409` (leilão fora de `DRAFT`) |
 | DELETE | `/auction-items/:id` | SELLER dono / ADMIN | — | `204` · `401` · `403` · `404` · `409` (leilão fora de `DRAFT`) |
+
+Cada item também volta com valores **calculados pelo servidor**: `situacao`
+(`EM_BREVE`, `ABERTO`, `ENCERRANDO`, `VENDIDO`, `NAO_VENDIDO`, `CANCELADO`),
+`lanceMinimo` (menor lance aceito agora), `segundosParaMudanca` (contagem até
+abrir/encerrar) e `vencedorNome`.
 
 Campos de dinheiro (`precoInicial`, `incrementoMinimo`, `lanceAtual`) sempre
 voltam como **string** na resposta (ex.: `"150.50"`), nunca como número —
@@ -347,14 +377,17 @@ evita perda de precisão do `Decimal` do Postgres em JSON.
 
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
-| POST | `/auction-items/:itemId/bids` | BIDDER | `{ valor }` | `201` · `400` · `401` · `403` (não é BIDDER, ou é o vendedor do item) · `404` · `409` (leilão fechado/fora do período, valor abaixo do mínimo) |
-| GET | `/auction-items/:itemId/bids` | Livre | — | `200` lista, do maior lance para o menor |
+| POST | `/auction-items/:itemId/bids` | BIDDER | `{ valor }` | `201` · `400` · `401` · `403` (não é BIDDER) · `404` · `409` (é o vendedor do item, leilão fechado/fora do período, valor abaixo do mínimo) |
+| GET | `/auction-items/:itemId/bids` | Livre | — | `200` lista, do maior lance para o menor (com `licitanteNome`) |
 | GET | `/bids/meus` | BIDDER | — | `200` os lances do próprio usuário logado · `401` |
 
 Concorrência: cada lance é processado dentro de uma transação com
 `SELECT ... FOR UPDATE` na linha do item — dois lances simultâneos no mesmo
 item nunca "vencem" juntos; o segundo é sempre avaliado contra o valor já
 atualizado pelo primeiro.
+
+Depois de gravar o lance, o servidor avisa em tempo real quem está vendo o item
+(evento `lance-novo`, ver [Tempo real](#tempo-real-websocket)).
 
 ### Documents (upload)
 
@@ -364,11 +397,54 @@ atualizado pelo primeiro.
 | GET | `/auction-items/:itemId/documents` | Livre | — | `200` lista |
 | GET | `/documents/:id/download` | Livre | — | `200` (stream do arquivo) · `404` |
 
+### CEP (`/cep`)
+
+| Método | Rota | Auth | Respostas |
+| --- | --- | --- | --- |
+| GET | `/cep/:cep` | Livre (só `X-API-KEY`) | `200` `{ logradouro, cidade, uf }` (ViaCEP; aceita com ou sem hífen) · `400` CEP mal formado ou inexistente · `503` ViaCEP fora do ar |
+
+### Destaques (`/destaques`)
+
+| Método | Rota | Auth | Respostas |
+| --- | --- | --- | --- |
+| GET | `/destaques?limite=` | Livre (só `X-API-KEY`) | `200` até 10 leilões para o carrossel da home |
+
+Ordem decidida no backend: abertos (encerram primeiro), em breve (abrem primeiro),
+encerrados (mais recentes). Rascunho e cancelado nunca aparecem. Cada card traz
+`etiqueta` (Aberto, Em breve, Encerrado), totais, maior lance, `capaDocumentoId` e
+`itemUnicoId` (preenchido se o leilão tem um item só).
+
+### Ranking, obras, chat, institucional e painel admin
+
+| Método | Rota | Auth | Respostas |
+| --- | --- | --- | --- |
+| GET | `/ranking/vendedores` | Livre (só `X-API-KEY`) | `200` melhores vendedores por total arrecadado |
+| GET | `/auction-items/:id/historia` | Livre (só `X-API-KEY`) | `200` história da obra e contexto da época · `404` |
+| GET | `/auctions/:leilaoId/chat` | Livre (só `X-API-KEY`) | `200` últimas mensagens, da mais antiga para a mais nova |
+| POST | `/auctions/:leilaoId/chat` | Autenticado | `201` envia mensagem (**só com o leilão `OPEN`**) · `400` · `401` · `404` leilão inexistente · `409` leilão não aberto |
+| GET | `/institucional` | Livre (só `X-API-KEY`) | `200` dados da casa de leilões para o rodapé |
+| GET | `/admin/resumo` | ADMIN | `200` totais da plataforma para o painel · `401` · `403` |
+
 ### Saúde
 
 | Método | Rota | Auth | Respostas |
 | --- | --- | --- | --- |
 | GET | `/saude` | Livre (só `X-API-KEY`) | `200` `{ status, banco, dataHora }` · `503` banco fora do ar |
+
+## Tempo real (WebSocket)
+
+Socket.io no namespace **`/lances`** (`src/realtime/`), com uma sala por item
+(`item:{id}`). O CORS usa a mesma `FRONTEND_URL` da API.
+
+| Direção | Evento | Dados |
+| --- | --- | --- |
+| cliente → servidor | `entrar-item` / `sair-item` | `itemId` |
+| servidor → sala | `lance-novo` | `{ lance, licitanteNome, lanceAtual, lanceMinimo }` |
+| servidor → sala | `item-finalizado` | `{ itemId, status, vencedorId, vencedorNome, valorFinal }` |
+
+Os eventos só **leem** dados públicos e por isso não exigem a `X-API-KEY` (o
+`ApiKeyGuard` ignora o que não é HTTP). Toda **escrita** (dar lance, mudar status)
+continua sendo HTTP, com chave e login.
 
 ## Exemplos de requisição
 
@@ -501,7 +577,14 @@ src/
   auction-items/      itens do leilão, integração com o CEP
   bids/               lances, concorrência
   documents/          upload de fotos/documentos
-  cep/                integração externa (ViaCEP) via HttpService
+  cep/                integração externa (ViaCEP) via HttpService + GET /cep/:cep
+  destaques/          carrossel da home (GET /destaques)
+  ranking/            ranking de vendedores
+  obras/              história e contexto da obra (GET /auction-items/:id/historia)
+  chat/               chat por leilão (mensagens só com o leilão aberto)
+  institucional/      dados da casa de leilões (rodapé)
+  admin/              resumo da plataforma para o painel ADMIN
+  realtime/           gateway Socket.io (lances ao vivo) e adaptador de CORS
   saude/              health check
   prisma/             PrismaService (driver adapter)
   common/             guards, decorators, filtros, interceptors, pipes, utils

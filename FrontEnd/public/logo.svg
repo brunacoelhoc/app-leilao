@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Belle Époque Leilões">
+  <defs>
+    <linearGradient id="ouro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e2c98a"/>
+      <stop offset="1" stop-color="#a9822c"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="47" fill="#2f1c11" stroke="url(#ouro)" stroke-width="3"/>
+  <circle cx="50" cy="50" r="41" fill="none" stroke="#a9822c" stroke-width="0.8" opacity="0.7"/>
+  <!-- flor-de-lis -->
+  <path d="M50 15 C59 27 61 40 50 55 C39 40 41 27 50 15 Z" fill="url(#ouro)"/>
+  <path d="M47 53 C41 37 23 32 21 46 C20 58 34 63 46 59 C38 57 33 52 33 47 C38 46 43 48 47 53 Z" fill="url(#ouro)"/>
+  <path d="M53 53 C59 37 77 32 79 46 C80 58 66 63 54 59 C62 57 67 52 67 47 C62 46 57 48 53 53 Z" fill="url(#ouro)"/>
+  <rect x="35" y="60" width="30" height="6" rx="2" fill="#6b1420" stroke="url(#ouro)" stroke-width="1.2"/>
+  <path d="M50 68 C46 75 42 80 35 84 C44 85 48 83 50 79 C52 83 56 85 65 84 C58 80 54 75 50 68 Z" fill="url(#ouro)"/>
+</svg>

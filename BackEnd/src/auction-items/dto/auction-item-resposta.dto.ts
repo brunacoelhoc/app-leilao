@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ItemStatus } from '../../generated/prisma/client';
+import type { SituacaoItem } from '../situacao-item';
 
 // Formato real da resposta de um item -- so para o Swagger documentar o
 // schema. Os campos de dinheiro saem como STRING (nunca number), porque o
@@ -30,6 +31,41 @@ export class AuctionItemResposta {
   @ApiProperty({ example: 3, description: 'Indicador do dominio: quantidade total de lances recebidos por este item' })
   totalLances: number;
 
+  @ApiProperty({
+    enum: ['EM_BREVE', 'ABERTO', 'ENCERRANDO', 'VENDIDO', 'NAO_VENDIDO', 'CANCELADO'],
+    example: 'ABERTO',
+    description: 'Situacao calculada pelo servidor (a tela so exibe)',
+  })
+  situacao: SituacaoItem;
+
+  @ApiProperty({ example: '110.00', description: 'Menor lance aceito agora (preco inicial ou lance atual + incremento)' })
+  lanceMinimo: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 3600,
+    description: 'Segundos ate a proxima mudanca (abertura se EM_BREVE, encerramento se ABERTO); null nos demais casos',
+  })
+  segundosParaMudanca: number | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Vincent van Gogh', description: 'Ficha tecnica: Artista, autor ou fabricante' })
+  autor: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'c. 1880', description: 'Ficha tecnica: Epoca ou ano da peca' })
+  periodo: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Óleo sobre tela', description: 'Ficha tecnica: Tecnica e material' })
+  tecnica: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: '60 x 80 cm', description: 'Ficha tecnica: Medidas da peca' })
+  dimensoes: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Excelente', description: 'Ficha tecnica: Estado de conservacao' })
+  conservacao: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Coleção particular europeia', description: 'Ficha tecnica: Origem e historico da peca' })
+  procedencia: string | null;
+
   @ApiProperty({ example: '01310100' })
   cep: string;
 
@@ -44,6 +80,21 @@ export class AuctionItemResposta {
 
   @ApiPropertyOptional({ nullable: true, description: 'Id de quem ganhou (so preenchido se status=SOLD)' })
   vencedorId: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Maria Silva', description: 'Nome de quem ganhou (so preenchido se status=SOLD)' })
+  vencedorNome: string | null;
+
+  @ApiProperty({ type: [String], example: ['110.00', '120.00', '130.00', '160.00'], description: 'Valores prontos para o campo de lance (minimo, +1, +2 e +5 incrementos); vazio quando o lote nao recebe lances' })
+  lancesSugeridos: string[];
+
+  @ApiProperty({ example: 'Participar', description: 'Texto do botao do card, decidido pelo servidor' })
+  rotuloAcao: string;
+
+  @ApiProperty({ description: 'Caminho de uma obra do acervo para usar quando nao ha foto enviada' })
+  capaPadrao: string;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Id da primeira foto (so na listagem); baixe em GET /documents/:id/download' })
+  capaDocumentoId?: string | null;
 
   @ApiProperty({ description: 'Id do leilao a que este item pertence' })
   leilaoId: string;

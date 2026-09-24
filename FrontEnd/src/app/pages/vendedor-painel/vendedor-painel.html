@@ -1,0 +1,236 @@
+<div class="pagina">
+  <app-voltar class="voltar-topo" />
+  <header class="banner">
+    <div class="banner-texto">
+      <p class="sobre">Painel do vendedor</p>
+      <h1>Meus leilões</h1>
+      <p class="boas-vindas">
+        {{ primeiroNome() ? 'Olá, ' + primeiroNome() + '. ' : '' }}Crie e acompanhe os leilões e peças que você colocou à venda.
+      </p>
+    </div>
+    <button type="button" class="novo" (click)="abrirModal()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Novo leilão
+    </button>
+  </header>
+
+  @if (contagens(); as c) {
+    <section class="resumo" aria-label="Resumo dos seus leilões">
+      <div class="numero"><strong>{{ total() }}</strong><span>Leilões</span></div>
+      <div class="numero aberto"><strong>{{ c['OPEN'] }}</strong><span>Abertos</span></div>
+      <div class="numero"><strong>{{ c['SCHEDULED'] }}</strong><span>Agendados</span></div>
+      <div class="numero"><strong>{{ c['DRAFT'] }}</strong><span>Rascunhos</span></div>
+      <div class="numero"><strong>{{ c['CLOSED'] }}</strong><span>Encerrados</span></div>
+    </section>
+  }
+
+  <section class="barra-filtros" aria-label="Filtros">
+    <div class="busca">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <label for="busca-meus-leiloes" class="so-leitor">Buscar por título ou descrição</label>
+      <input
+        id="busca-meus-leiloes"
+        type="search"
+        placeholder="Buscar por título ou descrição…"
+        maxlength="100"
+        [ngModel]="busca"
+        (ngModelChange)="aoDigitarBusca($event)"
+      />
+    </div>
+    <div class="chips" role="group" aria-label="Filtrar por status">
+      <button type="button" class="chip" [class.ativo]="!status" [attr.aria-pressed]="!status" (click)="escolherStatus('')">
+        Todos
+      </button>
+      @for (opcao of statusOpcoes; track opcao[0]) {
+        <button type="button" class="chip" [class.ativo]="status === opcao[0]" [attr.aria-pressed]="status === opcao[0]" (click)="escolherStatus(opcao[0])">
+          {{ opcao[1] }}
+          @if (contagens(); as c) {
+            <span class="qtd">{{ c[opcao[0]] }}</span>
+          }
+        </button>
+      }
+    </div>
+  </section>
+
+  @if (carregando()) {
+    <div class="grade-cards" aria-busy="true">
+      @for (n of [1, 2, 3]; track n) {
+        <div class="esqueleto" aria-hidden="true"></div>
+      }
+    </div>
+  } @else if (leiloes(); as l) {
+    @if (l.dados.length === 0 && (busca.trim() || status)) {
+      <div class="vazio-filtro">
+        <p>Nenhum leilão encontrado para esses filtros.</p>
+        <button type="button" class="secundario" (click)="limparFiltros()">Limpar filtros</button>
+      </div>
+    } @else if (l.dados.length === 0) {
+      <div class="vazio">
+        <div class="medalhao" aria-hidden="true">⚜</div>
+        <h2>Sua vitrine está vazia</h2>
+        <p class="texto-elegante">Cada grande coleção começa com uma primeira peça.</p>
+        <ol class="passos">
+          <li><span>1</span><div><strong>Cadastre o leilão</strong><small>Título, descrição e período</small></div></li>
+          <li><span>2</span><div><strong>Adicione a peça</strong><small>Foto, valor inicial e ficha</small></div></li>
+          <li><span>3</span><div><strong>Agende e publique</strong><small>Os lances abrem na data marcada</small></div></li>
+        </ol>
+        <button type="button" class="primario grande" (click)="abrirModal()">Criar meu primeiro leilão</button>
+      </div>
+    } @else {
+      <div class="grade-cards">
+        @for (leilao of l.dados; track leilao.id) {
+          <a [routerLink]="['/vendedor/leiloes', leilao.id]" class="leilao-card">
+            <span class="foto">
+              @if (capaDe(leilao); as capa) {
+                <img [src]="capa" alt="" loading="lazy" />
+              } @else {
+                <span class="sem-foto" aria-hidden="true">⚜</span>
+              }
+              <span [class]="'selo-foto st-' + leilao.status.toLowerCase()">{{ ROTULO_STATUS_LEILAO[leilao.status] }}</span>
+            </span>
+            <span class="conteudo">
+              <h3>{{ leilao.titulo }}</h3>
+              <span class="descricao">{{ leilao.descricao || 'Sem descrição.' }}</span>
+              <span class="periodo">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                {{ leilao.dataInicio | date: 'dd/MM/yyyy' }} — {{ leilao.dataFim | date: 'dd/MM/yyyy' }}
+              </span>
+              <span class="gerenciar">Gerenciar <i aria-hidden="true">→</i></span>
+            </span>
+          </a>
+        }
+      </div>
+
+      <app-paginacao
+        [pagina]="l.pagina"
+        [totalPaginas]="l.totalPaginas"
+        [total]="l.total"
+        [limite]="limite"
+        (mudarPagina)="mudarPagina($event)"
+        (mudarLimite)="mudarLimite($event)"
+      />
+    }
+  }
+</div>
+
+@if (modalAberto()) {
+  <app-modal titulo="Novo leilão" [largura]="760" (fechar)="modalAberto.set(false)">
+    <form class="modal-leilao" (ngSubmit)="criar()" novalidate>
+      <p class="lista-vazia">Todos os campos são obrigatórios. O leilão nasce como rascunho.</p>
+
+      <h3>Dados do leilão</h3>
+      <div class="campo">
+        <label for="titulo">Título</label>
+        <input id="titulo" name="titulo" type="text" [(ngModel)]="titulo" (blur)="tocar('titulo')" [class.invalido]="erro('titulo')" [attr.aria-invalid]="erro('titulo') ? 'true' : null" [attr.aria-describedby]="erro('titulo') ? 'erro-titulo' : null" />
+        @if (erro('titulo'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-titulo'">{{ msg }}</small>
+        }
+      </div>
+      <div class="campo">
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao" rows="2" [(ngModel)]="descricao" (blur)="tocar('descricao')" [class.invalido]="erro('descricao')" [attr.aria-invalid]="erro('descricao') ? 'true' : null" [attr.aria-describedby]="erro('descricao') ? 'erro-descricao' : null"></textarea>
+        @if (erro('descricao'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-descricao'">{{ msg }}</small>
+        }
+      </div>
+      <div class="linha">
+      <div class="campo">
+        <label for="dataInicio">Início</label>
+        <input id="dataInicio" name="dataInicio" type="datetime-local" [(ngModel)]="dataInicio" (blur)="tocar('dataInicio')" [class.invalido]="erro('dataInicio')" [attr.aria-invalid]="erro('dataInicio') ? 'true' : null" [attr.aria-describedby]="erro('dataInicio') ? 'erro-dataInicio' : null" />
+        @if (erro('dataInicio'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-dataInicio'">{{ msg }}</small>
+        }
+      </div>
+      <div class="campo">
+        <label for="dataFim">Fim</label>
+        <input id="dataFim" name="dataFim" type="datetime-local" [(ngModel)]="dataFim" (blur)="tocar('dataFim')" [class.invalido]="erro('dataFim')" [attr.aria-invalid]="erro('dataFim') ? 'true' : null" [attr.aria-describedby]="erro('dataFim') ? 'erro-dataFim' : null" />
+        @if (erro('dataFim'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-dataFim'">{{ msg }}</small>
+        }
+      </div>
+      </div>
+
+      <h3>Item a ser leiloado</h3>
+      <div class="campo">
+        <label for="itemTitulo">Título do item</label>
+        <input id="itemTitulo" name="itemTitulo" type="text" [(ngModel)]="itemTitulo" (blur)="tocar('itemTitulo')" [class.invalido]="erro('itemTitulo')" [attr.aria-invalid]="erro('itemTitulo') ? 'true' : null" [attr.aria-describedby]="erro('itemTitulo') ? 'erro-itemTitulo' : null" />
+        @if (erro('itemTitulo'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-itemTitulo'">{{ msg }}</small>
+        }
+      </div>
+      <div class="campo">
+        <label for="itemDescricao">Descrição do item</label>
+        <textarea id="itemDescricao" name="itemDescricao" rows="2" [(ngModel)]="itemDescricao" (blur)="tocar('itemDescricao')" [class.invalido]="erro('itemDescricao')" [attr.aria-invalid]="erro('itemDescricao') ? 'true' : null" [attr.aria-describedby]="erro('itemDescricao') ? 'erro-itemDescricao' : null"></textarea>
+        @if (erro('itemDescricao'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-itemDescricao'">{{ msg }}</small>
+        }
+      </div>
+      <div class="linha">
+      <div class="campo">
+        <label for="itemPreco">Preço inicial (R$)</label>
+        <input id="itemPreco" name="itemPreco" type="number" step="any" [(ngModel)]="itemPrecoInicial" (blur)="tocar('itemPreco')" [class.invalido]="erro('itemPreco')" [attr.aria-invalid]="erro('itemPreco') ? 'true' : null" [attr.aria-describedby]="erro('itemPreco') ? 'erro-itemPreco' : null" />
+        @if (erro('itemPreco'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-itemPreco'">{{ msg }}</small>
+        }
+      </div>
+      <div class="campo">
+        <label for="itemIncremento">Incremento mínimo (R$)</label>
+        <input id="itemIncremento" name="itemIncremento" type="number" step="any" [(ngModel)]="itemIncremento" (blur)="tocar('itemIncremento')" [class.invalido]="erro('itemIncremento')" [attr.aria-invalid]="erro('itemIncremento') ? 'true' : null" [attr.aria-describedby]="erro('itemIncremento') ? 'erro-itemIncremento' : null" />
+        @if (erro('itemIncremento'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-itemIncremento'">{{ msg }}</small>
+        }
+      </div>
+      </div>
+      <div class="linha">
+      <div class="campo">
+        <label for="itemCep">CEP de retirada</label>
+        <input id="itemCep" name="itemCep" type="text" inputmode="numeric" placeholder="00000-000" (input)="mascararCep()" [(ngModel)]="itemCep" (blur)="tocar('itemCep')" [class.invalido]="erro('itemCep')" [attr.aria-invalid]="erro('itemCep') ? 'true' : null" [attr.aria-describedby]="erro('itemCep') ? 'erro-itemCep' : null" />
+        @if (erro('itemCep'); as msg) {
+          <small class="msg-campo" role="alert" [id]="'erro-itemCep'">{{ msg }}</small>
+        }
+      </div>
+        <div class="campo">
+          <label for="itemCategoria">Categoria</label>
+          <select id="itemCategoria" name="itemCategoria" [(ngModel)]="itemCategoriaId" (blur)="tocar('itemCategoria')" (change)="tocar('itemCategoria')" [class.invalido]="erro('itemCategoria')" [attr.aria-invalid]="erro('itemCategoria') ? 'true' : null">
+            <option value="" disabled>Selecione</option>
+            @for (categoria of categorias(); track categoria.id) {
+              <option [value]="categoria.id">{{ categoria.nome }}</option>
+            }
+          </select>
+          @if (erro('itemCategoria'); as msg) {
+            <small class="msg-campo" role="alert">{{ msg }}</small>
+          }
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="foto">Foto do item</label>
+        <label class="area-foto" for="foto" [class.invalido]="erro('foto')">
+          @if (fotoPreview(); as preview) {
+            <img [src]="preview" alt="Pré-visualização da foto do item" />
+            <span>Clique para trocar a foto</span>
+          } @else {
+            <span class="icone">🖼</span>
+            <span>Clique para escolher a foto do item</span>
+          }
+          <input id="foto" type="file" accept="image/*" (change)="aoEscolherFoto($event)" hidden />
+        </label>
+        @if (erro('foto'); as msg) {
+          <small class="msg-campo" role="alert">{{ msg }}</small>
+        }
+        <app-acervo-fotos (escolher)="usarFotoDoAcervo($event)" />
+      </div>
+
+      @if (erroForm()) {
+        <p class="erro" role="alert">{{ erroForm() }}</p>
+      }
+
+      <div class="botoes">
+        <button type="submit" class="primario" [disabled]="criando()">
+          {{ criando() ? 'Criando...' : 'Criar leilão' }}
+        </button>
+        <button type="button" class="secundario" (click)="modalAberto.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </app-modal>
+}

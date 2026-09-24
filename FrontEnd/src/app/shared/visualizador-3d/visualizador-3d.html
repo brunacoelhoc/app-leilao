@@ -1,0 +1,12 @@
+<div class="palco" [class.indisponivel]="indisponivel()">
+  @if (semWebgl()) {
+    <p class="aviso">Seu navegador não suporta a visualização 3D. Peça: {{ titulo() }}.</p>
+  }
+  <canvas
+    #canvas
+    tabindex="0"
+    role="img"
+    [attr.aria-label]="'Visualização 3D interativa: ' + titulo() + '. Arraste ou use as setas do teclado para girar.'"
+  ></canvas>
+  <span class="dica" aria-hidden="true">Arraste para girar · role para aproximar</span>
+</div>

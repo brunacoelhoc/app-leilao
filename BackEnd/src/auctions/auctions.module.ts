@@ -3,10 +3,11 @@ import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import { AuctionsController } from './auctions.controller';
 import { AuctionsService } from './auctions.service';
+import { EncerramentoAutomaticoService } from './encerramento-automatico.service';
 
 @Module({
   imports: [AuthModule, AuditModule], // AuthModule pelo JwtAuthGuard, AuditModule pelo AuditLogService
   controllers: [AuctionsController],
-  providers: [AuctionsService],
+  providers: [AuctionsService, EncerramentoAutomaticoService],
 })
 export class AuctionsModule {}

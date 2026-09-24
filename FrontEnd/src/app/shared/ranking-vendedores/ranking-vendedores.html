@@ -1,0 +1,49 @@
+@if (ranking().length > 0) {
+  <section class="hall" #secao aria-labelledby="titulo-ranking">
+    <header class="cabeca">
+      <p class="sobre">Hall da Fama</p>
+      <h2 id="titulo-ranking">Melhores Vendedores</h2>
+      <p class="sub">Quem mais fez peças mudarem de mãos na Belle Époque.</p>
+    </header>
+
+    <ol class="podio" aria-label="Pódio dos três melhores vendedores">
+      @for (v of podio(); track v.vendedorId) {
+        <li class="lugar" [class]="'lugar l' + v.posicao">
+          @if (v.posicao === 1) {
+            <span class="coroa" aria-hidden="true">♛</span>
+          }
+          <span class="anel">
+            <app-avatar [avatarUrl]="v.avatarUrl" [nome]="v.nome" [tamanho]="v.posicao === 1 ? 104 : 80" />
+            <span class="medalha" aria-hidden="true">{{ v.posicao }}</span>
+          </span>
+          <h3>{{ v.nome }}</h3>
+          <strong class="valor" [attr.aria-label]="'Arrecadado: ' + moedaExata(v.arrecadado)">{{ moeda(v.arrecadado) }}</strong>
+          <span class="mini">{{ v.vendidas }} peças vendidas · {{ v.taxaVenda }}% de venda</span>
+          <span class="degrau" aria-hidden="true"><b>{{ v.posicao }}º</b></span>
+        </li>
+      }
+    </ol>
+
+    @if (demais().length > 0) {
+      <ol class="lista" start="4" aria-label="Demais vendedores">
+        @for (v of demais(); track v.vendedorId) {
+          <li class="linha">
+            <span class="pos">{{ v.posicao }}º</span>
+            <app-avatar [avatarUrl]="v.avatarUrl" [nome]="v.nome" [tamanho]="44" />
+            <div class="quem">
+              <strong>{{ v.nome }}</strong>
+              <span class="barra" aria-hidden="true"><i [style.width.%]="v.participacao * progresso()"></i></span>
+              <small>{{ v.vendidas }} peças · {{ v.leiloesEncerrados }} leilões · {{ v.taxaVenda }}% de venda</small>
+            </div>
+            <strong class="valor-linha">{{ moeda(v.arrecadado) }}</strong>
+          </li>
+        }
+      </ol>
+    }
+
+    <footer class="rodape">
+      <span aria-hidden="true">✦</span>
+      Ranking pelo total arrecadado em peças vendidas. Só entram vendedores com pelo menos uma venda.
+    </footer>
+  </section>
+}

@@ -1,9 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsUUID } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { PaginacaoQueryDto } from '../../common/dto/paginacao-query.dto';
 
 // Filtros de GET /auction-items: paginacao (herdada) + as duas consultas por
-// relacionamento (itens de um leilao e/ou itens de uma categoria)
+// relacionamento (itens de um leilao e/ou itens de uma categoria) + busca por texto
 export class ListarAuctionItemsQueryDto extends PaginacaoQueryDto {
   @ApiPropertyOptional({ description: 'Filtra pelos itens de um leilao' })
   @IsOptional()
@@ -14,4 +15,15 @@ export class ListarAuctionItemsQueryDto extends PaginacaoQueryDto {
   @IsOptional()
   @IsUUID('4', { message: 'categoriaId deve ser um uuid valido' })
   categoriaId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Busca por trecho do titulo ou da descricao (sem diferenciar maiusculas)',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @MaxLength(100, { message: 'busca deve ter no maximo 100 caracteres' })
+  busca?: string;
 }

@@ -47,6 +47,8 @@ import { CriarAuctionDto } from './dto/criar-auction.dto';
 import { IndicadoresAuctionResposta } from './dto/indicadores-auction-resposta.dto';
 import { ListarAuctionsQueryDto } from './dto/listar-auctions-query.dto';
 import { MudarStatusDto } from './dto/mudar-status.dto';
+import { capaPadrao } from '../common/utils/capa-padrao.util';
+import { proximosStatus } from './transicoes-status';
 
 // Id de um leilao DRAFT real do seed (editar/mudar status/remover so
 // funcionam em DRAFT) -- serve so de exemplo no Swagger, nao e obrigatorio usar
@@ -58,6 +60,16 @@ const PARAM_ID = {
 
 // Leitura (GET) e livre (so a X-API-KEY global). Escrever exige login.
 // So o SELLER dono do leilao (ou um ADMIN) pode editar, mudar o status ou remover
+// Acrescenta a resposta o que o leilao pode fazer agora: o front so exibe
+function comTransicoes(leilao: Auction & { capaDocumentoId?: string | null; capaPadrao?: string }): AuctionResposta {
+  return {
+    ...leilao,
+    transicoesPermitidas: proximosStatus(leilao.status),
+    // Regra do servidor: so rascunho aceita editar dados, itens e remocao
+    editavel: leilao.status === 'DRAFT',
+  };
+}
+
 @ApiTags('Auctions')
 @ApiSecurity('api-key')
 @Controller('auctions')
@@ -95,8 +107,8 @@ export class AuctionsController {
     @Body() dto: CriarAuctionDto,
     @CurrentUser() usuario: UsuarioAutenticado,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
-  ): Promise<Auction> {
-    return this.auctionsService.criar(dto, usuario, contexto);
+  ): Promise<AuctionResposta> {
+    return this.auctionsService.criar(dto, usuario, contexto).then(comTransicoes);
   }
 
   @Get()
@@ -109,8 +121,21 @@ export class AuctionsController {
   @ApiRespostaPaginada(AuctionResposta)
   listarTodos(
     @Query() query: ListarAuctionsQueryDto,
-  ): Promise<RespostaPaginada<Auction>> {
-    return this.auctionsService.listarTodos(query);
+  ): Promise<RespostaPaginada<AuctionResposta>> {
+    return this.auctionsService
+      .listarTodos(query)
+      .then((r) => ({ ...r, dados: r.dados.map(comTransicoes) }));
+  }
+
+  // Vem ANTES de ":id", senao "resumo" seria lido como um id
+  @Get('resumo')
+  @ApiOperation({
+    summary: 'Quantidade de leiloes por status (livre, sem login)',
+    description: '"vendedorId" e opcional: sem ele, conta todos os leiloes.',
+  })
+  @ApiQuery({ name: 'vendedorId', required: false, description: 'So os leiloes deste vendedor' })
+  resumo(@Query('vendedorId') vendedorId?: string): Promise<Record<string, number>> {
+    return this.auctionsService.resumoPorStatus(vendedorId || undefined);
   }
 
   @Get(':id')
@@ -119,8 +144,11 @@ export class AuctionsController {
   @ApiOkResponse({ description: 'Leilao encontrado', type: AuctionResposta, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Leilao inexistente', type: ErroResposta })
-  buscarPorId(@Param('id', ParseUuidPipePt) id: string): Promise<Auction> {
-    return this.auctionsService.buscarPorId(id);
+  buscarPorId(@Param('id', ParseUuidPipePt) id: string): Promise<AuctionResposta> {
+    // O detalhe tambem traz a capa (o front nao precisa procurar a foto nos itens)
+    return Promise.all([this.auctionsService.buscarPorId(id), this.auctionsService.capaDoLeilao(id)]).then(
+      ([leilao, capaDocumentoId]) => comTransicoes({ ...leilao, capaDocumentoId, capaPadrao: capaPadrao(id) }),
+    );
   }
 
   @Get(':id/indicadores')
@@ -155,8 +183,8 @@ export class AuctionsController {
     @Body() dto: AtualizarAuctionDto,
     @CurrentUser() usuario: UsuarioAutenticado,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
-  ): Promise<Auction> {
-    return this.auctionsService.atualizar(id, dto, usuario, contexto);
+  ): Promise<AuctionResposta> {
+    return this.auctionsService.atualizar(id, dto, usuario, contexto).then(comTransicoes);
   }
 
   @Patch(':id/status')
@@ -182,8 +210,8 @@ export class AuctionsController {
     @Body() dto: MudarStatusDto,
     @CurrentUser() usuario: UsuarioAutenticado,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
-  ): Promise<Auction> {
-    return this.auctionsService.mudarStatus(id, dto, usuario, contexto);
+  ): Promise<AuctionResposta> {
+    return this.auctionsService.mudarStatus(id, dto, usuario, contexto).then(comTransicoes);
   }
 
   @Delete(':id')

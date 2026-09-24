@@ -5,14 +5,27 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
 import { timingSafeEqual } from 'crypto';
 import type { Request } from 'express';
+import { SEM_CHAVE_API } from '../decorators/sem-chave-api.decorator';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly reflector: Reflector,
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // O WebSocket (sala de lances, so leitura de eventos publicos) nao envia
+    // cabecalhos; as acoes de escrita continuam sendo HTTP e exigem a chave
+    if (context.getType() !== 'http') return true;
+
+    // Rotas marcadas com @SemChaveApi() (so as fotos das pecas) ficam livres
+    const livre = this.reflector.getAllAndOverride<boolean>(SEM_CHAVE_API, [context.getHandler(), context.getClass()]);
+    if (livre) return true;
+
     // Pega a requisicao HTTP que chegou
     const requisicao = context.switchToHttp().getRequest<Request>();
 

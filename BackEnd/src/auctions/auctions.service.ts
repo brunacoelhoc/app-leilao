@@ -3,11 +3,13 @@ import {
   ForbiddenException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { AuditLogService } from '../audit/audit-log.service';
 import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { decimalParaString } from '../common/utils/decimal.util';
 import {
   calcularPaginacao,
@@ -18,23 +20,33 @@ import {
 import {
   AuctionStatus,
   AuditResult,
+  DocumentType,
   ItemStatus,
   Prisma,
   type Auction,
   type Role,
 } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { LancesGateway } from '../realtime/lances.gateway';
 import type { AtualizarAuctionDto } from './dto/atualizar-auction.dto';
 import type { CriarAuctionDto } from './dto/criar-auction.dto';
 import type { IndicadoresAuctionResposta } from './dto/indicadores-auction-resposta.dto';
 import type { MudarStatusDto } from './dto/mudar-status.dto';
 import { transicaoEhValida } from './transicoes-status';
 
+// Percentual com uma casa decimal (0 quando nao ha itens)
+function percentual(parte: number, total: number): number {
+  return total === 0 ? 0 : Math.round((parte / total) * 1000) / 10;
+}
+
 @Injectable()
 export class AuctionsService {
+  private readonly logger = new Logger(AuctionsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly lancesGateway: LancesGateway,
   ) {}
 
   // Cria o leilao ja como DRAFT. NAO grava linha no historico aqui: criar
@@ -80,12 +92,28 @@ export class AuctionsService {
     }
   }
 
-  // Filtro por vendedorId e a consulta por relacionamento "leiloes do vendedor"
+  // Filtro por vendedorId e a consulta por relacionamento "leiloes do vendedor".
+  // "busca" procura o trecho no titulo ou na descricao (contains + insensitive)
   async listarTodos(
-    params: ParametrosPaginacao & { vendedorId?: string },
-  ): Promise<RespostaPaginada<Auction>> {
+    params: ParametrosPaginacao & {
+      vendedorId?: string;
+      busca?: string;
+      status?: AuctionStatus;
+    },
+  ): Promise<RespostaPaginada<Auction & { capaDocumentoId: string | null; capaPadrao: string }>> {
     const paginacao = calcularPaginacao(params);
-    const where = { vendedorId: params.vendedorId };
+    const where: Prisma.AuctionWhereInput = {
+      vendedorId: params.vendedorId,
+      status: params.status,
+      ...(params.busca
+        ? {
+            OR: [
+              { titulo: { contains: params.busca, mode: 'insensitive' } },
+              { descricao: { contains: params.busca, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
     const [dados, total] = await Promise.all([
       this.prisma.auction.findMany({
         where,
@@ -95,7 +123,53 @@ export class AuctionsService {
       }),
       this.prisma.auction.count({ where }),
     ]);
-    return paginar(dados, total, paginacao);
+
+    // Capa do card: a primeira foto de qualquer item do leilao (uma consulta so)
+    const fotos = await this.prisma.document.findMany({
+      where: { tipo: DocumentType.PHOTO, item: { leilaoId: { in: dados.map((l) => l.id) } } },
+      orderBy: { criadoEm: 'asc' },
+      select: { id: true, item: { select: { leilaoId: true } } },
+    });
+    const capas = new Map<string, string>();
+    for (const foto of fotos) {
+      if (!capas.has(foto.item.leilaoId)) capas.set(foto.item.leilaoId, foto.id);
+    }
+
+    return paginar(
+      dados.map((leilao) => ({
+        ...leilao,
+        capaDocumentoId: capas.get(leilao.id) ?? null,
+        capaPadrao: capaPadrao(leilao.id),
+      })),
+      total,
+      paginacao,
+    );
+  }
+
+  // Quantos leiloes existem em cada status (opcionalmente so de um vendedor).
+  // Alimenta os paineis: a tela nao precisa mais somar listagens
+  async resumoPorStatus(vendedorId?: string): Promise<Record<AuctionStatus | 'total', number>> {
+    const grupos = await this.prisma.auction.groupBy({
+      by: ['status'],
+      where: { vendedorId },
+      _count: { _all: true },
+    });
+    const resumo = { DRAFT: 0, SCHEDULED: 0, OPEN: 0, CLOSED: 0, CANCELED: 0, total: 0 };
+    for (const g of grupos) {
+      resumo[g.status] = g._count._all;
+      resumo.total += g._count._all;
+    }
+    return resumo;
+  }
+
+  // Foto de capa do leilao: a primeira foto de qualquer item dele
+  async capaDoLeilao(leilaoId: string): Promise<string | null> {
+    const foto = await this.prisma.document.findFirst({
+      where: { tipo: DocumentType.PHOTO, item: { leilaoId } },
+      orderBy: { criadoEm: 'asc' },
+      select: { id: true },
+    });
+    return foto?.id ?? null;
   }
 
   async buscarPorId(id: string): Promise<Auction> {
@@ -145,6 +219,11 @@ export class AuctionsService {
         (item) => item.status === ItemStatus.AVAILABLE,
       ).length,
       arrecadadoTotal: decimalParaString(arrecadadoTotal)!,
+      percentuais: {
+        vendidos: percentual(itensVendidos.length, itens.length),
+        disponiveis: percentual(itens.filter((i) => i.status === ItemStatus.AVAILABLE).length, itens.length),
+        naoVendidos: percentual(itens.filter((i) => i.status === ItemStatus.UNSOLD).length, itens.length),
+      },
     };
   }
 
@@ -226,32 +305,12 @@ export class AuctionsService {
         );
       }
 
-      const atualizado = await this.prisma.$transaction(async (tx) => {
-        const resultado = await tx.auction.update({
-          where: { id },
-          data: { status: dto.status },
-        });
-
-        await tx.auctionStatusHistory.create({
-          data: {
-            leilaoId: id,
-            statusAnterior: leilao.status,
-            statusNovo: dto.status,
-            alteradoPorId: usuario.id,
-            motivo: dto.motivo,
-          },
-        });
-
-        // Ao fechar o leilao, cada item precisa de um destino: vendido (com
-        // vencedor) ou nao vendido. O banco exige as duas coisas juntas
-        // (CHECK "status = SOLD" <=> "vencedorId IS NOT NULL"), entao as duas
-        // sao sempre gravadas no mesmo UPDATE
-        if (dto.status === AuctionStatus.CLOSED) {
-          await this.definirVencedoresDosItens(tx, id);
-        }
-
-        return resultado;
-      });
+      const atualizado = await this.aplicarMudancaStatus(
+        leilao,
+        dto.status,
+        usuario.id,
+        dto.motivo,
+      );
 
       // Auditoria FORA da transacao (que ja comitou): mudanca de estado e um
       // evento de negocio importante, vale ficar registrado independente do
@@ -277,6 +336,79 @@ export class AuctionsService {
         this.motivoDoErro(erro),
       );
       throw erro;
+    }
+  }
+
+  // Grava o novo estado + historico na mesma transacao. Usado pela mudanca
+  // manual (mudarStatus) e pelo encerramento automatico por horario
+  async aplicarMudancaStatus(
+    leilao: Auction,
+    novoStatus: AuctionStatus,
+    alteradoPorId: string,
+    motivo?: string,
+  ): Promise<Auction> {
+    const atualizado = await this.prisma.$transaction(async (tx) => {
+      // Ao fechar, trava os itens ANTES de mudar o status: um lance em
+      // andamento termina primeiro (ou espera e ja ve o leilao fechado),
+      // entao o vencedor calculado nunca fica desatualizado
+      if (novoStatus === AuctionStatus.CLOSED) {
+        await tx.$queryRaw`
+          SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${leilao.id} FOR UPDATE
+        `;
+      }
+
+      const resultado = await tx.auction.update({
+        where: { id: leilao.id },
+        data: { status: novoStatus },
+      });
+
+      await tx.auctionStatusHistory.create({
+        data: {
+          leilaoId: leilao.id,
+          statusAnterior: leilao.status,
+          statusNovo: novoStatus,
+          alteradoPorId,
+          motivo,
+        },
+      });
+
+      // Ao fechar o leilao, cada item precisa de um destino: vendido (com
+      // vencedor) ou nao vendido. O banco exige as duas coisas juntas
+      // (CHECK "status = SOLD" <=> "vencedorId IS NOT NULL"), entao as duas
+      // sao sempre gravadas no mesmo UPDATE
+      if (novoStatus === AuctionStatus.CLOSED) {
+        await this.definirVencedoresDosItens(tx, leilao.id);
+      }
+
+      return resultado;
+    });
+
+    // Tempo real: so depois do commit avisamos quem esta na sala de cada item
+    if (novoStatus === AuctionStatus.CLOSED) {
+      try {
+        await this.avisarItensFinalizados(leilao.id);
+      } catch (erroAviso) {
+        // O fechamento ja foi gravado: falha no aviso nao pode virar erro
+        this.logger.error(`Falha ao avisar itens finalizados: ${(erroAviso as Error).message}`);
+      }
+    }
+    return atualizado;
+  }
+
+  // Envia "item-finalizado" (com o nome do ganhador) para cada item do leilao
+  private async avisarItensFinalizados(leilaoId: string): Promise<void> {
+    const itens = await this.prisma.auctionItem.findMany({
+      where: { leilaoId },
+      include: { vencedor: { select: { nome: true } } },
+    });
+    for (const item of itens) {
+      this.lancesGateway.emitirItemFinalizado({
+        itemId: item.id,
+        status: item.status === ItemStatus.SOLD ? 'SOLD' : 'UNSOLD',
+        vencedorId: item.vencedorId,
+        vencedorNome: item.vencedor?.nome ?? null,
+        valorFinal: decimalParaString(item.lanceAtual),
+      });
     }
   }
 

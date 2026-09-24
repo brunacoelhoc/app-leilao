@@ -21,6 +21,9 @@ export class IndicadoresAuctionResposta {
   @ApiProperty({ example: 2, description: 'Itens ainda disponiveis, sem decisao de venda (status AVAILABLE)' })
   itensDisponiveis: number;
 
+  @ApiProperty({ example: { vendidos: 50, disponiveis: 30, naoVendidos: 20 }, description: 'Percentual de cada situacao sobre o total de itens (0 a 100), para a barra de andamento' })
+  percentuais: { vendidos: number; disponiveis: number; naoVendidos: number };
+
   @ApiProperty({ example: '620.00', description: 'Soma do lance vencedor dos itens vendidos (Decimal(12,2) como string)' })
   arrecadadoTotal: string;
 }

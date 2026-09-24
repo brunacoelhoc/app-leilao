@@ -1,0 +1,436 @@
+/* ---- Cabecalho com a foto da peca ao fundo ---- */
+.capa-leilao {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  background: radial-gradient(circle at 20% 20%, #6b1420, #2f1c11);
+  box-shadow: var(--sombra-media);
+  border-bottom: 3px solid var(--cor-dourado-suave);
+}
+
+.capa-leilao.com-foto::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--foto);
+  background-size: cover;
+  background-position: center;
+  filter: blur(2px) saturate(0.9);
+  transform: scale(1.05);
+  animation: aparecer 0.6s ease;
+}
+
+.capa-leilao::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, rgba(47, 28, 17, 0.94) 25%, rgba(47, 28, 17, 0.55));
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+.capa-conteudo {
+  position: relative;
+  z-index: 1;
+  padding: 2rem 1.75rem;
+  color: #f7efe0;
+  max-width: 46rem;
+}
+
+.capa-conteudo h1 {
+  margin: 0.6rem 0 0.4rem;
+  color: #fff;
+}
+
+.periodo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+  font-style: italic;
+  color: #e6d6b5;
+}
+
+.resumo {
+  margin: 0.9rem 0 0;
+  font-family: var(--fonte-elegante);
+  font-size: 1.25rem;
+  line-height: 1.4;
+  color: #f7efe0;
+}
+
+/* ---- Indicadores ---- */
+.painel {
+  margin-bottom: 1.75rem;
+  padding: 1.1rem;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  box-shadow: var(--sombra-suave);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.85rem;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem 1.1rem 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-top: 3px solid var(--cor-dourado-suave);
+  border-radius: 10px;
+  background: var(--cor-superficie-alt);
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sombra-media);
+}
+
+.tile .ornamento {
+  position: absolute;
+  right: 0.7rem;
+  top: 0.3rem;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--cor-dourado-suave);
+  opacity: 0.22;
+}
+
+.rotulo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.valor {
+  font-family: var(--fonte-texto);
+  font-size: clamp(1.5rem, 3vw, 1.9rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--cor-texto);
+  font-variant-numeric: lining-nums tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.legenda {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--cor-texto-suave);
+}
+
+.tile.ouro {
+  background: linear-gradient(135deg, var(--cor-marrom), var(--cor-bordo-escuro));
+  border-color: var(--cor-dourado-suave);
+  border-top-color: #e5c885;
+}
+
+.tile.ouro .rotulo,
+.tile.ouro .legenda {
+  color: #e6d6b5;
+}
+
+.tile.ouro .valor {
+  color: #f1d894;
+}
+
+.tile.ouro .ornamento {
+  color: #f1d894;
+  opacity: 0.25;
+}
+
+/* Barra de andamento do leilao */
+.andamento {
+  margin-top: 1rem;
+}
+
+.barra {
+  display: flex;
+  height: 0.7rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--cor-borda);
+}
+
+.barra span {
+  height: 100%;
+}
+
+.f-vendida,
+.p-vendida {
+  background: var(--cor-sucesso);
+}
+
+.f-disponivel,
+.p-disponivel {
+  background: var(--cor-dourado-suave);
+}
+
+.f-nao,
+.p-nao {
+  background: var(--cor-texto-suave);
+}
+
+.legenda-barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.legenda-barra i {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+}
+
+/* ---- Pecas + chat ---- */
+.grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 24rem);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.grade h2 {
+  margin-top: 0;
+}
+
+.lateral {
+  position: sticky;
+  top: 1rem;
+}
+
+.peca {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  box-shadow: var(--sombra-suave);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  animation: subir 0.35s ease backwards;
+}
+
+.peca:hover {
+  box-shadow: var(--sombra-media);
+  transform: translateY(-2px);
+}
+
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.foto {
+  position: relative;
+  flex: 0 0 11rem;
+  min-height: 12rem;
+  border-radius: 8px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 30%, #6b1420, #2f1c11);
+}
+
+.foto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.peca:hover .foto img {
+  transform: scale(1.06);
+}
+
+.sem-foto {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+  color: var(--cor-dourado-suave);
+}
+
+.detalhes {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.linha-titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.linha-titulo h3 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  line-height: 1.2;
+  color: var(--cor-marrom-escuro);
+}
+
+:root[data-tema='escuro'] .linha-titulo h3,
+:root[data-tema='alto-contraste'] .linha-titulo h3 {
+  color: var(--cor-texto);
+}
+
+.descricao {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--cor-texto);
+}
+
+/* Ficha tecnica: linhas simples "rotulo  valor", sem caixas */
+.ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.3rem;
+  margin: 0.1rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.ficha div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ficha dt {
+  flex: 0 0 6.2rem; /* rotulos com a mesma largura: os valores ficam alinhados */
+  font-size: 0.78rem;
+  color: var(--cor-texto-suave);
+}
+
+.ficha dd {
+  margin: 0;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.procedencia {
+  margin: 0;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--cor-texto-suave);
+}
+
+.rodape-peca {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--cor-borda);
+}
+
+.preco {
+  display: flex;
+  flex-direction: column;
+}
+
+.preco small {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.preco strong {
+  /* Inter: numeros de mesma altura e bem abertos (o Playfair mistura alturas e cansa a leitura) */
+  font-family: var(--fonte-texto);
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--cor-texto);
+}
+
+.preco span {
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.acao {
+  border: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.55rem 1.2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, var(--cor-dourado), var(--cor-marrom));
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.acao:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 980px) {
+  .grade {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lateral {
+    position: static;
+  }
+}
+
+@media (max-width: 560px) {
+  .peca {
+    flex-direction: column;
+  }
+  .foto {
+    flex-basis: auto;
+    min-height: 13rem;
+  }
+  .capa-conteudo {
+    padding: 1.4rem 1.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peca,
+  .capa-leilao::before {
+    animation: none;
+  }
+}

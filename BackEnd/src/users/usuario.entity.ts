@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Role, User } from '../generated/prisma/client';
 
 // Formato de usuario seguro para respostas da API. A senha nunca sai daqui,
@@ -26,6 +26,18 @@ export class UsuarioEntity implements User {
 
   @ApiProperty()
   ativo: boolean;
+
+  @ApiPropertyOptional({ nullable: true, example: '11987654321', description: 'So numeros, com DDD' })
+  telefone: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Rua das Antiguidades, 120 - Sao Paulo/SP' })
+  endereco: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: '12345678900', description: 'So numeros (11 digitos)' })
+  cpf: string | null;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Identificador de um avatar pronto, ou uma imagem pequena em base64' })
+  avatarUrl: string | null;
 
   @ApiProperty()
   criadoEm: Date;

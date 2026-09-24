@@ -428,6 +428,25 @@ describe('Auctions (e2e)', () => {
     });
   });
 
+  describe('transicoesPermitidas (a maquina de estados vem do backend)', () => {
+    it('cada leilao informa para quais estados pode ir agora', async () => {
+      const criado = await rota('post', '', tokenSeller).send(
+        dadosValidos('Auctions E2E Transicoes'),
+      );
+      expect(criado.body.transicoesPermitidas).toEqual(['SCHEDULED', 'CANCELED']);
+      expect(criado.body.editavel).toBe(true); // rascunho pode ser editado
+
+      const agendado = await rota('patch', `/${criado.body.id}/status`, tokenSeller)
+        .send({ status: 'SCHEDULED' })
+        .expect(200);
+      expect(agendado.body.transicoesPermitidas).toEqual(['OPEN', 'CANCELED']);
+      expect(agendado.body.editavel).toBe(false); // depois de agendado, nao
+
+      const lido = await rota('get', `/${criado.body.id}`).expect(200);
+      expect(lido.body.transicoesPermitidas).toEqual(['OPEN', 'CANCELED']);
+    });
+  });
+
   describe('GET /auctions/:id/indicadores', () => {
     it('id malformado -> 400 em portugues', async () => {
       const resposta = await rota('get', '/nao-e-um-uuid/indicadores').expect(

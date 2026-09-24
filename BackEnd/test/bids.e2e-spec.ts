@@ -372,7 +372,7 @@ describe('Bids (e2e)', () => {
   });
 
   describe('vendedor nao pode dar lance no proprio item', () => {
-    it('promovendo o vendedor a BIDDER (efeito imediato, sem novo login) -> 409 ao tentar dar lance no proprio item', async () => {
+    it('promovendo o vendedor a BIDDER (efeito imediato, sem novo login) -> 403 ao tentar dar lance no proprio item', async () => {
       await prisma.user.update({
         where: { email: emailSeller },
         data: { papel: 'BIDDER' },
@@ -384,7 +384,7 @@ describe('Bids (e2e)', () => {
         .set('Authorization', `Bearer ${tokenSeller}`)
         .send({ valor: 1000 });
 
-      expect(resposta.status).toBe(409);
+      expect(resposta.status).toBe(403);
       expect(resposta.body.mensagem).toContain('proprio item');
     });
   });

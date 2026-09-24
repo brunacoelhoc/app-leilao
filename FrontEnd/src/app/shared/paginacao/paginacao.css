@@ -1,0 +1,71 @@
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.tamanho {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.tamanho select {
+  padding: 0.25rem 0.4rem;
+}
+
+.total {
+  margin-left: 0.5rem;
+  font-style: italic;
+}
+
+/* flex-wrap: em telas de 320-360px os numeros quebram de linha em vez de estourar a tela */
+.paginas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.paginas button {
+  min-width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.paginas button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cor-dourado) 15%, transparent);
+}
+
+.paginas button.atual {
+  background: linear-gradient(135deg, var(--cor-dourado), var(--cor-marrom));
+  color: #fff;
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.paginas button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.seta {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.reticencias {
+  color: var(--cor-texto-suave);
+}

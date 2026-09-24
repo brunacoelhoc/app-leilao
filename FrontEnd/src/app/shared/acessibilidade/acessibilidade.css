@@ -1,0 +1,194 @@
+:host {
+  display: block;
+}
+
+.pular-conteudo {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--cor-bordo);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  z-index: 200;
+  border-radius: 0 0 6px 0;
+}
+
+.pular-conteudo:focus {
+  left: 0;
+}
+
+.vlibras-oculto {
+  display: none;
+}
+
+.painel-a11y {
+  position: fixed;
+  top: 3rem;
+  right: 1rem;
+  z-index: 300;
+  width: min(360px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 4rem);
+  overflow-y: auto;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  border: 2px solid var(--cor-dourado);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  box-shadow: var(--sombra-media);
+}
+
+.painel-a11y header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.painel-a11y h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.painel-a11y .fechar {
+  background: transparent;
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0.2rem 0.55rem;
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+}
+
+.grupo label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.interruptor {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.interruptor input {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.15rem;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: var(--cor-bordo);
+}
+
+.interruptor small {
+  display: block;
+  font-weight: 400;
+  color: var(--cor-texto-suave);
+  font-size: 0.78rem;
+}
+
+.aviso-lgpd {
+  font-size: 0.78rem;
+  color: var(--cor-texto-suave);
+  margin: 0 0 0.75rem;
+}
+
+.restaurar {
+  width: 100%;
+  background: transparent;
+  color: var(--cor-texto);
+  border: 1.5px solid var(--cor-dourado);
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.restaurar:hover {
+  background: color-mix(in srgb, var(--cor-dourado) 15%, transparent);
+}
+
+.barra-a11y {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end; /* botoes no canto direito */
+  gap: 0.5rem;
+  /* o menu lateral e fixo e ocupa o canto esquerdo: a barra comeca depois dele */
+  margin-left: var(--largura-sidebar);
+  transition: margin-left 0.25s ease;
+  padding: 0.35rem 1.25rem;
+  background: var(--cor-marrom-escuro);
+  color: #f0e6d6;
+  font-size: 0.78rem;
+}
+
+.rotulo {
+  opacity: 0.8;
+  margin-right: 0.25rem;
+}
+
+.barra-a11y button {
+  background: transparent;
+  border: 1px solid rgba(240, 230, 214, 0.4);
+  color: #f0e6d6;
+  border-radius: 4px;
+  padding: 0.15rem 0.55rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.barra-a11y button:hover,
+.barra-a11y button[aria-expanded='true'],
+.barra-a11y button[aria-pressed='true'] {
+  background: var(--cor-dourado);
+  border-color: var(--cor-dourado);
+  color: var(--cor-marrom-escuro);
+}
+
+@media (max-width: 900px) {
+  /* no celular o menu vira "gaveta": a barra ocupa a largura toda, com
+     espaco a esquerda para o botao hamburguer */
+  .barra-a11y {
+    margin-left: 0;
+    /* altura minima: o botao hamburguer (fixo, 2.6rem) fica alinhado dentro da barra */
+    min-height: 3.2rem;
+    padding-left: 3.7rem;
+  }
+}
+
+.atalhos {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+}
+
+.atalhos div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px dashed var(--cor-borda);
+}
+
+.atalhos dt,
+.atalhos dd {
+  margin: 0;
+}
+
+.atalhos kbd {
+  font-family: inherit;
+  font-weight: 600;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 4px;
+  background: var(--cor-superficie-alt);
+  white-space: nowrap;
+}

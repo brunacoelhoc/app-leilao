@@ -18,7 +18,8 @@
     "test:cov": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --inspect-brk --experimental-vm-modules -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand",
-    "seed": "node -r ./prisma/corrigir-resolucao-js.js prisma/seed.ts"
+    "seed": "node -r ./prisma/corrigir-resolucao-js.js prisma/seed.ts",
+    "fotos:demo": "node -r ./prisma/corrigir-resolucao-js.js prisma/anexar-fotos-demo.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^12.0.1",
@@ -29,8 +30,10 @@
     "@nestjs/mapped-types": "^12.0.0",
     "@nestjs/passport": "^12.0.0",
     "@nestjs/platform-express": "^12.0.1",
+    "@nestjs/platform-socket.io": "^12.1.0",
     "@nestjs/swagger": "^12.0.1",
     "@nestjs/throttler": "^6.7.0",
+    "@nestjs/websockets": "^12.1.0",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "axios": "^1.20.0",
@@ -44,7 +47,8 @@
     "passport-jwt": "^4.0.1",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
@@ -64,6 +68,7 @@
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
     "prisma": "7.10.0",
+    "socket.io-client": "^4.8.3",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
     "ts-jest": "^29.4.0",

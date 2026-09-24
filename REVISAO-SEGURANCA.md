@@ -100,6 +100,29 @@ como "resolvidos" — decisão de escopo, não descuido.
    exatamente `7.10.0`. Risco real percebido: baixo (código morto para este
    projeto); registrado aqui em vez de ignorado silenciosamente.
 
+## Adendo (2026-09-23): infraestrutura adicionada depois desta revisão
+
+O Docker Compose, a paginação/indicadores e o CI foram implementados **depois**
+desta revisão (2026-09-22). Registro aqui o que muda em termos de superfície
+de segurança — nenhum achado novo, só confirmação:
+
+- **Docker Compose:** o Postgres do container só expõe a porta `5433` no
+  **host local** (`docker-compose.yml`), nunca pra fora da máquina. A senha
+  vem do `.env` da raiz (`POSTGRES_PASSWORD`), gitignored, igual ao padrão já
+  usado no `BackEnd/.env`. A API dentro do container roda com as mesmas
+  variáveis/guards já revisados acima — nada muda no código da aplicação.
+- **CI (GitHub Actions):** o workflow (`.github/workflows/ci.yml`) tem
+  `JWT_SECRET`/`API_KEY` **fixos e falsos** escritos direto no YAML — só para
+  satisfazer a validação de `.env` (`src/config/variaveis-ambiente.ts`) num
+  banco descartável criado e destruído a cada execução. Não são segredos reais
+  e não dão acesso a nada fora daquela execução isolada; documentado aqui para
+  quem revisar o workflow não confundir com uma credencial vazada.
+- **Paginação e indicadores do domínio:** os endpoints novos (`?pagina=`,
+  `?limite=`, `GET /auctions/:id/indicadores`) são todos de **leitura**,
+  seguindo exatamente o mesmo padrão de autorização das rotas de listagem já
+  revisadas (públicas, sem dado sensível de usuário exposto) — nenhuma
+  autorização nova foi introduzida.
+
 ## Metodologia
 
 Verificação manual, categoria por categoria (autenticação, autorização,

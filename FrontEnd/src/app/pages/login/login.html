@@ -1,0 +1,58 @@
+<div class="pagina-central">
+  <app-voltar class="voltar-canto" [claro]="true" />
+  <div class="cartao cartao-auth">
+    <h1>Entrar / Login em Belle Époque</h1>
+    <p class="subtitulo">Sua próxima peça rara está a um lance de distância.</p>
+
+    <form (ngSubmit)="entrar()">
+      <div class="campo">
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email" [(ngModel)]="email" required autocomplete="email" />
+      </div>
+
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <div class="campo-senha">
+          <input
+            id="senha"
+            name="senha"
+            [type]="mostrarSenha() ? 'text' : 'password'"
+            [(ngModel)]="senha"
+            required
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="olho"
+            (click)="mostrarSenha.set(!mostrarSenha())"
+            [attr.aria-label]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+          >
+            {{ mostrarSenha() ? '🙈' : '👁' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="campo-checkbox">
+        <input id="termos" name="termos" type="checkbox" [(ngModel)]="aceiteTermos" required />
+        <label for="termos">Li e aceito os termos de uso e a política de privacidade.</label>
+      </div>
+
+      <button type="button" class="link-esqueci" (click)="recuperando.set(true)">Esqueci minha senha</button>
+
+      @if (erro()) {
+        <p class="erro">{{ erro() }}</p>
+      }
+
+      <div class="botoes">
+        <button type="submit" class="primario" [disabled]="carregando()">
+          {{ carregando() ? 'Entrando...' : 'Entrar' }}
+        </button>
+        <a routerLink="/registrar" class="secundario botao-como-link">Cadastrar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+@if (recuperando()) {
+  <app-recuperar-senha [emailInicial]="email" (fechar)="recuperando.set(false)" />
+}

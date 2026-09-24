@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 720" preserveAspectRatio="xMaxYMid slice">
+  <defs>
+    <linearGradient id="parede" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4d0f19"/><stop offset="1" stop-color="#2a0a10"/></linearGradient>
+    <linearGradient id="ouro" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0d68f"/><stop offset="0.5" stop-color="#b8924b"/><stop offset="1" stop-color="#e2c27a"/></linearGradient>
+    <linearGradient id="madeira" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2317"/><stop offset="1" stop-color="#22140c"/></linearGradient>
+    <linearGradient id="ceu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3c98b"/><stop offset="0.6" stop-color="#e79e6c"/><stop offset="1" stop-color="#b96a55"/></linearGradient>
+    <linearGradient id="ceu2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9db8c9"/><stop offset="1" stop-color="#e6dcc0"/></linearGradient>
+    <radialGradient id="spot" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffe2a0" stop-opacity="0.55"/><stop offset="1" stop-color="#ffe2a0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="brilho" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffe9b0" stop-opacity="0.95"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient>
+    <pattern id="damasco" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M40 8 C48 22 60 24 60 36 C60 48 48 52 40 72 C32 52 20 48 20 36 C20 24 32 22 40 8 Z" fill="#6b1420" opacity="0.35"/>
+      <circle cx="0" cy="0" r="4" fill="#6b1420" opacity="0.3"/><circle cx="80" cy="0" r="4" fill="#6b1420" opacity="0.3"/>
+      <circle cx="0" cy="80" r="4" fill="#6b1420" opacity="0.3"/><circle cx="80" cy="80" r="4" fill="#6b1420" opacity="0.3"/>
+    </pattern>
+  </defs>
+
+  <!-- parede -->
+  <rect width="1600" height="720" fill="url(#parede)"/>
+  <rect width="1600" height="560" fill="url(#damasco)"/>
+
+  <!-- rodape de madeira (boiserie) -->
+  <rect y="560" width="1600" height="160" fill="url(#madeira)"/>
+  <rect y="556" width="1600" height="8" fill="url(#ouro)"/>
+  <g fill="none" stroke="#b8924b" stroke-width="2" opacity="0.7">
+    <rect x="620" y="588" width="150" height="100"/><rect x="800" y="588" width="150" height="100"/>
+    <rect x="980" y="588" width="150" height="100"/><rect x="1160" y="588" width="150" height="100"/>
+    <rect x="1340" y="588" width="150" height="100"/><rect x="1520" y="588" width="150" height="100"/>
+    <rect x="440" y="588" width="150" height="100"/><rect x="260" y="588" width="150" height="100"/>
+  </g>
+
+  <!-- friso dourado no teto -->
+  <rect width="1600" height="16" fill="url(#ouro)"/>
+  <rect y="22" width="1600" height="3" fill="#b8924b" opacity="0.6"/>
+
+  <!-- lustre -->
+  <g transform="translate(600 0)">
+    <line x1="0" y1="16" x2="0" y2="70" stroke="#b8924b" stroke-width="3"/>
+    <ellipse cx="0" cy="96" rx="52" ry="12" fill="url(#ouro)"/>
+    <path d="M-52 96 Q-84 118 -92 150 M52 96 Q84 118 92 150 M-26 100 Q-40 122 -42 150 M26 100 Q40 122 42 150" fill="none" stroke="#d9b56a" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#fff4d0">
+      <rect x="-96" y="132" width="8" height="18"/><rect x="88" y="132" width="8" height="18"/>
+      <rect x="-46" y="132" width="8" height="18"/><rect x="38" y="132" width="8" height="18"/>
+      <rect x="-4" y="104" width="8" height="18"/>
+    </g>
+    <g fill="url(#brilho)"><circle cx="-92" cy="126" r="34"/><circle cx="92" cy="126" r="34"/><circle cx="-42" cy="126" r="30"/><circle cx="42" cy="126" r="30"/><circle cx="0" cy="98" r="28"/></g>
+  </g>
+
+  <!-- luz de galeria sobre os quadros -->
+  <ellipse cx="950" cy="270" rx="300" ry="230" fill="url(#spot)"/>
+  <ellipse cx="1290" cy="290" rx="160" ry="200" fill="url(#spot)"/>
+  <ellipse cx="1500" cy="290" rx="130" ry="170" fill="url(#spot)"/>
+
+  <!-- quadro 1: paisagem ao entardecer -->
+  <g transform="translate(760 150)">
+    <rect x="-16" y="-16" width="392" height="272" fill="url(#ouro)"/>
+    <rect x="-6" y="-6" width="372" height="252" fill="#3a2317"/>
+    <rect width="360" height="240" fill="url(#ceu)"/>
+    <circle cx="240" cy="120" r="34" fill="#fff0c0" opacity="0.95"/>
+    <path d="M0 150 Q70 96 140 140 T280 130 T360 150 V240 H0 Z" fill="#7a5a4a"/>
+    <path d="M0 178 Q90 140 180 172 T360 168 V240 H0 Z" fill="#4e4030"/>
+    <rect y="196" width="360" height="44" fill="#8a7a6a" opacity="0.55"/>
+    <path d="M190 200 h70 M170 214 h110" stroke="#fff0c0" stroke-width="2" opacity="0.6"/>
+    <path d="M40 176 v-38 M40 150 l-14 -12 M40 158 l14 -14" stroke="#2c1e14" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="40" cy="132" r="18" fill="#2f3b22"/><circle cx="26" cy="140" r="12" fill="#2f3b22"/><circle cx="54" cy="140" r="12" fill="#2f3b22"/>
+  </g>
+  <rect x="912" y="392" width="56" height="12" rx="2" fill="url(#ouro)" opacity="0.95"/>
+
+  <!-- quadro 2: retrato oval -->
+  <g transform="translate(1290 290)">
+    <ellipse rx="86" ry="112" fill="url(#ouro)"/>
+    <ellipse rx="74" ry="100" fill="#3a2317"/>
+    <ellipse rx="66" ry="92" fill="#8f6b4c"/>
+    <path d="M-52 92 Q-48 44 0 40 Q48 44 52 92 Z" fill="#2a1a2e"/>
+    <path d="M-16 40 Q0 62 16 40 Z" fill="#efe1c4"/>
+    <ellipse cx="0" cy="-2" rx="24" ry="30" fill="#e2c39d"/>
+    <path d="M-26 -8 Q-28 -46 0 -46 Q28 -46 26 -8 Q18 -30 0 -30 Q-18 -30 -26 -8 Z" fill="#3d2a1a"/>
+    <circle cx="-9" cy="-2" r="2.4" fill="#2f1c11"/><circle cx="9" cy="-2" r="2.4" fill="#2f1c11"/>
+    <path d="M-6 16 Q0 20 6 16" stroke="#8a3f3a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- quadro 3: natureza-morta -->
+  <g transform="translate(1440 190)">
+    <rect x="-14" y="-14" width="148" height="208" fill="url(#ouro)"/>
+    <rect x="-5" y="-5" width="130" height="190" fill="#2a1a12"/>
+    <rect width="120" height="180" fill="#40382a"/>
+    <path d="M40 176 Q30 130 46 108 L74 108 Q90 130 80 176 Z" fill="#3c7f8a"/>
+    <path d="M52 108 V92 M68 108 V92" stroke="#3c7f8a" stroke-width="6"/>
+    <g stroke="#2c3a1e" stroke-width="2" fill="none"><path d="M60 92 Q50 60 34 46 M60 92 Q60 56 60 36 M60 92 Q72 60 88 46"/></g>
+    <circle cx="34" cy="44" r="12" fill="#c25b62"/><circle cx="60" cy="34" r="13" fill="#e8b84a"/><circle cx="88" cy="44" r="12" fill="#d98a5a"/>
+    <circle cx="34" cy="44" r="4" fill="#8d2f3a"/><circle cx="60" cy="34" r="4.5" fill="#a9822c"/><circle cx="88" cy="44" r="4" fill="#a9532a"/>
+    <rect y="172" width="120" height="8" fill="#6b4a2a"/>
+  </g>
+
+  <!-- banco de veludo -->
+  <g transform="translate(900 520)">
+    <rect x="-150" y="0" width="300" height="42" rx="8" fill="#5c1420"/>
+    <rect x="-150" y="0" width="300" height="10" rx="5" fill="#7a2230"/>
+    <rect x="-140" y="42" width="10" height="20" fill="url(#ouro)"/><rect x="130" y="42" width="10" height="20" fill="url(#ouro)"/>
+  </g>
+</svg>

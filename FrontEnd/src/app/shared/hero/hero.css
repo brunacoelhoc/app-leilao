@@ -1,0 +1,107 @@
+:host {
+  display: block;
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(26rem, 62vh, 36rem);
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  color: #fff8ea;
+  /* Cena de galeria (public/hero-galeria.svg): parede bordô, quadros dourados e lustre */
+  background: url('/hero-galeria.svg') right center / cover no-repeat, #2a0a10;
+}
+
+/* Overlay escuro: garante a leitura do texto sobre as molduras */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(20, 8, 6, 0.9) 0%, rgba(20, 8, 6, 0.6) 50%, rgba(20, 8, 6, 0.15) 100%);
+}
+
+.conteudo {
+  max-width: 44rem;
+  padding: 3rem 2rem 3rem clamp(1.5rem, 6vw, 4rem);
+}
+
+.sobretitulo {
+  margin: 0 0 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: #e6c883;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-family: var(--fonte-titulo);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.12;
+  color: #fff8ea;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+}
+
+.texto {
+  margin: 0 0 1.75rem;
+  max-width: 36rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #f0e3cc;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.7rem;
+  border: 1px solid #e6c883;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #2a1810;
+  background: linear-gradient(135deg, #e6c883, #c5a059 55%, #a9822c);
+  box-shadow: 0 6px 20px rgba(197, 160, 89, 0.35);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.cta:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 28px rgba(197, 160, 89, 0.5);
+}
+
+.cta:focus-visible {
+  outline: 3px solid #fff8ea;
+  outline-offset: 3px;
+}
+
+.seta {
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+
+.cta:hover .seta {
+  transform: translateX(6px);
+}
+
+@media (max-width: 700px) {
+  .overlay {
+    background: rgba(20, 8, 6, 0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta,
+  .seta {
+    transition: none;
+  }
+  .cta:hover {
+    transform: none;
+  }
+}

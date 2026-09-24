@@ -25,6 +25,18 @@ export class AuctionResposta {
   @ApiProperty({ description: 'Id do usuario SELLER dono do leilao' })
   vendedorId: string;
 
+  @ApiProperty({ enum: AuctionStatus, isArray: true, description: 'Estados para os quais o leilao PODE ir agora (regra da maquina de estados, decidida pelo backend)' })
+  transicoesPermitidas: AuctionStatus[];
+
+  @ApiProperty({ description: 'true quando o leilao ainda pode ser editado, ter itens alterados e ser removido (so em rascunho). Decidido pelo backend' })
+  editavel: boolean;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Id da foto de capa (so na listagem); baixe em GET /documents/:id/download' })
+  capaDocumentoId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Caminho de uma obra do acervo para usar quando nao ha foto enviada (escolhida pelo servidor)' })
+  capaPadrao?: string;
+
   @ApiProperty()
   criadoEm: Date;
 

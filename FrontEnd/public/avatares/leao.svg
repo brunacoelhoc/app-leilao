@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Leão">
+  <defs>
+    <radialGradient id="fundo" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#f7ecd0"/><stop offset="1" stop-color="#e2cf9f"/></radialGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#fundo)" stroke="#a9822c" stroke-width="2"/>
+  <circle cx="50" cy="50" r="44" fill="none" stroke="#a9822c" stroke-width="0.6" stroke-dasharray="1.5 2"/>
+  <g stroke="#4a2e1f" stroke-width="1.2" stroke-linejoin="round">
+    <!-- juba: circulos em volta do rosto -->
+    <g fill="#b8863b">
+      <circle cx="50" cy="20" r="9"/><circle cx="66" cy="26" r="9"/><circle cx="76" cy="40" r="9"/>
+      <circle cx="76" cy="58" r="9"/><circle cx="66" cy="73" r="9"/><circle cx="50" cy="79" r="9"/>
+      <circle cx="34" cy="73" r="9"/><circle cx="24" cy="58" r="9"/><circle cx="24" cy="40" r="9"/><circle cx="34" cy="26" r="9"/>
+    </g>
+    <circle cx="50" cy="50" r="27" fill="#9a6a2a"/>
+    <!-- orelhas -->
+    <circle cx="33" cy="33" r="6" fill="#e4be7a"/><circle cx="67" cy="33" r="6" fill="#e4be7a"/>
+    <circle cx="33" cy="33" r="2.6" fill="#c98f6a" stroke="none"/><circle cx="67" cy="33" r="2.6" fill="#c98f6a" stroke="none"/>
+    <!-- rosto -->
+    <ellipse cx="50" cy="52" rx="19" ry="21" fill="#e9c988"/>
+    <ellipse cx="50" cy="61" rx="11" ry="9" fill="#f4dfae"/>
+    <!-- olhos -->
+    <path d="M36 46 Q41 42 46 46" fill="none"/><path d="M54 46 Q59 42 64 46" fill="none"/>
+    <circle cx="41" cy="47" r="2" fill="#2f1c11" stroke="none"/><circle cx="59" cy="47" r="2" fill="#2f1c11" stroke="none"/>
+    <path d="M44 41 L47 44 M56 41 L53 44" fill="none" stroke-width="1"/>
+    <!-- nariz e boca -->
+    <path d="M45 55 H55 L50 61 Z" fill="#6b3a2a"/>
+    <path d="M50 61 V65 M50 65 Q45 70 41 66 M50 65 Q55 70 59 66" fill="none"/>
+    <g stroke-width="0.6"><path d="M38 62 H30 M38 65 L31 68 M62 62 H70 M62 65 L69 68" fill="none"/></g>
+  </g>
+</svg>

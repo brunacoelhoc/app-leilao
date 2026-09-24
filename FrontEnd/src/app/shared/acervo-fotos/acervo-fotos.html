@@ -1,0 +1,23 @@
+<details class="acervo" (toggle)="aoAbrir()">
+  <summary>Ou escolha uma obra do acervo</summary>
+  <p class="nota">Obras de domínio público, para usar como foto do item.</p>
+  <div class="grade" role="listbox" aria-label="Obras do acervo">
+    @for (obra of obras(); track obra.arquivo) {
+      <button
+        type="button"
+        class="obra"
+        [class.escolhida]="selecionada() === obra.arquivo"
+        role="option"
+        [attr.aria-selected]="selecionada() === obra.arquivo"
+        [attr.aria-label]="obra.titulo + ', ' + obra.autor"
+        [title]="obra.titulo + ' — ' + obra.autor + ' (' + obra.ano + ')'"
+        (click)="usar(obra)"
+      >
+        <img [src]="'acervo/' + obra.arquivo" alt="" loading="lazy" />
+      </button>
+    }
+  </div>
+  @if (erro()) {
+    <p class="erro" role="alert">{{ erro() }}</p>
+  }
+</details>

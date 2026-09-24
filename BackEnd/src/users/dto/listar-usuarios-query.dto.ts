@@ -1,4 +1,4 @@
-import { IsBooleanString, IsEnum, IsOptional } from 'class-validator';
+import { IsBooleanString, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { PaginacaoQueryDto } from '../../common/dto/paginacao-query.dto';
 import { Role } from '../../generated/prisma/client';
 
@@ -14,4 +14,10 @@ export class ListarUsuariosQueryDto extends PaginacaoQueryDto {
   @IsOptional()
   @IsBooleanString({ message: 'ativo deve ser "true" ou "false"' })
   ativo?: string;
+
+  // Trecho do nome ou do e-mail (sem diferenciar maiusculas)
+  @IsOptional()
+  @MaxLength(100, { message: 'busca deve ter no maximo 100 caracteres' })
+  @IsString({ message: 'busca deve ser um texto' })
+  busca?: string;
 }

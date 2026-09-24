@@ -4,12 +4,16 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configurarAplicacao } from './configurar-aplicacao';
 import { configurarSwagger } from './configurar-swagger';
+import { CorsIoAdapter } from './realtime/cors-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Prefixo /api, Helmet, compressao, CORS e validacao dos DTOs
   configurarAplicacao(app);
+
+  // WebSocket (Socket.io) com o mesmo CORS da API
+  app.useWebSocketAdapter(new CorsIoAdapter(app));
 
   // Documentacao interativa em /docs (fora do prefixo /api, de proposito)
   configurarSwagger(app);

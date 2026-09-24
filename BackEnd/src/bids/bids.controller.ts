@@ -16,6 +16,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiSecurity,
@@ -37,6 +38,8 @@ import { ErroResposta } from '../common/dto/erro-resposta.dto';
 import type { RespostaPaginada } from '../common/utils/paginacao.util';
 import { BidsService } from './bids.service';
 import { BidResposta } from './dto/bid-resposta.dto';
+import { MinhasPecasResposta } from './dto/minha-peca-resposta.dto';
+import { MinhaSituacaoResposta } from './dto/minha-situacao-resposta.dto';
 import { CriarBidDto } from './dto/criar-bid.dto';
 
 // Id de um item real do seed (leilao OPEN, ja recebeu lance) -- so de exemplo
@@ -56,11 +59,11 @@ export class BidsController {
 
   @Post('auction-items/:itemId/bids')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('BIDDER')
+  @Roles('BIDDER', 'SELLER')
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('jwt')
   @ApiOperation({
-    summary: 'Da um lance em um item (BIDDER)',
+    summary: 'Da um lance em um item (BIDDER ou SELLER; nunca no proprio leilao)',
     description:
       'Concorrencia protegida por lock pessimista (SELECT ... FOR UPDATE): ' +
       'dois lances simultaneos no mesmo item nunca "vencem" juntos.',
@@ -69,7 +72,7 @@ export class BidsController {
   @ApiCreatedResponse({ description: 'Lance aceito (valor/lanceAnterior sempre como string)', type: BidResposta, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'Corpo invalido (valor negativo ou com mais de 2 casas decimais)', type: ErroResposta })
   @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e BIDDER, ou e o vendedor deste item', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'ADMIN nao participa de leiloes; e o dono do leilao nunca da lance no proprio item', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
   @ApiConflictResponse({ description: 'Leilao fechado/fora do periodo, item indisponivel, ou valor abaixo do minimo aceito', type: ErroResposta })
   darLance(
@@ -96,16 +99,48 @@ export class BidsController {
     return this.bidsService.listarPorItem(itemId, query);
   }
 
+  // Posso dar lance nesta peca? (qualquer usuario logado pergunta; a resposta depende do papel)
+  @Get('auction-items/:itemId/bids/minha-situacao')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt')
+  @ApiOperation({
+    summary: 'O que o usuario logado pode fazer nesta peca: pode dar lance? se nao, por que? sou dono? venci?',
+    description: 'As mesmas regras de POST /auction-items/{itemId}/bids, respondidas antes. A tela so exibe o resultado.',
+  })
+  @ApiParam(PARAM_ITEM_ID)
+  @ApiOkResponse({ type: MinhaSituacaoResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
+  minhaSituacao(
+    @Param('itemId', ParseUuidPipePt) itemId: string,
+    @CurrentUser() usuario: UsuarioAutenticado,
+  ): Promise<MinhaSituacaoResposta> {
+    return this.bidsService.minhaSituacao(itemId, usuario);
+  }
+
+  // Um card por PECA disputada, com a situacao (arrematei / liderando / superado / perdi)
+  @Get('bids/minhas-pecas')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('BIDDER', 'SELLER')
+  @ApiBearerAuth('jwt')
+  @ApiOperation({ summary: 'Resumo por peca dos lances do usuario logado (BIDDER ou SELLER)' })
+  @ApiOkResponse({ type: MinhasPecasResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'ADMIN nao participa de leiloes', type: ErroResposta })
+  minhasPecas(@CurrentUser() usuario: UsuarioAutenticado): Promise<MinhasPecasResposta> {
+    return this.bidsService.minhasPecas(usuario.id);
+  }
+
   // Consulta por relacionamento: os lances do proprio usuario logado
   @Get('bids/meus')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('BIDDER')
+  @Roles('BIDDER', 'SELLER')
   @ApiBearerAuth('jwt')
-  @ApiOperation({ summary: 'Lista os lances do proprio usuario logado, paginado, do mais recente pro mais antigo (BIDDER)' })
+  @ApiOperation({ summary: 'Lista os lances do proprio usuario logado, paginado, do mais recente pro mais antigo (BIDDER ou SELLER)' })
   @ApiPaginacaoQuery()
   @ApiRespostaPaginada(BidResposta)
   @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e BIDDER', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'ADMIN nao participa de leiloes', type: ErroResposta })
   listarMeusLances(
     @CurrentUser() usuario: UsuarioAutenticado,
     @Query() query: PaginacaoQueryDto,

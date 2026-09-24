@@ -1,0 +1,281 @@
+<div class="pagina">
+  <app-voltar class="voltar-topo" />
+  <header class="banner">
+    <p class="sobre">Painel administrativo</p>
+    <h1>Administração</h1>
+    <p class="boas-vindas">Gerencie categorias, usuários e leilões da plataforma.</p>
+  </header>
+
+  <div class="abas" role="tablist" aria-label="Áreas da administração">
+    <button type="button" role="tab" class="aba" [class.ativa]="aba() === 'categorias'" [attr.aria-selected]="aba() === 'categorias'" (click)="trocarAba('categorias')">
+      <span class="aba-icone" aria-hidden="true">❖</span>
+      <span class="aba-texto"><strong>Categorias</strong><small>Organize o acervo</small></span>
+      @if (resumo(); as r) { <span class="aba-numero">{{ r.categorias }}</span> }
+    </button>
+    <button type="button" role="tab" class="aba" [class.ativa]="aba() === 'usuarios'" [attr.aria-selected]="aba() === 'usuarios'" (click)="trocarAba('usuarios')">
+      <span class="aba-icone" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </span>
+      <span class="aba-texto"><strong>Usuários</strong><small>Quem participa</small></span>
+      @if (resumo(); as r) { <span class="aba-numero">{{ r.usuarios }}</span> }
+    </button>
+    <button type="button" role="tab" class="aba" [class.ativa]="aba() === 'leiloes'" [attr.aria-selected]="aba() === 'leiloes'" (click)="trocarAba('leiloes')">
+      <span class="aba-icone" aria-hidden="true">⚖</span>
+      <span class="aba-texto"><strong>Leilões</strong><small>Status e moderação</small></span>
+      @if (resumo(); as r) { <span class="aba-numero">{{ r.leiloes }}</span> }
+    </button>
+  </div>
+
+  <!-- ============ CATEGORIAS ============ -->
+  @if (aba() === 'categorias') {
+    <div class="topo-secao">
+      <div>
+        <h2>Categorias</h2>
+        <p class="ajuda">Agrupam as peças do catálogo.</p>
+      </div>
+      <button type="button" class="acao-principal" (click)="novaCategoria()">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Nova categoria
+      </button>
+    </div>
+
+    @if (categorias(); as c) {
+      @if (c.dados.length === 0) {
+        <div class="vazio"><div class="medalhao" aria-hidden="true">❖</div><p>Nenhuma categoria cadastrada.</p></div>
+      } @else {
+        <div class="grade-cards">
+          @for (cat of c.dados; track cat.id) {
+            <article class="card-adm">
+              <div class="cat-topo">
+                <span class="monograma" aria-hidden="true">{{ inicial(cat.nome) }}</span>
+                <div>
+                  <h3>{{ cat.nome }}</h3>
+                  <p class="meta">Criada em {{ cat.criadoEm | date: 'dd/MM/yyyy' }}</p>
+                </div>
+              </div>
+              <p class="descricao">{{ cat.descricao || 'Sem descrição.' }}</p>
+              <div class="acoes-card">
+                <button type="button" class="secundario pequeno" (click)="editarCategoria(cat)">Editar</button>
+                <button type="button" class="perigo pequeno" (click)="removerCategoria(cat)">Remover</button>
+              </div>
+            </article>
+          }
+        </div>
+        <app-paginacao
+          [pagina]="c.pagina"
+          [totalPaginas]="c.totalPaginas"
+          [total]="c.total"
+          [limite]="limiteCategorias"
+          (mudarPagina)="mudarPaginaCategorias($event)"
+          (mudarLimite)="mudarLimiteCategorias($event)"
+        />
+      }
+    }
+  }
+
+  <!-- ============ USUARIOS ============ -->
+  @if (aba() === 'usuarios') {
+    <div class="topo-secao">
+      <div>
+        <h2>Usuários</h2>
+        <p class="ajuda">Dados sensíveis ficam ocultos. Clique em um usuário para ver os detalhes.</p>
+      </div>
+    </div>
+
+    <section class="barra-filtros" aria-label="Filtros">
+      <div class="busca">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label for="busca-usuarios" class="so-leitor">Buscar por nome ou e-mail</label>
+        <input id="busca-usuarios" type="search" placeholder="Buscar por nome ou e-mail…" maxlength="100" [ngModel]="buscaUsuarios" (ngModelChange)="aoDigitarBuscaUsuarios($event)" />
+      </div>
+      <div class="chips" role="group" aria-label="Filtrar por papel">
+        @for (p of papeis; track p.valor) {
+          <button type="button" class="chip" [class.ativo]="filtroPapel === p.valor" [attr.aria-pressed]="filtroPapel === p.valor" (click)="escolherPapel(p.valor)">{{ p.rotulo }}</button>
+        }
+      </div>
+    </section>
+
+    @if (usuarios(); as u) {
+      @if (u.dados.length === 0) {
+        <div class="vazio"><div class="medalhao" aria-hidden="true">♛</div><p>Nenhum usuário encontrado.</p></div>
+      } @else {
+        <div class="grade-cards">
+          @for (usuario of u.dados; track usuario.id) {
+            <article class="card-adm usuario clicavel" tabindex="0" (click)="abrirUsuario(usuario)" (keydown.enter)="abrirUsuario(usuario)" [class.inativo]="!usuario.ativo">
+              <div class="capa-usuario">
+                <span class="anel"><app-avatar [avatarUrl]="usuario.avatarUrl" [nome]="usuario.nome" [tamanho]="84" /></span>
+                <span class="selo" [class.status-open]="usuario.ativo" [class.status-canceled]="!usuario.ativo">{{ usuario.ativo ? 'Ativo' : 'Desativado' }}</span>
+              </div>
+              <div class="identidade">
+                <h3 [title]="usuario.nome">{{ usuario.nome }}</h3>
+                <span [class]="'papel p-' + usuario.papel.toLowerCase()">{{ usuario.papel === 'ADMIN' ? 'Administrador' : usuario.papel === 'SELLER' ? 'Vendedor' : 'Licitante' }}</span>
+              </div>
+              <ul class="contatos">
+                <li>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                  <span class="sr">E-mail:</span>{{ usuario.email }}
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>
+                  <span class="sr">Telefone:</span>{{ usuario.telefone || '—' }}
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M14 9h4M14 13h4M6 17c.6-1.6 1.7-2.4 3-2.4s2.4.8 3 2.4"/></svg>
+                  <span class="sr">CPF:</span>{{ usuario.cpf || '—' }}
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span class="sr">Endereço:</span>{{ usuario.endereco || '—' }}
+                </li>
+              </ul>
+              <footer class="rodape-usuario">
+                <span>Membro desde {{ usuario.criadoEm | date: 'MMM/yyyy' }}</span>
+                <small class="dica">Ver detalhes <i aria-hidden="true">→</i></small>
+              </footer>
+            </article>
+          }
+        </div>
+        <app-paginacao
+          [pagina]="u.pagina"
+          [totalPaginas]="u.totalPaginas"
+          [total]="u.total"
+          [limite]="limiteUsuarios"
+          (mudarPagina)="mudarPaginaUsuarios($event)"
+          (mudarLimite)="mudarLimiteUsuarios($event)"
+        />
+      }
+    }
+  }
+
+  <!-- ============ LEILOES ============ -->
+  @if (aba() === 'leiloes') {
+    <div class="topo-secao">
+      <div>
+        <h2>Leilões</h2>
+        <p class="ajuda">Acompanhe, mude o status ou remova rascunhos.</p>
+      </div>
+    </div>
+
+    <section class="barra-filtros" aria-label="Filtros">
+      <div class="busca">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label for="busca-leiloes-admin" class="so-leitor">Buscar por título ou descrição</label>
+        <input
+          id="busca-leiloes-admin"
+          type="search"
+          placeholder="Buscar por título ou descrição…"
+          maxlength="100"
+          [ngModel]="buscaLeiloes"
+          (ngModelChange)="aoDigitarBuscaLeiloes($event)"
+        />
+      </div>
+      <div class="chips" role="group" aria-label="Filtrar por status">
+        <button type="button" class="chip" [class.ativo]="!statusLeiloes" [attr.aria-pressed]="!statusLeiloes" (click)="escolherStatusLeiloes('')">Todos</button>
+        @for (opcao of statusOpcoes; track opcao[0]) {
+          <button type="button" class="chip" [class.ativo]="statusLeiloes === opcao[0]" [attr.aria-pressed]="statusLeiloes === opcao[0]" (click)="escolherStatusLeiloes(opcao[0])">{{ opcao[1] }}</button>
+        }
+      </div>
+    </section>
+
+    @if (leiloes(); as l) {
+      @if (l.dados.length === 0) {
+        <div class="vazio">
+          <div class="medalhao" aria-hidden="true">⚖</div>
+          <p>{{ buscaLeiloes.trim() || statusLeiloes ? 'Nenhum leilão encontrado para esses filtros.' : 'Nenhum leilão cadastrado.' }}</p>
+          @if (buscaLeiloes || statusLeiloes) {
+            <button type="button" class="secundario" (click)="limparFiltrosLeiloes()">Limpar filtros</button>
+          }
+        </div>
+      } @else {
+        <div class="grade-cards">
+          @for (leilao of l.dados; track leilao.id) {
+            <article class="card-adm com-foto">
+              <a [routerLink]="['/leiloes', leilao.id]" class="foto" [attr.aria-label]="'Abrir ' + leilao.titulo">
+                @if (capaDe(leilao); as capa) {
+                  <img [src]="capa" alt="" loading="lazy" />
+                } @else {
+                  <span class="sem-foto" aria-hidden="true">⚜</span>
+                }
+                <span [class]="'selo-foto st-' + leilao.status.toLowerCase()">{{ ROTULO_STATUS_LEILAO[leilao.status] }}</span>
+              </a>
+              <div class="corpo">
+                <h3>{{ leilao.titulo }}</h3>
+                <p class="descricao">{{ leilao.descricao || 'Sem descrição.' }}</p>
+                <p class="periodo">{{ leilao.dataInicio | date: 'dd/MM/yy' }} — {{ leilao.dataFim | date: 'dd/MM/yy' }}</p>
+              </div>
+              <div class="acoes-card">
+                <a [routerLink]="['/leiloes', leilao.id]" class="secundario pequeno botao-como-link">Abrir</a>
+                @for (proximo of leilao.transicoesPermitidas; track proximo) {
+                  <button type="button" class="pequeno" [class.perigo]="proximo === 'CANCELED'" [class.secundario]="proximo !== 'CANCELED'" (click)="mudarStatusLeilao(leilao, proximo)">
+                    {{ ROTULO_STATUS_LEILAO[proximo] }}
+                  </button>
+                }
+                @if (leilao.editavel) {
+                  <a [routerLink]="['/vendedor/leiloes', leilao.id]" class="secundario pequeno botao-como-link">Editar</a>
+                  <button type="button" class="perigo pequeno" (click)="removerLeilao(leilao)">Remover</button>
+                }
+              </div>
+            </article>
+          }
+        </div>
+        <app-paginacao
+          [pagina]="l.pagina"
+          [totalPaginas]="l.totalPaginas"
+          [total]="l.total"
+          [limite]="limiteLeiloes"
+          (mudarPagina)="mudarPaginaLeiloes($event)"
+          (mudarLimite)="mudarLimiteLeiloes($event)"
+        />
+      }
+    }
+  }
+</div>
+
+<!-- ============ MODAL: categoria ============ -->
+@if (modalCategoria()) {
+  <app-modal [titulo]="categoriaEditandoId ? 'Editar categoria' : 'Nova categoria'" [largura]="480" (fechar)="modalCategoria.set(false)">
+    <form (ngSubmit)="salvarCategoria()">
+      <div class="campo">
+        <label for="catNome">Nome</label>
+        <input id="catNome" name="catNome" type="text" [(ngModel)]="catNome" required />
+      </div>
+      <div class="campo">
+        <label for="catDescricao">Descrição (simples e objetiva)</label>
+        <textarea id="catDescricao" name="catDescricao" rows="3" [(ngModel)]="catDescricao" required></textarea>
+      </div>
+      @if (erroCategoria()) {
+        <p class="erro">{{ erroCategoria() }}</p>
+      }
+      <div class="botoes">
+        <button type="submit" class="primario" [disabled]="salvandoCategoria() || !catNome.trim() || !catDescricao.trim()">
+          {{ salvandoCategoria() ? 'Salvando...' : 'Salvar' }}
+        </button>
+        <button type="button" class="secundario" (click)="modalCategoria.set(false)">Cancelar</button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+<!-- ============ MODAL: usuario ============ -->
+@if (usuarioAberto(); as ua) {
+  <app-modal [titulo]="ua.nome" [largura]="520" (fechar)="usuarioAberto.set(null)">
+    <div class="detalhe-usuario">
+      <app-avatar [avatarUrl]="ua.avatarUrl" [nome]="ua.nome" [tamanho]="90" />
+      <span class="selo" [class.status-open]="ua.ativo" [class.status-canceled]="!ua.ativo">{{ ua.ativo ? 'Ativo' : 'Desativado' }}</span>
+    </div>
+    <dl class="dados-completos">
+      <div><dt>Papel</dt><dd>{{ ua.papel }}</dd></div>
+      <div><dt>E-mail</dt><dd>{{ ua.email }}</dd></div>
+      <div><dt>Telefone</dt><dd>{{ formatarTelefone(ua.telefone) || '—' }}</dd></div>
+      <div><dt>CPF</dt><dd>{{ formatarCpf(ua.cpf) || '—' }}</dd></div>
+      <div><dt>Endereço</dt><dd>{{ ua.endereco || '—' }}</dd></div>
+      <div><dt>Cadastro</dt><dd>{{ ua.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+    </dl>
+    <div class="botoes">
+      <button type="button" [class.perigo]="ua.ativo" [class.primario]="!ua.ativo" (click)="alternarAtivo(ua)">
+        {{ ua.ativo ? 'Desativar usuário' : 'Reativar usuário' }}
+      </button>
+      <button type="button" class="secundario" (click)="usuarioAberto.set(null)">Fechar</button>
+    </div>
+  </app-modal>
+}

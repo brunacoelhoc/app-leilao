@@ -1,0 +1,189 @@
+<div class="pagina">
+  <app-voltar class="voltar-topo" />
+
+  <header class="banner">
+    <p class="sobre">Minha coleção</p>
+    <h1>Meus lances</h1>
+    <p class="boas-vindas">As peças que você arrematou e as que ainda estão em disputa.</p>
+  </header>
+
+  @if (erro()) {
+    <p class="erro">{{ erro() }}</p>
+  }
+
+  @if (carregando()) {
+    <div class="grade" aria-busy="true">
+      @for (n of [1, 2, 3]; track n) {
+        <div class="esqueleto" aria-hidden="true"></div>
+      }
+    </div>
+  } @else if (pecas().length === 0) {
+    <div class="vazio">
+      <div class="medalhao" aria-hidden="true">⚖</div>
+      <h2>Você ainda não deu nenhum lance</h2>
+      <p class="texto-elegante">Cada coleção começa com um primeiro lance.</p>
+      <a routerLink="/" fragment="todos-leiloes" class="botao-ouro">Explorar leilões</a>
+    </div>
+  } @else {
+    <section class="resumo" aria-label="Resumo da coleção">
+      <div class="numero ouro"><strong>{{ resumo().adquiridas }}</strong><span>Peças adquiridas</span></div>
+      <div class="numero"><strong>{{ moeda(resumo().totalInvestido) }}</strong><span>Total investido</span></div>
+      <div class="numero"><strong>{{ resumo().liderando }}</strong><span>Liderando agora</span></div>
+      <div class="numero"><strong>{{ resumo().disputadas }}</strong><span>Peças disputadas</span></div>
+    </section>
+
+    <div class="chips" role="tablist" aria-label="Filtrar minhas peças">
+      <button type="button" role="tab" class="chip" [class.ativo]="aba() === 'adquiridas'" [attr.aria-selected]="aba() === 'adquiridas'" (click)="aba.set('adquiridas')">Adquiridas <span class="qtd">{{ resumo().adquiridas }}</span></button>
+      <button type="button" role="tab" class="chip" [class.ativo]="aba() === 'disputa'" [attr.aria-selected]="aba() === 'disputa'" (click)="aba.set('disputa')">Em disputa <span class="qtd">{{ resumo().emDisputa }}</span></button>
+      <button type="button" role="tab" class="chip" [class.ativo]="aba() === 'encerradas'" [attr.aria-selected]="aba() === 'encerradas'" (click)="aba.set('encerradas')">Encerradas <span class="qtd">{{ resumo().encerradas }}</span></button>
+      <button type="button" role="tab" class="chip" [class.ativo]="aba() === 'todas'" [attr.aria-selected]="aba() === 'todas'" (click)="aba.set('todas')">Todas <span class="qtd">{{ resumo().disputadas }}</span></button>
+    </div>
+
+    @if (visiveis().length === 0) {
+      <p class="sem-itens">Nada por aqui ainda.</p>
+    } @else {
+      <div class="grade">
+        @for (p of visiveis(); track p.item.id; let i = $index) {
+          <article class="peca" [class]="'peca sit-' + p.situacaoDoLance.toLowerCase()" [style.animation-delay.ms]="i * 60">
+            <div class="foto">
+              @if (capaDe(p); as capa) {
+                <img [src]="capa" alt="" loading="lazy" />
+              } @else {
+                <span class="sem-foto" aria-hidden="true">⚜</span>
+              }
+              <span class="faixa">
+                @if (p.situacaoDoLance === 'VENCEDOR') { <i aria-hidden="true">🏆</i> }
+                {{ ROTULOS[p.situacaoDoLance] }}
+              </span>
+              @if (p.situacaoDoLance === 'VENCEDOR') {
+                <span class="selo-ouro" aria-hidden="true">✦</span>
+              }
+            </div>
+
+            <div class="corpo">
+              <p class="leilao">{{ p.item.leilaoTitulo }}</p>
+              <h3>{{ p.item.titulo }}</h3>
+              @if (p.item.descricao) {
+                <p class="descricao">{{ p.item.descricao }}</p>
+              }
+
+              <dl class="dados">
+                @if (p.situacaoDoLance === 'VENCEDOR') {
+                  <div class="destaque">
+                    <dt>Valor da aquisição</dt>
+                    <dd>{{ moeda(p.valorAquisicao) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Adquirida em</dt>
+                    <dd>{{ p.adquiridoEm | date: "dd/MM/yyyy 'às' HH:mm" }}</dd>
+                  </div>
+                } @else {
+                  <div class="destaque">
+                    <dt>Meu maior lance</dt>
+                    <dd>{{ moeda(p.meuMaiorLance) }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ emAberto(p) ? 'Lance atual' : 'Lance vencedor' }}</dt>
+                    <dd>{{ moeda(p.item.lanceAtual ?? p.meuMaiorLance) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Último lance meu</dt>
+                    <dd>{{ p.ultimoLanceEm | date: "dd/MM/yyyy 'às' HH:mm" }}</dd>
+                  </div>
+                }
+              </dl>
+
+              <div class="acoes">
+                <button type="button" class="detalhes" (click)="abrirDetalhes(p)">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Ver detalhes
+                </button>
+                @if (emAberto(p)) {
+                  <a [routerLink]="['/itens', p.item.id]" class="ir">{{ p.situacaoDoLance === 'SUPERADO' ? 'Cobrir lance' : 'Acompanhar' }} →</a>
+                } @else {
+                  <a [routerLink]="['/itens', p.item.id]" class="ir">Ver peça →</a>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- ============ Pop-up: sobre a obra ============ -->
+@if (aberta(); as p) {
+  <app-modal [titulo]="p.item.titulo" [largura]="760" (fechar)="fechar()">
+    <div class="sobre-obra">
+      <div class="capa-obra">
+        @if (capaDe(p); as capa) {
+          <img [src]="capa" [alt]="'Foto de ' + p.item.titulo" />
+        }
+        @if (p.situacaoDoLance === 'VENCEDOR') {
+          <span class="tag-adquirida">🏆 Sua aquisição · {{ moeda(p.valorAquisicao) }}</span>
+        }
+      </div>
+
+      @if (carregandoHistoria()) {
+        <p class="carregando-h">Consultando a história da obra…</p>
+      } @else if (historia(); as h) {
+        @if (h.obra; as o) {
+          <div class="identidade-obra">
+            <span class="etiqueta">{{ o.movimento }}</span>
+            <h3>{{ o.titulo }}</h3>
+            <p class="autor">{{ o.artista }} · {{ o.ano }}</p>
+            <p class="local">📍 Original: {{ o.localAtual }}</p>
+          </div>
+
+          <div class="aviso-autenticidade" role="note">
+            <strong>Original ou cópia?</strong>
+            <span>{{ o.autenticidadeTexto }}</span>
+          </div>
+
+          <section>
+            <h4>A história da obra</h4>
+            <p>{{ o.historia }}</p>
+          </section>
+
+          <section>
+            <h4>O mundo naquele momento</h4>
+            <div class="contextos">
+              <div class="ctx"><span class="ctx-titulo">Histórico</span><p>{{ o.contextoHistorico }}</p></div>
+              <div class="ctx"><span class="ctx-titulo">Filosófico</span><p>{{ o.contextoFilosofico }}</p></div>
+              <div class="ctx"><span class="ctx-titulo">Social</span><p>{{ o.contextoSocial }}</p></div>
+            </div>
+          </section>
+
+          <aside class="curiosidade">
+            <strong>Você sabia?</strong>
+            <p>{{ o.curiosidade }}</p>
+          </aside>
+        } @else {
+          <div class="identidade-obra">
+            <span class="etiqueta">Ficha da peça</span>
+            <h3>{{ h.titulo }}</h3>
+          </div>
+          @if (h.descricao) {
+            <section><h4>Sobre a peça</h4><p>{{ h.descricao }}</p></section>
+          }
+          <dl class="ficha-peca">
+            @if (h.autor) { <div><dt>Autor</dt><dd>{{ h.autor }}</dd></div> }
+            @if (h.periodo) { <div><dt>Época</dt><dd>{{ h.periodo }}</dd></div> }
+            @if (h.tecnica) { <div><dt>Técnica</dt><dd>{{ h.tecnica }}</dd></div> }
+            @if (h.dimensoes) { <div><dt>Dimensões</dt><dd>{{ h.dimensoes }}</dd></div> }
+            @if (h.conservacao) { <div><dt>Conservação</dt><dd>{{ h.conservacao }}</dd></div> }
+            @if (h.procedencia) { <div><dt>Procedência</dt><dd>{{ h.procedencia }}</dd></div> }
+          </dl>
+        }
+      } @else {
+        <p class="carregando-h">Não foi possível carregar a história desta peça agora.</p>
+      }
+
+      <div class="rodape-modal">
+        <a [routerLink]="['/itens', p.item.id]" class="botao-ouro" (click)="fechar()">Abrir a página da peça</a>
+        <button type="button" class="botao-borda" (click)="fechar()">Fechar</button>
+      </div>
+    </div>
+  </app-modal>
+}

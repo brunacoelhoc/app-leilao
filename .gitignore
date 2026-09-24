@@ -3,6 +3,8 @@
 /CONTEXTO.md
 /GLOSSARIO.md
 /INSUMOS-APRESENTACAO.md
+/HISTORIA-DA-APLICACAO.md
+/RESPONSABILIDADES.md
 
 # Senha do Postgres usada pelo docker-compose.yml (nunca vai pro Git)
 /.env
