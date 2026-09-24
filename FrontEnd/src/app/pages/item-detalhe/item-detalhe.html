@@ -55,7 +55,7 @@
             <p>Lote arrematado por <strong>{{ it.vencedorNome }}</strong> por <strong>{{ moeda(it.lanceAtual) }}</strong>.</p>
           </div>
         } @else if (situacao() === 'NAO_VENDIDO') {
-          <div class="encerrado" role="status"><strong>Lote encerrado sem lances.</strong> Não foi vendido.</div>
+          <div class="encerrado" role="status"><strong>Lote encerrado sem vencedor.</strong> Não foi vendido.</div>
         } @else if (situacao() === 'CANCELADO') {
           <div class="encerrado" role="status"><strong>Leilão cancelado.</strong></div>
         } @else if (situacao() === 'ENCERRANDO') {
