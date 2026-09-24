@@ -18,6 +18,8 @@ export interface LanceNovoEvento {
   lanceAtual: string;
   lanceMinimo: string; // menor lance aceito a partir de agora
   lancesSugeridos: string[]; // atalhos prontos para o campo de lance (calculados aqui)
+  // Prazo do leilao depois deste lance (o anti-sniping pode ter estendido): a tela so acompanha
+  prazo: { dataFim: string; segundosParaMudanca: number; prorrogacoes: number; estendido: boolean };
 }
 
 // Dados enviados quando o item e finalizado (vendido ou sem lances)

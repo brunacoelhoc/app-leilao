@@ -41,7 +41,7 @@ interface FiltrosListagem extends ParametrosPaginacao {
 type ItemComContagem = AuctionItem & {
   _count?: { lances: number };
   vencedor?: { nome: string } | null;
-  leilao?: { status: AuctionStatus; dataInicio: Date; dataFim: Date };
+  leilao?: { status: AuctionStatus; dataInicio: Date; dataFim: Date; prorrogacoes: number };
   documentos?: { id: string }[]; // so na listagem: a primeira foto vira a capa
 };
 
@@ -71,6 +71,7 @@ function paraResposta(itemComRelacoes: ItemComContagem): AuctionItemResposta {
     capaPadrao: capaPadrao(item.id),
     situacao,
     segundosParaMudanca,
+    prorrogacoes: leilao?.prorrogacoes ?? 0,
     lanceMinimo: lanceMinimo.toString(),
     vencedorNome: vencedor?.nome ?? null,
     capaDocumentoId: documentos?.[0]?.id ?? null,
@@ -199,7 +200,7 @@ export class AuctionItemsService {
           _count: { select: { lances: true } },
           vencedor: { select: { nome: true } },
           leilao: {
-            select: { status: true, dataInicio: true, dataFim: true },
+            select: { status: true, dataInicio: true, dataFim: true, prorrogacoes: true },
           },
           documentos: {
             where: { tipo: DocumentType.PHOTO },
@@ -221,7 +222,7 @@ export class AuctionItemsService {
           _count: { select: { lances: true } },
           vencedor: { select: { nome: true } },
           leilao: {
-            select: { status: true, dataInicio: true, dataFim: true },
+            select: { status: true, dataInicio: true, dataFim: true, prorrogacoes: true },
           },
         },
     });

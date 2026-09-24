@@ -48,6 +48,9 @@ export class AuctionItemResposta {
   })
   segundosParaMudanca: number | null;
 
+  @ApiProperty({ example: 0, description: 'Quantas vezes o prazo do leilao foi estendido pelo anti-sniping (lance nos ultimos 2 minutos)' })
+  prorrogacoes: number;
+
   @ApiPropertyOptional({ nullable: true, example: 'Vincent van Gogh', description: 'Ficha tecnica: Artista, autor ou fabricante' })
   autor: string | null;
 

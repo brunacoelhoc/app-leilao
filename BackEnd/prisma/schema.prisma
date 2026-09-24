@@ -90,7 +90,8 @@ model Auction {
   descricao    String? // opcional
   status       AuctionStatus          @default(DRAFT) // todo leilao nasce como rascunho
   dataInicio   DateTime // quando o leilao abre para lances
-  dataFim      DateTime // quando o leilao fecha
+  dataFim      DateTime // quando o leilao fecha (pode ser estendido pelo anti-sniping)
+  prorrogacoes Int          @default(0) // quantas vezes o prazo foi estendido por lances nos ultimos minutos
   vendedorId   String // guarda o id do usuario dono do leilao (chave estrangeira)
   vendedor     User                   @relation(fields: [vendedorId], references: [id], onDelete: Restrict) // liga ao usuario
   criadoEm     DateTime               @default(now())

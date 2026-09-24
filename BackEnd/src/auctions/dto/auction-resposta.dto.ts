@@ -22,6 +22,9 @@ export class AuctionResposta {
   @ApiProperty()
   dataFim: Date;
 
+  @ApiProperty({ example: 0, description: 'Quantas vezes o prazo foi estendido pelo anti-sniping (lance nos ultimos 2 minutos)' })
+  prorrogacoes: number;
+
   @ApiProperty({ description: 'Id do usuario SELLER dono do leilao' })
   vendedorId: string;
 

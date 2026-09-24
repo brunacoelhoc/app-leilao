@@ -12,6 +12,7 @@ import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticad
 import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { decimalParaString } from '../common/utils/decimal.util';
 import { nomeAbreviado } from '../common/utils/nome.util';
+import { calcularNovoFim, segundosAteOFim } from '../auctions/anti-sniping';
 import { camposFaltandoNoPerfil, mensagemPerfilIncompleto } from '../common/utils/perfil-completo.util';
 import {
   calcularPaginacao,
@@ -84,7 +85,7 @@ export class BidsService {
       if (faltando.length > 0) {
         throw new ForbiddenException(mensagemPerfilIncompleto(faltando, 'dar lances'));
       }
-      const { bid, proximoMinimo, incremento } = await this.prisma.$transaction(async (tx) => {
+      const { bid, proximoMinimo, incremento, prazo } = await this.prisma.$transaction(async (tx) => {
         // Trava a linha do item ate o fim desta transacao: um lance
         // concorrente no MESMO item espera aqui, e so ve o valor ja atualizado
         // (evita dois lances "vencerem" ao mesmo tempo)
@@ -155,8 +156,24 @@ export class BidsService {
             idRequisicao: contexto.idRequisicao,
           },
         });
+        // 🔎 Anti-sniping: lance nos ultimos 2 minutos estende o prazo (na MESMA transacao do lance,
+        // entao ou os dois acontecem ou nenhum)
+        const novoFim = calcularNovoFim(leilao.dataFim, agora);
+        let dataFim = leilao.dataFim;
+        let prorrogacoes = leilao.prorrogacoes;
+        if (novoFim) {
+          const estendido = await tx.auction.update({
+            where: { id: leilao.id },
+            data: { dataFim: novoFim, prorrogacoes: { increment: 1 } },
+            select: { dataFim: true, prorrogacoes: true },
+          });
+          dataFim = estendido.dataFim;
+          prorrogacoes = estendido.prorrogacoes;
+        }
+
         // Depois deste lance, o proximo precisa superar ele + incremento
         return {
+          prazo: { dataFim, prorrogacoes, estendido: novoFim !== null, leilaoId: leilao.id },
           bid: criado,
           proximoMinimo: new Prisma.Decimal(dto.valor).plus(
             item.incrementoMinimo,
@@ -179,6 +196,21 @@ export class BidsService {
         ...contexto,
       });
 
+      // O prazo foi estendido pelo anti-sniping: fica na auditoria (o historico do leilao mostra por que ele durou mais)
+      if (prazo.estendido) {
+        await this.auditLogService.registrar({
+          usuarioId: usuario.id,
+          papel: usuario.papel as Role,
+          acao: 'LEILAO_PRAZO_ESTENDIDO',
+          entidade: 'Auction',
+          entidadeId: prazo.leilaoId,
+          resultado: AuditResult.SUCCESS,
+          motivo: `Lance nos ultimos minutos: novo fim ${prazo.dataFim.toISOString()} (prorrogacao ${prazo.prorrogacoes})`,
+          statusHttp: 201,
+          ...contexto,
+        });
+      }
+
       // Tempo real: avisa quem esta vendo este item (nao pode derrubar o lance se falhar)
       const resposta = paraResposta(bid);
       try {
@@ -192,6 +224,12 @@ export class BidsService {
           lanceAtual: resposta.valor,
           lanceMinimo: proximoMinimo.toString(),
           lancesSugeridos: lancesSugeridosDe(proximoMinimo, incremento),
+          prazo: {
+            dataFim: prazo.dataFim.toISOString(),
+            segundosParaMudanca: segundosAteOFim(prazo.dataFim),
+            prorrogacoes: prazo.prorrogacoes,
+            estendido: prazo.estendido,
+          },
         });
       } catch (erroAviso) {
         // O lance ja foi gravado: falha no aviso nao pode virar erro para quem lancou

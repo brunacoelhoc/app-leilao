@@ -105,7 +105,7 @@ describe('Tempo real (e2e)', () => {
   });
 
   it('avisa a sala do item quando chega um lance novo', async () => {
-    const chegou = esperar<{ lance: { valor: string; itemId: string }; licitanteNome: string; lanceAtual: string; lanceMinimo: string }>(
+    const chegou = esperar<{ lance: { valor: string; itemId: string }; licitanteNome: string; lanceAtual: string; lanceMinimo: string; prazo: { estendido: boolean; segundosParaMudanca: number } }>(
       socket,
       'lance-novo',
     );
@@ -115,6 +115,9 @@ describe('Tempo real (e2e)', () => {
     expect(evento.lance.itemId).toBe(itemId);
     expect(evento.lanceAtual).toBe('150');
     expect(evento.lanceMinimo).toBe('160');
+    // O evento leva o prazo do leilao (anti-sniping): sem extensao, aqui, porque ainda ha bastante tempo
+    expect(evento.prazo.estendido).toBe(false);
+    expect(evento.prazo.segundosParaMudanca).toBeGreaterThan(600);
     // Publico: so o primeiro nome e a inicial do segundo
     expect(evento.licitanteNome).toBe('Maria G.');
   });
