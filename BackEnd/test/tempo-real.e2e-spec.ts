@@ -5,6 +5,8 @@ import { io, type Socket } from 'socket.io-client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { CepService } from './../src/cep/cep.service';
+import { cepFalso } from './cep-falso';
 import { EncerramentoAutomaticoService } from './../src/auctions/encerramento-automatico.service';
 import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
@@ -52,7 +54,12 @@ describe('Tempo real (e2e)', () => {
     request(app.getHttpServer())[metodo](url).set('X-API-KEY', chave).set('Authorization', `Bearer ${token}`);
 
   beforeAll(async () => {
-    const modulo = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const modulo = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+      .overrideProvider(CepService)
+      .useValue(cepFalso)
+      .compile();
     app = modulo.createNestApplication();
     configurarAplicacao(app);
     app.useWebSocketAdapter(new CorsIoAdapter(app));

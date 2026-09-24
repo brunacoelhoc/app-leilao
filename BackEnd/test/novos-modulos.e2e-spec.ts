@@ -5,6 +5,8 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { CepService } from './../src/cep/cep.service';
+import { cepFalso } from './cep-falso';
 import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { PERFIL_COMPLETO } from './perfil-teste';
@@ -54,7 +56,12 @@ describe('Novos modulos (e2e)', () => {
   }
 
   beforeAll(async () => {
-    const modulo = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const modulo = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+      .overrideProvider(CepService)
+      .useValue(cepFalso)
+      .compile();
     app = modulo.createNestApplication();
     configurarAplicacao(app);
     await app.init();

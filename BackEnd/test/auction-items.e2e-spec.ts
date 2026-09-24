@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { CepService } from './../src/cep/cep.service';
+import { cepFalso } from './cep-falso';
 import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { PERFIL_COMPLETO } from './perfil-teste';
@@ -39,7 +41,10 @@ describe('AuctionItems (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(CepService)
+      .useValue(cepFalso)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     configurarAplicacao(app);
@@ -144,7 +149,7 @@ describe('AuctionItems (e2e)', () => {
       expect(resposta.status).toBe(400);
     });
 
-    it('cep com formato valido (8 digitos) mas inexistente -> 400 (integracao real com o ViaCEP)', async () => {
+    it('cep com formato valido (8 digitos) mas inexistente -> 400', async () => {
       const resposta = await rota('post', '', tokenSeller).send({
         ...dadosValidos('Items E2E Cep Inexistente'),
         cep: '00000000',

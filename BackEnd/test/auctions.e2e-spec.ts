@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { CepService } from './../src/cep/cep.service';
+import { cepFalso } from './cep-falso';
 import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { PERFIL_COMPLETO } from './perfil-teste';
@@ -42,7 +44,10 @@ describe('Auctions (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(CepService)
+      .useValue(cepFalso)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     configurarAplicacao(app);
