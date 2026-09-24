@@ -62,7 +62,10 @@ A matriz completa de permissões por endpoint está em [`BackEnd/README.md`](Bac
 - **Indicadores por leilão**: total de lances, maior lance, itens vendidos e total arrecadado (`Decimal`, nunca `Float`).
 - **Ranking de vendedores** por valor arrecadado e **destaques** na página inicial.
 - **Ficha técnica** das obras (autor, época, técnica, dimensões, conservação, procedência) e **visualizador 3D** da peça.
-- **Upload** de fotos e documentos, com download autenticado.
+- **Upload** de fotos e documentos, com **validação do conteúdo real do arquivo** (assinatura JPEG/PNG/PDF, não só o tipo informado). Fotos são servidas por URL pública com cache; documentos exigem a chave da API.
+- **Modo comprador / vendedor**: a mesma conta alterna com um clique (vendedor cria leilões, comprador dá lances; ninguém dá lance no próprio leilão). Lance e criação de leilão exigem **perfil completo** (telefone, CPF válido e endereço).
+- **Recuperação de senha** com código de 6 dígitos de uso único (só o hash fica no banco), validade de 15 minutos, limite de 5 tentativas e de 3 pedidos por hora. O envio do e-mail é **simulado** (o código aparece no log do servidor).
+- **Aceite dos termos de uso** gravado no banco no cadastro e **privacidade** dos nomes (histórico de lances, tempo real e chat mostram "Maria S.").
 - **Integração externa real**: consulta de CEP via ViaCEP.
 - **Auditoria** de ações sensíveis em tabelas append-only (triggers impedem `UPDATE`/`DELETE`).
 - **Paginação e filtros** em todas as listagens.
@@ -137,9 +140,12 @@ A coleção do Thunder Client está em [`BackEnd/thunder-tests/`](BackEnd/thunde
 ## Segurança
 
 - Autenticação **JWT (HS256 fixado)** e chave **`X-API-KEY`** exigida em toda rota de negócio.
-- **Rate limiting** global e específico em login/cadastro; **Helmet** e **CORS** restrito ao front.
+- **Rate limiting** global e específico em login, cadastro e recuperação de senha; **Helmet** e **CORS** restrito ao front.
 - Validação estrita de DTOs (`whitelist` + `forbidNonWhitelisted`); dados pessoais **mascarados** nas listagens.
 - Senhas com hash; segredos apenas em `.env` (fora do Git); validação de variáveis na inicialização.
+- **Upload seguro**: tipo declarado **e** assinatura real do arquivo (magic bytes), nome aleatório, tamanho limitado, hash SHA-256.
+- **Recuperação de senha** sem revelar se o e-mail existe, com código só em hash, validade, tentativas limitadas e uso único.
+- **Sessão enxuta no navegador**: só o token fica salvo; os dados pessoais vêm do servidor a cada abertura e nunca ficam no `localStorage`.
 - Revisão de segurança documentada em [`REVISAO-SEGURANCA.md`](REVISAO-SEGURANCA.md).
 
 ## Estrutura do repositório

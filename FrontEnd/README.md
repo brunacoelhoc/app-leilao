@@ -31,10 +31,10 @@ igual à origem do front.
 | `/` | todos | Hero, carrossel 3D de leilões em destaque, lista com busca, filtro e paginação |
 | `/leiloes/:id` | todos | Itens do leilão e indicadores |
 | `/itens/:id` | todos | **Sala de leilão ao vivo**: 3D, contagem regressiva, lance e histórico em tempo real |
-| `/login`, `/registrar` | visitante | Login (olho mágico, consentimento LGPD, recuperação de senha simulada) e cadastro |
-| `/perfil` | logado | Editar dados, e-mail, endereço com busca de CEP, avatar (upload ou biblioteca) e senha |
-| `/meus-lances` | licitante | Lances do usuário |
-| `/vendedor`, `/vendedor/leiloes/:id` | vendedor/admin | Grade de leilões e itens, com criar, editar e remover em modais |
+| `/login`, `/registrar` | visitante | Login (olho mágico e "Esqueci minha senha", que usa a API: código por e-mail simulado) e cadastro com aceite dos termos (gravado no servidor) |
+| `/perfil` | logado | Editar dados, e-mail, endereço com busca de CEP, avatar (upload ou biblioteca) e senha; aviso do que falta no perfil; **botão para alternar entre comprador (BIDDER) e vendedor (SELLER)** |
+| `/meus-lances` | comprador | Lances do usuário |
+| `/vendedor`, `/vendedor/leiloes/:id` | vendedor/admin | Grade de leilões e itens, com criar, editar e remover em modais (descrição e foto opcionais) |
 | `/admin` | admin | Categorias (CRUD), usuários (ativar/desativar) e leilões |
 
 ## Estrutura
@@ -47,7 +47,7 @@ src/app/
   shared/     hero, carrossel-destaques, visualizador-3d, sidebar, footer, modal,
               paginacao, avatar, acessibilidade, recuperar-senha
 public/       logo, cena de galeria do Hero, ilustrações de avatares (SVG) e acervo/
-              (12 obras de domínio público para os lotes de demonstração; ver acervo/CREDITOS.md)
+              (imagens das 70 obras de domínio público; a lista e os dados vêm de `GET /obras/acervo`; créditos em acervo/CREDITOS.md)
 ```
 
 ## Destaques técnicos
@@ -62,9 +62,10 @@ public/       logo, cena de galeria do Hero, ilustrações de avatares (SVG) e a
   o conteúdo", atalhos de teclado, ARIA, foco visível e VLibras.
 - **Responsivo:** menu lateral vira gaveta com botão hambúrguer no celular; testado
   de 320 a 1920 px sem rolagem horizontal.
+- **Sessão:** o navegador guarda só o token; ao abrir a página o usuário é carregado de `GET /users/me` (`provideAppInitializer`). CPF, telefone e endereço nunca ficam no `localStorage`.
 - **Validação visual:** campos inválidos ficam com borda vermelha e válidos com verde.
 
 ## O que fica no front (só apresentação)
 
-Rótulos e cores de status, máscaras de digitação, biblioteca de avatares, links e
-guards por papel (o backend recusa com 401/403 de qualquer forma).
+Rótulos e cores de status, máscaras de digitação, biblioteca de avatares, preferências de
+acessibilidade (guardadas no navegador), links e guards por papel (o backend recusa com 401/403 de qualquer forma).

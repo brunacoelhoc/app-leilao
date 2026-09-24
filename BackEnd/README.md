@@ -215,7 +215,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 5 suítes / 30 testes (e2e: 16 suítes / 218 testes)
+npm run test         # unitários (Jest) -- 6 suítes / 32 testes (e2e: 16 suítes / 225 testes)
 npm run test:e2e      # end-to-end, contra o banco real (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -253,7 +253,7 @@ npm run lint          # oxlint --type-aware
 - **Rate limiting**: por padrão, `RATE_LIMIT_MAX` requisições por IP a cada
   `RATE_LIMIT_JANELA_MS`; excedido, responde `429` com `Retry-After`.
   `POST /auth/login` e `POST /auth/registrar` têm um limite **próprio e mais
-  baixo** (10/min cada), independente do geral — são os alvos clássicos de
+  baixo** (10/min cada; `esqueci-senha` 5/min e `redefinir-senha` 10/min), independente do geral — são os alvos clássicos de
   força bruta e cadastro em massa.
 - **JWT com algoritmo travado** (`HS256`, explícito na assinatura e na
   verificação) — defesa em profundidade contra ataques de confusão de
@@ -261,6 +261,9 @@ npm run lint          # oxlint --type-aware
 - **Senha**: hash `bcrypt` (custo 12), nunca retornada em nenhuma resposta
   (`@Exclude()` + `ClassSerializerInterceptor` global, como rede de
   segurança adicional).
+- **Upload conferido pelo conteúdo**: além do `mimetype` (que o cliente pode falsificar), o servidor lê os primeiros bytes do arquivo (assinatura JPEG `FF D8 FF`, PNG, `%PDF-`) e recusa com `400` quando não batem — um executável enviado como `foto.jpg` é barrado. Implementado em `src/common/utils/assinatura-arquivo.util.ts`.
+- **Recuperação de senha** (`POST /auth/esqueci-senha` e `/auth/redefinir-senha`): código de 6 dígitos gerado com `crypto.randomInt`, guardado só como hash bcrypt na tabela `PasswordReset`, com validade de 15 min, no máximo 5 tentativas (contadas de forma atômica antes de conferir), uso único e no máximo 3 pedidos por hora por conta. A resposta é idêntica para e-mail inexistente. A entrega do e-mail é **simulada** (`EmailSimuladoService` escreve o código no log do servidor: `docker compose logs api`); é o único ponto a trocar por um envio real.
+- **Aceite dos termos** (`aceiteTermos` obrigatório no cadastro) gravado em `User.termosAceitosEm`.
 - **Timing attack neutralizado no login**: o `bcrypt.compare` roda sempre,
   mesmo se o e-mail não existir (contra um hash fictício), para o tempo de
   resposta não denunciar quais e-mails estão cadastrados.
@@ -344,7 +347,7 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | GET | `/auctions/:id` | Livre | — | `200` · `400` · `404` |
 | GET | `/auctions/:id/indicadores` | Livre | — | `200` `{ totalItens, totalLances, maiorLance, itensVendidos, itensNaoVendidos, itensDisponiveis, arrecadadoTotal }` · `400` · `404` |
 | PATCH | `/auctions/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` (não é o dono) · `404` · `409` (fora de `DRAFT`) |
-| PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` · `404` · `409` (transição inválida) |
+| PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` · `404` · `409` (transição inválida; agendar sem itens ou com `dataFim` já passada; ou o leilão mudou de estado ao mesmo tempo) |
 | DELETE | `/auctions/:id` | SELLER dono / ADMIN | — | `204` · `401` · `403` · `404` · `409` (fora de `DRAFT`) |
 
 Máquina de estados: `DRAFT → SCHEDULED → OPEN → CLOSED`; `CANCELED` alcançável
@@ -400,7 +403,7 @@ Depois de gravar o lance, o servidor avisa em tempo real quem está vendo o item
 
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
-| POST | `/auction-items/:itemId/documents` | SELLER dono / ADMIN | `multipart/form-data`: campo `arquivo` (jpeg/png/pdf) + campo `tipo` (`PHOTO` ou `DOCUMENT`) | `201` · `400` (sem arquivo, tipo não aceito, maior que `UPLOAD_MAX_SIZE_MB`) · `401` · `403` · `404` |
+| POST | `/auction-items/:itemId/documents` | SELLER dono / ADMIN | `multipart/form-data`: campo `arquivo` (jpeg/png/pdf) + campo `tipo` (`PHOTO` ou `DOCUMENT`) | `201` · `400` (sem arquivo, tipo não aceito, **conteúdo diferente do tipo informado**, maior que `UPLOAD_MAX_SIZE_MB`) · `401` · `403` · `404` |
 | GET | `/auction-items/:itemId/documents` | Livre | — | `200` lista |
 | GET | `/documents/:id/download` | Livre | — | `200` (stream do arquivo) · `404` |
 
