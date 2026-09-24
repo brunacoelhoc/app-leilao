@@ -6,6 +6,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { configurarAplicacao } from './../src/configurar-aplicacao';
+import { AuctionsService } from './../src/auctions/auctions.service';
 import { CepService } from './../src/cep/cep.service';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { cepFalso } from './cep-falso';
@@ -134,5 +135,18 @@ describe('Anti-sniping (e2e)', () => {
     // o robo de encerramento so fecha quem passou do prazo ATUAL: este ainda nao passou
     const vencidos = await prisma.auction.count({ where: { id: leilaoId, status: 'OPEN', dataFim: { lte: new Date() } } });
     expect(vencidos).toBe(0);
+  });
+
+  it('corrida: o robo leu o leilao como vencido, mas um lance estendeu o prazo antes de ele fechar -> NAO fecha', async () => {
+    const { leilaoId } = await criarLeilao(-1000); // ja passou do prazo: o robo o veria como vencido
+    const leituraDoRobo = await leilaoDoBanco(leilaoId);
+
+    // no meio tempo, um lance de ultima hora estende o prazo
+    await prisma.auction.update({ where: { id: leilaoId }, data: { dataFim: new Date(Date.now() + 120_000), prorrogacoes: 1 } });
+
+    await expect(
+      app.get(AuctionsService).aplicarMudancaStatus(leituraDoRobo, 'CLOSED', vendedorId, 'Encerrado automaticamente ao fim do prazo', true),
+    ).rejects.toThrow(/mudou de estado/);
+    expect((await leilaoDoBanco(leilaoId)).status).toBe('OPEN');
   });
 });

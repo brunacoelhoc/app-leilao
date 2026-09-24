@@ -47,6 +47,7 @@ export class EncerramentoAutomaticoService implements OnModuleInit, OnModuleDest
             AuctionStatus.CLOSED,
             leilao.vendedorId,
             'Encerrado automaticamente ao fim do prazo',
+            true, // se um lance de ultima hora estendeu o prazo neste meio tempo, NAO fecha
           );
           this.logger.log(`Leilao ${leilao.id} encerrado automaticamente`);
         } catch (erro) {

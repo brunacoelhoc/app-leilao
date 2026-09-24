@@ -40,6 +40,14 @@ function percentual(parte: number, total: number): number {
   return total === 0 ? 0 : Math.round((parte / total) * 1000) / 10;
 }
 
+// Quando quem liderava foi desativado: o lance dele e pulado no fechamento (ver definirVencedoresDosItens)
+interface SubstituicaoDeVencedor {
+  itemId: string;
+  valorDoLider: string;
+  novoVencedorId: string | null; // null = todos os licitantes desativados (peca nao vendida)
+  valorFinal: string | null;
+}
+
 @Injectable()
 export class AuctionsService {
   private readonly logger = new Logger(AuctionsService.name);
@@ -385,7 +393,10 @@ export class AuctionsService {
     novoStatus: AuctionStatus,
     alteradoPorId: string,
     motivo?: string,
+    // Encerramento por horario: so fecha se o PRAZO continua o mesmo que o robo leu (o anti-sniping pode ter estendido)
+    exigirMesmoPrazo = false,
   ): Promise<Auction> {
+    let substituicoes: SubstituicaoDeVencedor[] = [];
     const atualizado = await this.prisma.$transaction(async (tx) => {
       // Ao fechar, trava os itens ANTES de mudar o status: um lance em
       // andamento termina primeiro (ou espera e ja ve o leilao fechado),
@@ -400,7 +411,7 @@ export class AuctionsService {
       // Se outra requisicao (ou o robo de encerramento) mudou antes, nada e gravado
       // e devolvemos 409 -- assim nunca ha historico duplicado nem CANCELED depois de CLOSED
       const { count } = await tx.auction.updateMany({
-        where: { id: leilao.id, status: leilao.status },
+        where: { id: leilao.id, status: leilao.status, ...(exigirMesmoPrazo ? { dataFim: leilao.dataFim } : {}) },
         data: { status: novoStatus },
       });
       if (count === 0) {
@@ -423,11 +434,26 @@ export class AuctionsService {
       // (CHECK "status = SOLD" <=> "vencedorId IS NOT NULL"), entao as duas
       // sao sempre gravadas no mesmo UPDATE
       if (novoStatus === AuctionStatus.CLOSED) {
-        await this.definirVencedoresDosItens(tx, leilao.id);
+        substituicoes = await this.definirVencedoresDosItens(tx, leilao.id);
       }
 
       return resultado;
     });
+
+    // O lider foi pulado (conta desativada): fica na auditoria, para explicar por que o vencedor nao foi quem liderava
+    for (const troca of substituicoes) {
+      await this.auditLogService.registrar({
+        usuarioId: alteradoPorId,
+        acao: 'ITEM_VENCEDOR_SUBSTITUIDO',
+        entidade: 'AuctionItem',
+        entidadeId: troca.itemId,
+        resultado: AuditResult.SUCCESS,
+        motivo: troca.novoVencedorId
+          ? `Lider (lance ${troca.valorDoLider}) estava desativado: vence o proximo lance ativo (${troca.valorFinal})`
+          : `Todos os licitantes estavam desativados (maior lance ${troca.valorDoLider}): peca nao vendida`,
+        statusHttp: 200,
+      });
+    }
 
     // Tempo real: so depois do commit avisamos quem esta na sala de cada item
     if (novoStatus === AuctionStatus.CLOSED) {
@@ -459,13 +485,15 @@ export class AuctionsService {
   }
 
   // So chamado de dentro da transacao de mudarStatus, ao fechar o leilao.
-  // Para cada item: quem deu o maior lance vence (SOLD); sem nenhum lance,
-  // o item fica sem vender (UNSOLD)
+  // 🔎 Para cada item: vence o MAIOR lance de uma conta ATIVA (SOLD). Se quem liderava foi desativado, o
+  // lance dele e pulado e a peca vai para o proximo maior lance ativo, pelo valor desse lance. Sem nenhum
+  // lance ativo (ou sem lances), o item fica sem vender (UNSOLD). Devolve as trocas, para auditar depois do commit
   private async definirVencedoresDosItens(
     tx: Prisma.TransactionClient,
     leilaoId: string,
-  ): Promise<void> {
+  ): Promise<SubstituicaoDeVencedor[]> {
     const itens = await tx.auctionItem.findMany({ where: { leilaoId } });
+    const substituicoes: SubstituicaoDeVencedor[] = [];
 
     for (const item of itens) {
       if (item.lanceAtual === null) {
@@ -476,28 +504,49 @@ export class AuctionsService {
         continue;
       }
 
-      // O lance vencedor e o de maior valor (unico, gracas ao
-      // @@unique([itemId, valor]) do model Bid)
-      const lanceVencedor = await tx.bid.findFirst({
-        where: { itemId: item.id, valor: item.lanceAtual },
+      // Do maior para o menor (o valor e unico por item, gracas ao @@unique([itemId, valor]) do model Bid)
+      const lances = await tx.bid.findMany({
+        where: { itemId: item.id },
+        orderBy: { valor: 'desc' },
+        include: { licitante: { select: { ativo: true } } },
       });
-      // Nunca deveria acontecer (todo item com lanceAtual tem um Bid
-      // correspondente) -- se acontecer, e melhor travar a transacao inteira
-      // do que gravar um SOLD sem vencedor (o CHECK do banco ia recusar mesmo)
-      if (!lanceVencedor) {
+      // Nunca deveria acontecer (todo item com lanceAtual tem um Bid correspondente) -- se acontecer,
+      // e melhor travar a transacao inteira do que gravar um SOLD sem vencedor
+      if (lances.length === 0) {
         throw new ConflictException(
           `Inconsistencia: item ${item.id} tem lanceAtual mas nenhum lance correspondente`,
         );
+      }
+
+      const vencedor = lances.find((l) => l.licitante.ativo);
+      const lider = lances[0];
+
+      if (!vencedor) {
+        // Todos os licitantes foram desativados: ninguem pode levar a peca
+        await tx.auctionItem.update({ where: { id: item.id }, data: { status: ItemStatus.UNSOLD } });
+        substituicoes.push({ itemId: item.id, valorDoLider: lider.valor.toString(), novoVencedorId: null, valorFinal: null });
+        continue;
       }
 
       await tx.auctionItem.update({
         where: { id: item.id },
         data: {
           status: ItemStatus.SOLD,
-          vencedorId: lanceVencedor.licitanteId,
+          vencedorId: vencedor.licitanteId,
+          // O valor final e o do lance vencedor (pode ser menor que o do lider desativado)
+          lanceAtual: vencedor.valor,
         },
       });
+      if (vencedor.id !== lider.id) {
+        substituicoes.push({
+          itemId: item.id,
+          valorDoLider: lider.valor.toString(),
+          novoVencedorId: vencedor.licitanteId,
+          valorFinal: vencedor.valor.toString(),
+        });
+      }
     }
+    return substituicoes;
   }
 
   async remover(

@@ -241,18 +241,40 @@ export class UsersController {
   @Patch(':id/desativar')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Desativa um usuario (gestao pelo ADMIN)' })
+  @ApiOperation({
+    summary: 'Desativa um usuario (gestao pelo ADMIN)',
+    description:
+      'Bloqueia (409) quem esta disputando peca em leilao em andamento. Em emergencia (ex.: fraude), o ADMIN pode usar ' +
+      '?forcar=true: a acao fica na auditoria e, no fechamento, os lances dessa conta sao pulados (vence o proximo maior lance de uma conta ativa).',
+  })
+  @ApiQuery({ name: 'forcar', required: false, description: 'true = desativa mesmo com disputa em andamento (auditado)' })
   @ApiParam({ name: 'id', description: 'Id (uuid) do usuario', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
   @ApiOkResponse({ description: 'Usuario desativado (ativo=false)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
   @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Usuario inexistente', type: ErroResposta })
-  @ApiConflictResponse({ description: 'O ADMIN esta tentando desativar a propria conta', type: ErroResposta })
+  @ApiConflictResponse({ description: 'O ADMIN esta tentando desativar a propria conta, ou o usuario esta disputando peca em leilao em andamento (sem forcar=true)', type: ErroResposta })
   async desativar(
     @Param('id', ParseUuidPipePt) id: string,
     @CurrentUser() usuarioLogado: UsuarioAutenticado,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+    @Query('forcar') forcar?: string,
   ): Promise<UsuarioEntity> {
-    const atualizado = await this.usersService.desativar(id, usuarioLogado);
+    const forcado = forcar === 'true';
+    const atualizado = await this.usersService.desativar(id, usuarioLogado, forcado);
+    if (forcado) {
+      // Desativacao forcada (mesmo com disputa em andamento) fica registrada na auditoria
+      await this.auditLogService.registrar({
+        usuarioId: usuarioLogado.id,
+        papel: usuarioLogado.papel as Role,
+        acao: 'USUARIO_DESATIVADO_FORCADO',
+        entidade: 'User',
+        entidadeId: id,
+        resultado: AuditResult.SUCCESS,
+        statusHttp: 200,
+        ...contexto,
+      });
+    }
     return mascarado(atualizado);
   }
 

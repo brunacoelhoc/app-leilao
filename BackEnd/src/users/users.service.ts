@@ -127,9 +127,13 @@ export class UsersService {
     return paginar(usuarios, total, paginacao);
   }
 
+  // 🔎 Trava: quem esta DISPUTANDO peca em leilao em andamento nao pode ser desativado (a menos que o
+  // ADMIN force, de forma explicita e auditada, ex.: fraude em andamento). Se for forcado, o
+  // fechamento do leilao pula os lances dessa conta e passa a peca ao proximo maior lance
   async desativar(
     id: string,
     usuarioLogado: UsuarioAutenticado,
+    forcar = false,
   ): Promise<User> {
     await this.buscarPorIdOuFalhar(id);
 
@@ -137,6 +141,21 @@ export class UsersService {
     // (nao existe outra forma de virar ADMIN a nao ser ja sendo um)
     if (id === usuarioLogado.id) {
       throw new ConflictException('Voce nao pode desativar a sua propria conta');
+    }
+
+    if (!forcar) {
+      const disputas = await this.prisma.auctionItem.count({
+        where: {
+          status: 'AVAILABLE',
+          leilao: { status: { in: ['OPEN', 'SCHEDULED'] } },
+          lances: { some: { licitanteId: id } },
+        },
+      });
+      if (disputas > 0) {
+        throw new ConflictException(
+          `Este usuario esta disputando ${disputas} peca(s) em leiloes em andamento. Desative depois do encerramento ou, em caso de fraude, use forcar=true (os lances dele serao pulados no fechamento).`,
+        );
+      }
     }
 
     return this.prisma.user.update({ where: { id }, data: { ativo: false } });
