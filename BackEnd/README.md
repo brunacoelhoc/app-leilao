@@ -216,7 +216,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 18 suítes / 241 testes)
+npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 19 suítes / 249 testes)
 npm run test:e2e      # end-to-end, contra um banco de TESTE separado (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -340,7 +340,7 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | POST | `/users` | ADMIN | `{ nome, email, senha, papel }` | `201` cria usuário já com o papel escolhido · `400` · `401` · `403` · `409` |
 | GET | `/users/:id` | ADMIN | — | `200` dados **completos** (a consulta é auditada) · `400` · `401` · `403` · `404` |
 | GET | `/users` | ADMIN | — | `200` lista de usuários (sem senha; e-mail, telefone, CPF e endereço **mascarados** pelo backend) · `401` · `403` |
-| PATCH | `/users/:id/desativar` | ADMIN | — | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação) |
+| PATCH | `/users/:id/desativar` | ADMIN | query opcional `?forcar=true` | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação, **ou usuário disputando peça em leilão em andamento**; com `forcar=true` desativa mesmo assim, para emergências como fraude, e a ação é auditada como `USUARIO_DESATIVADO_FORCADO`) |
 | PATCH | `/users/:id/reativar` | ADMIN | — | `200` · `400` · `401` · `403` · `404` |
 
 ### Categories (`/categories`)
@@ -367,7 +367,11 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 
 Máquina de estados: `DRAFT → SCHEDULED → OPEN → CLOSED`; `CANCELED` alcançável
 de qualquer estado não-final. Ao fechar (`CLOSED`), cada item do leilão vira
-`SOLD` (com o vencedor = maior lance) ou `UNSOLD` (sem nenhum lance).
+`SOLD` (com o vencedor = **maior lance de uma conta ativa**) ou `UNSOLD` (sem nenhum lance ativo).
+Se quem liderava foi desativado (só possível com `forcar=true`), o lance dele é **pulado**: a peça vai
+para o próximo maior lance de uma conta ativa, **pelo valor desse lance**, e a troca fica na auditoria
+(`ITEM_VENCEDOR_SUBSTITUIDO`). O encerramento automático só fecha se o prazo continua o mesmo que ele leu
+(um lance de anti-sniping no meio tempo impede o fechamento).
 
 Cada leilão volta com `transicoesPermitidas` (para onde ele pode ir agora) e
 `editavel` (`true` só em `DRAFT`): a tela apenas exibe, quem decide é o backend.
