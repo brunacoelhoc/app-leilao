@@ -86,7 +86,7 @@ alguma estiver ausente ou em formato inválido — ver `src/config/variaveis-amb
 | --------------------- | ------------------------------------------------------------------------ | ------------------------------------------------- |
 | `DATABASE_URL`        | String de conexão do PostgreSQL                                          | `postgresql://postgres:senha@localhost:5432/leiloes` |
 | `JWT_SECRET`          | Segredo para assinar o JWT (mínimo 32 caracteres, não pode ser o exemplo) | um valor longo e aleatório                        |
-| `JWT_EXPIRES_IN`      | Validade do token                                                       | `1d`                                              |
+| `JWT_EXPIRES_IN`      | Validade do **access token** (curto; a renovação é pelo refresh token)  | `15m`                                             |
 | `PORT`                | Porta HTTP da API                                                       | `3000`                                            |
 | `CEP_API_URL`         | URL base do ViaCEP (integração externa, seção 7 do enunciado)           | `https://viacep.com.br/ws`                        |
 | `CEP_API_TIMEOUT_MS`  | Timeout da chamada ao ViaCEP                                            | `5000`                                            |
@@ -216,7 +216,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 6 suítes / 32 testes (e2e: 16 suítes / 225 testes)
+npm run test         # unitários (Jest) -- 6 suítes / 32 testes (e2e: 17 suítes / 235 testes)
 npm run test:e2e      # end-to-end, contra um banco de TESTE separado (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -248,17 +248,25 @@ npm run lint          # oxlint --type-aware
   global e roda antes de qualquer outra verificação. Sem ele, ou com o
   valor errado, a resposta é sempre `401`.
 - **JWT** (`Authorization: Bearer <token>`): exigido nas rotas que precisam
-  de um usuário logado. Obtido em `POST /auth/login`. O token carrega
-  `{ sub: id, papel }`, mas a cada requisição autenticada a API **reconsulta
-  o usuário no banco** — se a conta foi desativada ou apagada depois do
-  login, o acesso é cortado imediatamente, sem esperar o token expirar.
+  de um usuário logado. Obtido em `POST /auth/login`. É um **access token curto**
+  (`JWT_EXPIRES_IN`, 15 min) e carrega `{ sub: id, papel, sid }` (`sid` = id da sessão).
+  A cada requisição autenticada a API **reconsulta o usuário e a sessão no banco** —
+  se a conta foi desativada ou apagada, ou a sessão foi encerrada, o acesso é
+  cortado imediatamente, sem esperar o token expirar.
+- **Sessões, refresh token e logout** (tabela `Session`): cada login abre uma sessão. O
+  **refresh token** (`<idDaSessão>.<segredo>`) é **rotativo e de uso único** — cada `POST /auth/refresh`
+  devolve um par novo e só o **hash SHA-256** do segredo fica no banco (comparação em tempo constante).
+  Se um refresh token **já usado** aparecer de novo (sinal de roubo), a sessão inteira é revogada.
+  A sessão expira após 7 dias sem uso. `POST /auth/logout` revoga a sessão na hora; **trocar a senha**
+  revoga as outras sessões e **redefinir a senha** (recuperação) revoga todas. Implementado em
+  `src/auth/sessao.service.ts`; tokens sem sessão (formato antigo) são recusados.
 - **Papéis** (`BIDDER`, `SELLER`, `ADMIN`): verificados por `@Roles()` +
   `RolesGuard`, sempre depois do `JwtAuthGuard` (`@UseGuards(JwtAuthGuard, RolesGuard)` —
   nessa ordem; invertida, um usuário não-logado recebe `403` em vez do `401` correto).
 - **Rate limiting**: por padrão, `RATE_LIMIT_MAX` requisições por IP a cada
   `RATE_LIMIT_JANELA_MS`; excedido, responde `429` com `Retry-After`.
   `POST /auth/login` e `POST /auth/registrar` têm um limite **próprio e mais
-  baixo** (10/min cada; `esqueci-senha` 5/min e `redefinir-senha` 10/min), independente do geral — são os alvos clássicos de
+  baixo** (10/min cada; `esqueci-senha` 5/min, `redefinir-senha` 10/min e `refresh` 20/min), independente do geral — são os alvos clássicos de
   força bruta e cadastro em massa.
 - **JWT com algoritmo travado** (`HS256`, explícito na assinatura e na
   verificação) — defesa em profundidade contra ataques de confusão de
@@ -315,7 +323,9 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
 | POST | `/auth/registrar` | Livre | `{ nome, email, senha, aceiteTermos }` | `201` usuário criado (BIDDER, sem senha; o servidor grava `termosAceitosEm`) · `400` inválido ou termos não aceitos · `409` e-mail já cadastrado |
-| POST | `/auth/login` | Livre | `{ email, senha }` | `200` `{ accessToken, usuario }` · `400` inválido · `401` credenciais inválidas · `403` conta desativada |
+| POST | `/auth/login` | Livre | `{ email, senha }` | `200` `{ accessToken, refreshToken, usuario }` (abre uma sessão) · `400` inválido · `401` credenciais inválidas · `403` conta desativada |
+| POST | `/auth/refresh` | Livre | `{ refreshToken }` | `200` par novo `{ accessToken, refreshToken, usuario }` (o refresh token é de **uso único**: o anterior deixa de valer) · `400` corpo inválido · `401` refresh inválido, já usado, revogado ou expirado (mensagem única) · `429` limite por IP |
+| POST | `/auth/logout` | Autenticado | — | `204` a sessão é revogada e o access token (e o refresh token) dela param de valer **na hora** · `401` |
 | POST | `/auth/esqueci-senha` | Livre | `{ email }` | `200` resposta **sempre igual**, o e-mail existindo ou não (gera um código de 6 dígitos, válido por 15 min, guardado só como hash; entrega simulada no log do servidor; máx. 3 pedidos/hora por conta; pedido novo cancela o anterior) · `400` e-mail inválido · `429` limite por IP |
 | POST | `/auth/redefinir-senha` | Livre | `{ email, codigo, novaSenha }` | `200` senha trocada (código de uso único) · `400` corpo inválido **ou** código incorreto/expirado/usado (mesma mensagem; máx. 5 tentativas, depois o código é queimado) · `429` limite por IP |
 
@@ -585,7 +595,7 @@ adequados e riscos aceitos, com evidência de cada um) está em
 
 ```
 src/
-  auth/              autenticação, JWT, DTOs de registro/login
+  auth/              autenticação, JWT, sessões (refresh token/logout), recuperação de senha, DTOs
   users/             perfil (/me) e gestão de usuários pelo ADMIN
   audit/              AuditLogService (log de auditoria)
   categories/         CRUD de categorias (ADMIN)

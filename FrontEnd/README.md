@@ -62,7 +62,7 @@ public/       logo, cena de galeria do Hero, ilustrações de avatares (SVG) e a
   o conteúdo", atalhos de teclado, ARIA, foco visível e VLibras.
 - **Responsivo:** menu lateral vira gaveta com botão hambúrguer no celular; testado
   de 320 a 1920 px sem rolagem horizontal.
-- **Sessão:** o navegador guarda só o token; ao abrir a página o usuário é carregado de `GET /users/me` (`provideAppInitializer`). CPF, telefone e endereço nunca ficam no `localStorage`.
+- **Sessão:** o navegador guarda só os tokens (acesso de 15 min e renovação); ao abrir a página o usuário é carregado de `GET /users/me` (`provideAppInitializer`). Quando o acesso vence (401), o interceptor renova com `POST /auth/refresh` (uma renovação por vez) e refaz a chamada; se a sessão foi encerrada, volta ao login. "Sair" chama `POST /auth/logout`. CPF, telefone e endereço nunca ficam no `localStorage`.
 - **Validação visual:** campos inválidos ficam com borda vermelha e válidos com verde.
 
 ## O que fica no front (só apresentação)
