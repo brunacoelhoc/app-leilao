@@ -1,11 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { RequisitosVendedor } from '../../core/models';
 import { AlertaService } from '../../core/alerta.service';
 import { AuthService } from '../../core/auth.service';
+import { ModoService } from '../../core/modo.service';
 import { AVATARES_PRONTOS } from '../../core/avatares';
 import { mensagemDeErro } from '../../core/erro.util';
 import { redimensionarParaDataUrl } from '../../core/imagem.util';
@@ -33,9 +31,9 @@ import { Voltar } from '../../shared/botao-voltar/botao-voltar';
 })
 export class Perfil {
   protected readonly auth = inject(AuthService);
+  protected readonly modo = inject(ModoService);
   private readonly usuariosService = inject(UsuariosService);
   private readonly alerta = inject(AlertaService);
-  private readonly router = inject(Router);
   private readonly cepService = inject(CepService);
 
   protected readonly avatares = AVATARES_PRONTOS;
@@ -82,36 +80,12 @@ export class Perfil {
   readonly mostrarSenhas = signal(false);
   readonly erroSenha = signal<string | null>(null);
 
-  readonly virandoVendedor = signal(false);
-  // O que falta para vender: a lista e o "ok" de cada item vem do servidor
-  readonly requisitosVendedor = signal<RequisitosVendedor | null>(null);
-
-  private carregarRequisitos(): void {
-    this.usuariosService.requisitosVendedor().subscribe({ next: (r) => this.requisitosVendedor.set(r) });
-  }
-
-  // "Quero vender": o servidor confere telefone, CPF valido e endereco (e CPF unico entre vendedores)
-  async queroVender(): Promise<void> {
-    this.virandoVendedor.set(true);
-    try {
-      const atualizado = await firstValueFrom(this.usuariosService.tornarVendedor());
-      this.auth.atualizarUsuarioLocal(atualizado);
-      await this.alerta.sucesso('Agora você também vende!', 'Sua conta continua podendo comprar. Crie seu primeiro leilão no Painel do vendedor.');
-      await this.router.navigateByUrl('/vendedor');
-    } catch (erro) {
-      void this.alerta.erro('Ainda não foi possível', mensagemDeErro(erro, 'Não foi possível concluir'));
-    } finally {
-      this.virandoVendedor.set(false);
-    }
-  }
-
   constructor() {
     // O usuario salvo no navegador e o do momento do login: busca o cadastro atual
     // para a tela (e o menu lateral) nao mostrarem dados desatualizados
     this.usuariosService.meuPerfil().subscribe({
       next: (atual) => {
         this.auth.atualizarUsuarioLocal(atual);
-        if (atual.papel === 'BIDDER') this.carregarRequisitos();
       },
     });
   }

@@ -9,6 +9,7 @@ import { EncerramentoAutomaticoService } from './../src/auctions/encerramento-au
 import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { CorsIoAdapter } from './../src/realtime/cors-io.adapter';
+import { PERFIL_COMPLETO } from './perfil-teste';
 
 // Espera o proximo evento de um socket (ou falha em 5s)
 function esperar<T>(socket: Socket, evento: string): Promise<T> {
@@ -38,8 +39,8 @@ describe('Tempo real (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
-      .send({ nome, email, senha: SENHA });
-    if (papel) await prisma.user.update({ where: { email }, data: { papel } });
+      .send({ nome, email, senha: SENHA, aceiteTermos: true });
+    await prisma.user.update({ where: { email }, data: { ...PERFIL_COMPLETO, ...(papel ? { papel } : {}) } });
     const login = await request(app.getHttpServer())
       .post('/api/auth/login')
       .set('X-API-KEY', chave)
@@ -107,7 +108,8 @@ describe('Tempo real (e2e)', () => {
     expect(evento.lance.itemId).toBe(itemId);
     expect(evento.lanceAtual).toBe('150');
     expect(evento.lanceMinimo).toBe('160');
-    expect(evento.licitanteNome).toBe('Maria Ganhadora Silva');
+    // Publico: so o primeiro nome e a inicial do segundo
+    expect(evento.licitanteNome).toBe('Maria G.');
   });
 
   it('fecha sozinho quando o prazo acaba e avisa o ganhador', async () => {

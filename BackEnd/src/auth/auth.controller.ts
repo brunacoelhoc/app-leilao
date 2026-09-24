@@ -18,6 +18,9 @@ import { HEADER_REQUEST_ID, HEADER_RETRY_AFTER } from '../common/swagger-headers
 import { ErroResposta } from '../common/dto/erro-resposta.dto';
 import { UsuarioEntity } from '../users/usuario.entity';
 import { AuthService, RespostaLogin } from './auth.service';
+import { EsqueciSenhaDto } from './dto/esqueci-senha.dto';
+import { RedefinirSenhaDto } from './dto/redefinir-senha.dto';
+import { RecuperacaoSenhaService } from './recuperacao-senha.service';
 import { LoginDto } from './dto/login.dto';
 import { RegistrarUsuarioDto } from './dto/registrar-usuario.dto';
 
@@ -26,7 +29,10 @@ import { RegistrarUsuarioDto } from './dto/registrar-usuario.dto';
 @ApiSecurity('api-key')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly recuperacaoSenhaService: RecuperacaoSenhaService,
+  ) {}
 
   // POST devolve 201 por padrao, e faz sentido aqui: um usuario novo foi criado
   // Limite proprio, mais baixo que o geral: rota publica e alvo comum de bots de cadastro em massa
@@ -73,5 +79,45 @@ export class AuthController {
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
   ): Promise<RespostaLogin> {
     return this.authService.login(dto, contexto);
+  }
+
+  // Recuperacao de senha em 2 passos. A resposta do 1o passo e sempre a mesma (o e-mail existindo ou nao)
+  @Post('esqueci-senha')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Pede um codigo de recuperacao de senha (passo 1)',
+    description:
+      'Gera um codigo de 6 digitos valido por 15 minutos (guardado so como hash) e o "envia" por e-mail ' +
+      '(entrega simulada: o codigo aparece no log do servidor). A resposta e SEMPRE a mesma, exista o e-mail ou nao. ' +
+      'Limite de 3 pedidos por hora por conta; um pedido novo cancela o anterior.',
+  })
+  @ApiOkResponse({ description: 'Resposta generica: { mensagem }', headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'E-mail com formato invalido', type: ErroResposta })
+  @ApiTooManyRequestsResponse({ description: 'Mais de 5 pedidos no ultimo minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
+  esqueciSenha(
+    @Body() dto: EsqueciSenhaDto,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<{ mensagem: string }> {
+    return this.recuperacaoSenhaService.solicitar(dto, contexto);
+  }
+
+  @Post('redefinir-senha')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Troca a senha com o codigo recebido (passo 2)',
+    description:
+      'O codigo e de uso unico, vale 15 minutos e aceita no maximo 5 tentativas (depois disso e queimado e e preciso pedir outro). ' +
+      'Todo erro de codigo devolve a mesma mensagem. A nova senha segue a mesma regra de forca do cadastro.',
+  })
+  @ApiOkResponse({ description: 'Senha trocada: { mensagem }', headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Corpo invalido (codigo fora de 6 digitos, senha fraca) ou codigo incorreto/expirado/usado', type: ErroResposta })
+  @ApiTooManyRequestsResponse({ description: 'Mais de 10 tentativas no ultimo minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
+  redefinirSenha(
+    @Body() dto: RedefinirSenhaDto,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<{ mensagem: string }> {
+    return this.recuperacaoSenhaService.redefinir(dto, contexto);
   }
 }

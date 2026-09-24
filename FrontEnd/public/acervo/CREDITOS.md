@@ -2,8 +2,8 @@
 
 Reproduções de obras de **domínio público** (os autores morreram há mais de 70 anos),
 obtidas no [Wikimedia Commons](https://commons.wikimedia.org/) e usadas aqui só como
-imagens de demonstração dos lotes. Os dados de cada obra e o link de origem estão em
-[`acervo.json`](acervo.json).
+imagens de demonstração dos lotes. Os dados de cada obra e o link de origem estão no
+catálogo do back-end (`BackEnd/src/obras/catalogo-obras.ts`, servido em `GET /obras/acervo`).
 
 | Arquivo | Obra | Autor | Ano |
 | --- | --- | --- | --- |

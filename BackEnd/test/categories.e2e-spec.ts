@@ -34,7 +34,7 @@ describe('Categories (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
-      .send({ nome: 'Bidder Categories', email: EMAIL_BIDDER, senha: SENHA_TESTE });
+      .send({ nome: 'Bidder Categories', email: EMAIL_BIDDER, senha: SENHA_TESTE, aceiteTermos: true });
     const loginBidder = await request(app.getHttpServer())
       .post('/api/auth/login')
       .set('X-API-KEY', chave)
@@ -44,7 +44,7 @@ describe('Categories (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
-      .send({ nome: 'Admin Categories', email: EMAIL_ADMIN, senha: SENHA_TESTE });
+      .send({ nome: 'Admin Categories', email: EMAIL_ADMIN, senha: SENHA_TESTE, aceiteTermos: true });
     await prisma.user.update({
       where: { email: EMAIL_ADMIN },
       data: { papel: 'ADMIN' },

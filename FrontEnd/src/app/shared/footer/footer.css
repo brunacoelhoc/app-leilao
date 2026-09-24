@@ -69,6 +69,12 @@
   transition: background 0.25s ease, color 0.25s ease, gap 0.25s ease;
 }
 
+button.convite-botao {
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
 .convite-botao:hover {
   gap: 0.8rem;
   color: var(--cor-marrom-escuro);

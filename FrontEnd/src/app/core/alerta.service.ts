@@ -24,7 +24,7 @@ export class AlertaService {
     return this.base('info', titulo, texto);
   }
 
-  async confirmar(titulo: string, texto?: string, textoBotao = 'Confirmar'): Promise<boolean> {
+  async confirmar(titulo: string, texto?: string, textoBotao = 'Confirmar', textoCancelar = 'Cancelar'): Promise<boolean> {
     const resultado = await Swal.fire({
       icon: 'warning',
       title: titulo,

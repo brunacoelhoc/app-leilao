@@ -40,9 +40,8 @@ interface Obra {
 }
 
 async function main(): Promise<void> {
-  const obras = JSON.parse(
-    await readFile(join(PASTA_ACERVO, 'acervo.json'), 'utf8'),
-  ) as Obra[];
+  // O catalogo (titulos, autores, fontes) mora no back-end: CATALOGO_OBRAS
+  const obras: Obra[] = Object.entries(CATALOGO_OBRAS).map(([chave, o]) => ({ arquivo: `${chave}.jpg`, titulo: o.titulo }));
   if (obras.length === 0) throw new Error('Acervo vazio');
 
   await mkdir(PASTA_UPLOADS, { recursive: true });

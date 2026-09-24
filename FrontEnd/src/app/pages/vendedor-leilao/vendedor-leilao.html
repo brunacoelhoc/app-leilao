@@ -84,15 +84,15 @@
 @if (modalItem()) {
   <app-modal [titulo]="itemEditandoId ? 'Editar item' : 'Novo item'" [largura]="640" (fechar)="modalItem.set(false)">
     <form #f="ngForm" (ngSubmit)="salvarItem()" novalidate>
-      <p class="lista-vazia">Todos os campos são obrigatórios. O endereço de retirada é preenchido pelo CEP.</p>
+      <p class="lista-vazia">Descrição e foto são opcionais. O endereço de retirada é preenchido pelo CEP.</p>
 
       <div class="campo">
         <label for="itemTitulo">Título</label>
         <input id="itemTitulo" name="itemTitulo" type="text" [(ngModel)]="itemTitulo" required />
       </div>
       <div class="campo">
-        <label for="itemDescricao">Descrição</label>
-        <textarea id="itemDescricao" name="itemDescricao" rows="2" [(ngModel)]="itemDescricao" required></textarea>
+        <label for="itemDescricao">Descrição (opcional)</label>
+        <textarea id="itemDescricao" name="itemDescricao" rows="2" [(ngModel)]="itemDescricao"></textarea>
       </div>
       <div class="linha">
         <div class="campo">
@@ -121,7 +121,7 @@
       </div>
 
       <div class="campo">
-        <label for="foto">{{ itemEditandoId ? 'Nova foto (opcional)' : 'Foto do item' }}</label>
+        <label for="foto">{{ itemEditandoId ? 'Nova foto (opcional)' : 'Foto do item (opcional)' }}</label>
         <label class="area-foto" for="foto">
           @if (fotoPreview(); as preview) {
             <img [src]="preview" alt="Pré-visualização da foto do item" />

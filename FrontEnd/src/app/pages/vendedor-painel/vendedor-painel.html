@@ -127,11 +127,8 @@
         }
       </div>
       <div class="campo">
-        <label for="descricao">Descrição</label>
+        <label for="descricao">Descrição (opcional)</label>
         <textarea id="descricao" name="descricao" rows="2" [(ngModel)]="descricao" (blur)="tocar('descricao')" [class.invalido]="erro('descricao')" [attr.aria-invalid]="erro('descricao') ? 'true' : null" [attr.aria-describedby]="erro('descricao') ? 'erro-descricao' : null"></textarea>
-        @if (erro('descricao'); as msg) {
-          <small class="msg-campo" role="alert" [id]="'erro-descricao'">{{ msg }}</small>
-        }
       </div>
       <div class="linha">
       <div class="campo">
@@ -159,11 +156,8 @@
         }
       </div>
       <div class="campo">
-        <label for="itemDescricao">Descrição do item</label>
+        <label for="itemDescricao">Descrição do item (opcional)</label>
         <textarea id="itemDescricao" name="itemDescricao" rows="2" [(ngModel)]="itemDescricao" (blur)="tocar('itemDescricao')" [class.invalido]="erro('itemDescricao')" [attr.aria-invalid]="erro('itemDescricao') ? 'true' : null" [attr.aria-describedby]="erro('itemDescricao') ? 'erro-itemDescricao' : null"></textarea>
-        @if (erro('itemDescricao'); as msg) {
-          <small class="msg-campo" role="alert" [id]="'erro-itemDescricao'">{{ msg }}</small>
-        }
       </div>
       <div class="linha">
       <div class="campo">
@@ -204,8 +198,8 @@
       </div>
 
       <div class="campo">
-        <label for="foto">Foto do item</label>
-        <label class="area-foto" for="foto" [class.invalido]="erro('foto')">
+        <label for="foto">Foto do item (opcional)</label>
+        <label class="area-foto" for="foto">
           @if (fotoPreview(); as preview) {
             <img [src]="preview" alt="Pré-visualização da foto do item" />
             <span>Clique para trocar a foto</span>
@@ -215,9 +209,6 @@
           }
           <input id="foto" type="file" accept="image/*" (change)="aoEscolherFoto($event)" hidden />
         </label>
-        @if (erro('foto'); as msg) {
-          <small class="msg-campo" role="alert">{{ msg }}</small>
-        }
         <app-acervo-fotos (escolher)="usarFotoDoAcervo($event)" />
       </div>
 

@@ -48,9 +48,11 @@ Projeto da avaliação **AV-08 — Plataforma de Leilões**.
 | Perfil | Pode |
 | --- | --- |
 | **Visitante** (sem login) | Explorar destaques, ranking, leilões, peças e histórico público de lances; ler o chat. |
-| **BIDDER** (comprador) | Dar lances, acompanhar "Meus lances", participar do chat, editar o perfil e solicitar tornar-se vendedor. Todo cadastro público nasce assim. |
-| **SELLER** (vendedor) | Criar leilões e itens (com ficha técnica e fotos), consultar CEP de retirada e conduzir o status do leilão. Não pode dar lance na própria peça. |
+| **BIDDER** (comprador) | Dar lances, acompanhar "Meus lances", participar do chat e editar o perfil. Todo cadastro nasce assim. Para vender, ativa o **modo vendedor** com um clique no menu. |
+| **SELLER** (vendedor) | Mesma conta no **modo vendedor**: cria leilões e itens (com ficha técnica e fotos), consulta CEP e conduz o status do leilão. Neste modo **não dá lances**; volta ao modo comprador com um clique. |
 | **ADMIN** | Gerenciar categorias e usuários (criar, desativar, reativar), moderar leilões e ver indicadores da plataforma. |
+
+Para **dar lance** ou **criar leilão**, o perfil precisa estar completo (telefone, CPF válido e endereço); a regra é validada no servidor. Ninguém dá lance no próprio leilão, em nenhum dos modos.
 
 A matriz completa de permissões por endpoint está em [`BackEnd/README.md`](BackEnd/README.md#matriz-de-permissões).
 

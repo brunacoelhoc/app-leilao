@@ -1,5 +1,6 @@
 import { Exclude } from 'class-transformer';
 import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { camposFaltandoDaConta } from '../common/utils/perfil-completo.util';
 import type { Role, User } from '../generated/prisma/client';
 
 // Formato de usuario seguro para respostas da API. A senha nunca sai daqui,
@@ -39,13 +40,25 @@ export class UsuarioEntity implements User {
   @ApiPropertyOptional({ nullable: true, description: 'Identificador de um avatar pronto, ou uma imagem pequena em base64' })
   avatarUrl: string | null;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Quando aceitou os termos de uso (null em contas criadas pelo ADMIN)' })
+  termosAceitosEm: Date | null;
+
   @ApiProperty()
   criadoEm: Date;
 
   @ApiProperty()
   atualizadoEm: Date;
 
+  @ApiProperty({
+    type: [String],
+    example: ['telefone', 'CPF', 'endereço'],
+    description: 'O que falta no perfil para dar lances e criar leiloes (vazio = perfil completo). Calculado pelo servidor',
+  })
+  camposFaltando: string[];
+
   constructor(parcial: Partial<UsuarioEntity>) {
     Object.assign(this, parcial);
+    // Na listagem mascarada o chamador ja manda o valor calculado com os dados reais
+    this.camposFaltando = parcial.camposFaltando ?? camposFaltandoDaConta(this);
   }
 }

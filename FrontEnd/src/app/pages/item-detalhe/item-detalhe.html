@@ -139,7 +139,7 @@
           @for (lance of l.dados; track lance.id; let primeiro = $first) {
             <li [class.lider]="primeiro" [class.meu]="ehMeuLance(lance)">
               <span class="ponto" aria-hidden="true"></span>
-              <span class="quem">{{ ehMeuLance(lance) ? 'Você' : nomeAbreviado(lance.licitanteNome) }}</span>
+              <span class="quem">{{ ehMeuLance(lance) ? 'Você' : (lance.licitanteNome ?? 'Licitante') }}</span>
               @if (primeiro) {
                 <span class="selo status-open">{{ situacao() === 'VENDIDO' ? 'Vencedor' : 'Maior lance' }}</span>
               }

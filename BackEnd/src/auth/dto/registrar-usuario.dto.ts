@@ -1,5 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
+  Equals,
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsString,
@@ -32,4 +34,9 @@ export class RegistrarUsuarioDto {
   @MinLength(8, { message: 'senha deve ter no minimo 8 caracteres' })
   @IsNotEmpty({ message: 'Por favor, preencha o campo senha (obrigatorio)' })
   senha: string;
+
+  // O aceite dos termos e regra do servidor (que grava a data): a tela so envia a caixa marcada
+  @Equals(true, { message: 'E preciso aceitar os termos de uso para criar a conta' })
+  @IsBoolean({ message: 'aceiteTermos deve ser verdadeiro ou falso' })
+  aceiteTermos: boolean;
 }

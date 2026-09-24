@@ -3,10 +3,22 @@ import { DocumentType } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CATALOGO_OBRAS } from './catalogo-obras';
 import type { HistoriaPecaResposta } from './dto/historia-resposta.dto';
+import type { ObraAcervoResposta } from './dto/obra-acervo-resposta.dto';
 
 @Injectable()
 export class ObrasService {
   constructor(private readonly prisma: PrismaService) {}
+
+  // Catalogo do acervo (fonte unica, no servidor): a tela so exibe a lista
+  acervo(): ObraAcervoResposta[] {
+    return Object.entries(CATALOGO_OBRAS).map(([chave, o]) => ({
+      arquivo: `${chave}.jpg`,
+      titulo: o.titulo,
+      autor: o.artista,
+      ano: o.ano,
+      fonte: o.fonte,
+    }));
+  }
 
   // 🔎 "Sobre a obra": se a foto principal da peca e uma obra do acervo, devolve a historia
   // e o contexto da epoca (conteudo do catalogo, escrito no servidor). Se nao for, devolve

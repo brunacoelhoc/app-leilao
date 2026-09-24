@@ -7,6 +7,7 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { PERFIL_COMPLETO } from './perfil-teste';
 
 // Cobre o que foi acrescentado depois do nucleo: criacao/remocao de usuario pelo
 // ADMIN, resumos, dados institucionais, ranking, chat e os campos calculados
@@ -28,8 +29,8 @@ describe('Novos modulos (e2e)', () => {
 
   // Cria o usuario direto no banco e assina o token (sem passar por registro/login):
   // esses dois endpoints tem limite de 10 por minuto e esta suite cria mais contas que isso
-  async function criarEEntrar(nome: string, quem: string, papel: 'BIDDER' | 'SELLER' | 'ADMIN') {
-    const usuario = await prisma.user.create({ data: { nome, email: email(quem), senha: 'x', papel } });
+  async function criarEEntrar(nome: string, quem: string, papel: 'BIDDER' | 'SELLER' | 'ADMIN', perfilCompleto = true) {
+    const usuario = await prisma.user.create({ data: { nome, email: email(quem), senha: 'x', papel, ...(perfilCompleto ? PERFIL_COMPLETO : {}) } });
     const token = app.get(JwtService, { strict: false }).sign({ sub: usuario.id, papel });
     return { token, id: usuario.id };
   }
@@ -38,18 +39,6 @@ describe('Novos modulos (e2e)', () => {
     const req = request(app.getHttpServer())[metodo](`/api${rota}`).set('X-API-KEY', chave);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   };
-
-  // CPF valido para testes (digitos verificadores corretos), a partir de uma base numerica
-  function cpfDe(base: number): string {
-    const d = String(100000000 + ((base * 7919) % 899999999)).slice(0, 9).split('').map(Number);
-    const dv = (n: number[]) => {
-      const r = (n.reduce((acc, v, i) => acc + v * (n.length + 1 - i), 0) * 10) % 11;
-      return r === 10 ? 0 : r;
-    };
-    d.push(dv(d));
-    d.push(dv(d));
-    return d.join('');
-  }
 
   async function criarLeilao(status: 'OPEN' | 'CLOSED' | 'DRAFT', vendedorId = sellerId) {
     const leilao = await prisma.auction.create({
@@ -184,9 +173,12 @@ describe('Novos modulos (e2e)', () => {
     it('so entra quem vendeu; ordena pelo total arrecadado; expoe so dados publicos', async () => {
       const comprador = await prisma.user.findUniqueOrThrow({ where: { email: email('bidder') } });
       const leilaoId = await criarLeilao('CLOSED');
+      // Valor unico e crescente a cada execucao: o banco de dev acumula vendedores de rodadas antigas
+      // e o ranking mostra so 20; assim esta venda sempre fica no topo (sem empate)
+      const valorVenda = 1_000_000 + (Math.floor(Date.now() / 1000) - 1_700_000_000);
       await prisma.auctionItem.create({
         data: {
-          titulo: 'Vendido A', precoInicial: 100, incrementoMinimo: 10, lanceAtual: 300, status: 'SOLD',
+          titulo: 'Vendido A', precoInicial: 100, incrementoMinimo: 10, lanceAtual: valorVenda, status: 'SOLD',
           vencedorId: comprador.id, cep: '01310100', leilaoId, categoriaId,
         },
       });
@@ -196,7 +188,7 @@ describe('Novos modulos (e2e)', () => {
 
       const res = await api('get', '/ranking/vendedores?limite=20').expect(200);
       const linha = (res.body as { vendedorId: string }[]).find((l) => l.vendedorId === sellerId);
-      expect(linha).toMatchObject({ arrecadado: '300.00', vendidas: 1, finalizadas: 2, taxaVenda: 50 });
+      expect(linha).toMatchObject({ arrecadado: `${valorVenda}.00`, vendidas: 1, finalizadas: 2, taxaVenda: 50 });
       expect(linha).not.toHaveProperty('email');
       expect(linha).not.toHaveProperty('cpf');
 
@@ -281,16 +273,22 @@ describe('Novos modulos (e2e)', () => {
     });
   });
 
-  describe('Uma conta compra e vende (sem brechas)', () => {
+  describe('Modo comprador / vendedor (a mesma conta, um clique, travas em cada modo)', () => {
     let itemDeA: string;
     let leilaoDeA: string;
     let tokenA: string;
     let idA: string;
     let tokenB: string;
 
+    const corpoLeilao = () => ({
+      titulo: 'Leilao do modo vendedor',
+      dataInicio: new Date(agora + 3600000).toISOString(),
+      dataFim: new Date(agora + 2 * 86400000).toISOString(),
+    });
+
     beforeAll(async () => {
-      const a = await criarEEntrar('Vendedor A Mista', 'mistaa', 'SELLER');
-      const b = await criarEEntrar('Vendedor B Mista', 'mistab', 'SELLER');
+      const a = await criarEEntrar('Vendedor A Modo', 'modoa', 'SELLER');
+      const b = await criarEEntrar('Comprador B Modo', 'modob', 'BIDDER');
       tokenA = a.token;
       idA = a.id;
       tokenB = b.token;
@@ -302,88 +300,92 @@ describe('Novos modulos (e2e)', () => {
       ).id;
     });
 
-    it('VENDEDOR compra: da lance em leilao de OUTRO vendedor -> 201', async () => {
+    it('modo COMPRADOR compra: da lance em leilao de outro vendedor -> 201', async () => {
       await api('post', `/auction-items/${itemDeA}/bids`, tokenB).send({ valor: 100 }).expect(201);
     });
 
-    it('VENDEDOR nunca da lance no PROPRIO leilao -> 403', async () => {
-      const res = await api('post', `/auction-items/${itemDeA}/bids`, tokenA).send({ valor: 500 }).expect(403);
-      expect(res.body.mensagem).toContain('proprio item');
+    it('modo VENDEDOR nao da lance (nem em leilao de outro) -> 403', async () => {
+      const outro = await criarEEntrar('Vendedor Sem Lance', 'semlance', 'SELLER');
+      await api('post', `/auction-items/${itemDeA}/bids`, outro.token).send({ valor: 500 }).expect(403);
+      await api('get', '/bids/meus', outro.token).expect(403);
     });
 
-    it('vendedor ve os proprios lances em "meus lances"', async () => {
-      const res = await api('get', '/bids/meus', tokenB).expect(200);
-      expect(res.body.total).toBeGreaterThanOrEqual(1);
+    it('modo COMPRADOR nao cria leilao -> 403', async () => {
+      await api('post', '/auctions', tokenB).send(corpoLeilao()).expect(403);
     });
 
     it('ADMIN continua fora do jogo: nao da lance e nao cria leilao -> 403', async () => {
       await api('post', `/auction-items/${itemDeA}/bids`, tokenAdmin).send({ valor: 900 }).expect(403);
-      await api('post', '/auctions', tokenAdmin)
-        .send({ titulo: 'Admin nao cria', dataInicio: new Date(agora).toISOString(), dataFim: new Date(agora + 86400000).toISOString() })
-        .expect(403);
+      await api('post', '/auctions', tokenAdmin).send(corpoLeilao()).expect(403);
     });
 
-    it('COMPRADOR com perfil incompleto NAO vira vendedor -> 400 dizendo o que falta', async () => {
-      const novo = await criarEEntrar('Comprador Quer Vender', 'querv', 'BIDDER');
-      const res = await api('post', '/users/me/vendedor', novo.token).expect(400);
-      expect(res.body.mensagem).toMatch(/telefone.*CPF.*endereco/);
-      // e continua sem poder criar leilao
-      await api('post', '/auctions', novo.token)
-        .send({ titulo: 'Ainda nao', dataInicio: new Date(agora).toISOString(), dataFim: new Date(agora + 86400000).toISOString() })
-        .expect(403);
-    });
-
-    it('CPF invalido no perfil -> 400', async () => {
-      const novo = await criarEEntrar('Cpf Invalido', 'cpfinv', 'BIDDER');
-      await api('patch', '/users/me', novo.token)
-        .send({ telefone: '11999998888', endereco: 'Rua Teste, 10', cpf: '12345678900' })
-        .expect(200);
-      const res = await api('post', '/users/me/vendedor', novo.token).expect(400);
-      expect(res.body.mensagem).toContain('invalido');
-    });
-
-    it('COMPRADOR com perfil completo vira vendedor NA HORA, cria leilao e continua podendo comprar', async () => {
-      const novo = await criarEEntrar('Comprador Vira Vendedor', 'viravend', 'BIDDER');
-      await api('patch', '/users/me', novo.token)
-        .send({ telefone: '11999998888', endereco: 'Rua Teste, 10', cpf: cpfDe(agora % 100000) })
-        .expect(200);
-
-      const res = await api('post', '/users/me/vendedor', novo.token).expect(200);
+    it('PATCH /users/me/modo: comprador vira vendedor NA HORA (sem completar perfil) e cria leilao', async () => {
+      const novo = await criarEEntrar('Quer Vender Modo', 'querv', 'BIDDER');
+      const res = await api('patch', '/users/me/modo', novo.token).send({ modo: 'SELLER' }).expect(200);
       expect(res.body.papel).toBe('SELLER');
-
-      // mesmo token, sem novo login: agora cria leilao...
-      const leilao = await api('post', '/auctions', novo.token)
-        .send({ titulo: 'Primeiro leilao', dataInicio: new Date(agora).toISOString(), dataFim: new Date(agora + 86400000).toISOString() })
-        .expect(201);
-      expect(leilao.body.status).toBe('DRAFT');
-      // ... e ainda da lance em leilao de outro
-      await api('post', `/auction-items/${itemDeA}/bids`, novo.token).send({ valor: 110 }).expect(201);
-      // ... mas nunca no proprio leilao (a regra vale por dono)
-      const meuLeilao = await criarLeilao('OPEN', res.body.id);
-      const meuItem = await prisma.auctionItem.create({
-        data: { titulo: 'Meu item', precoInicial: 50, incrementoMinimo: 5, cep: '01310100', leilaoId: meuLeilao, categoriaId },
-      });
-      await api('post', `/auction-items/${meuItem.id}/bids`, novo.token).send({ valor: 50 }).expect(403);
-
-      // ja e vendedor: pedir de novo -> 409
-      await api('post', '/users/me/vendedor', novo.token).expect(409);
+      await api('post', '/auctions', novo.token).send(corpoLeilao()).expect(201);
+      // o modo vendedor trava o lance
+      await api('post', `/auction-items/${itemDeA}/bids`, novo.token).send({ valor: 500 }).expect(403);
     });
 
-    it('o MESMO CPF nao pode estar em duas contas de vendedor -> 409', async () => {
-      const cpf = cpfDe((agora % 100000) + 7);
-      const primeiro = await criarEEntrar('Dono do CPF', 'cpf1', 'BIDDER');
-      await api('patch', '/users/me', primeiro.token).send({ telefone: '11999990000', endereco: 'Rua Um, 1', cpf }).expect(200);
-      await api('post', '/users/me/vendedor', primeiro.token).expect(200);
-
-      const segundo = await criarEEntrar('Outra Conta Mesmo CPF', 'cpf2', 'BIDDER');
-      await api('patch', '/users/me', segundo.token).send({ telefone: '11999991111', endereco: 'Rua Dois, 2', cpf }).expect(200);
-      const res = await api('post', '/users/me/vendedor', segundo.token).expect(409);
-      expect(res.body.mensagem).toContain('CPF');
+    it('trocar para o mesmo modo -> 409; voltar a comprador funciona e trava o leilao', async () => {
+      const novo = await criarEEntrar('Vai E Volta Modo', 'vaievolta', 'BIDDER');
+      await api('patch', '/users/me/modo', novo.token).send({ modo: 'BIDDER' }).expect(409);
+      await api('patch', '/users/me/modo', novo.token).send({ modo: 'SELLER' }).expect(200);
+      await api('patch', '/users/me/modo', novo.token).send({ modo: 'SELLER' }).expect(409);
+      const volta = await api('patch', '/users/me/modo', novo.token).send({ modo: 'BIDDER' }).expect(200);
+      expect(volta.body.papel).toBe('BIDDER');
+      await api('post', '/auctions', novo.token).send(corpoLeilao()).expect(403);
     });
 
-    it('ADMIN nao vira vendedor -> 403; sem login -> 401', async () => {
-      await api('post', '/users/me/vendedor', tokenAdmin).expect(403);
-      await api('post', '/users/me/vendedor').expect(401);
+    it('sem brecha: o dono nunca da lance no proprio leilao, mesmo voltando ao modo comprador', async () => {
+      await api('patch', '/users/me/modo', tokenA).send({ modo: 'BIDDER' }).expect(200);
+      const res = await api('post', `/auction-items/${itemDeA}/bids`, tokenA).send({ valor: 500 }).expect(403);
+      expect(res.body.mensagem).toContain('proprio item');
+      await api('patch', '/users/me/modo', tokenA).send({ modo: 'SELLER' }).expect(200);
+    });
+
+    it('modo invalido -> 400; ADMIN nao troca de modo -> 403; sem login -> 401', async () => {
+      await api('patch', '/users/me/modo', tokenB).send({ modo: 'ADMIN' }).expect(400);
+      await api('patch', '/users/me/modo', tokenAdmin).send({ modo: 'SELLER' }).expect(403);
+      await api('patch', '/users/me/modo').send({ modo: 'SELLER' }).expect(401);
+    });
+
+    it('perfil incompleto: comprador nao da lance e vendedor nao cria leilao -> 403 dizendo o que falta', async () => {
+      const semPerfil = await criarEEntrar('Comprador Sem Perfil', 'semperfil', 'BIDDER', false);
+      const lance = await api('post', `/auction-items/${itemDeA}/bids`, semPerfil.token).send({ valor: 200 }).expect(403);
+      expect(lance.body.mensagem).toMatch(/telefone, CPF, endereço/);
+
+      const vendSemPerfil = await criarEEntrar('Vendedor Sem Perfil', 'vendsemperfil', 'SELLER', false);
+      const leilao = await api('post', '/auctions', vendSemPerfil.token).send(corpoLeilao()).expect(403);
+      expect(leilao.body.mensagem).toMatch(/Complete seu perfil/);
+    });
+
+    it('GET /users/me diz o que falta no perfil (vazio quando completo; ADMIN nunca precisa)', async () => {
+      const semPerfil = await criarEEntrar('Perfil Vazio Modo', 'perfilvazio', 'BIDDER', false);
+      const falta = await api('get', '/users/me', semPerfil.token).expect(200);
+      expect(falta.body.camposFaltando).toEqual(['telefone', 'CPF', 'endereço']);
+      const completo = await api('get', '/users/me', tokenB).expect(200);
+      expect(completo.body.camposFaltando).toEqual([]);
+      const admin = await api('get', '/users/me', tokenAdmin).expect(200);
+      expect(admin.body.camposFaltando).toEqual([]);
+    });
+
+    it('CPF invalido no perfil tambem conta como perfil incompleto', async () => {
+      const u = await criarEEntrar('Cpf Invalido Modo', 'cpfinv', 'BIDDER');
+      await prisma.user.update({ where: { id: u.id }, data: { cpf: '11111111111' } });
+      const res = await api('post', `/auction-items/${itemDeA}/bids`, u.token).send({ valor: 200 }).expect(403);
+      expect(res.body.mensagem).toContain('CPF válido');
+    });
+
+    it('minha-situacao informa o motivo: MODO_VENDEDOR e PERFIL_INCOMPLETO', async () => {
+      const vend = await criarEEntrar('Vendedor Situacao', 'vendsit', 'SELLER');
+      let res = await api('get', `/auction-items/${itemDeA}/bids/minha-situacao`, vend.token).expect(200);
+      expect(res.body).toMatchObject({ permitido: false, motivo: 'MODO_VENDEDOR' });
+
+      const semPerfil = await criarEEntrar('Comprador Situacao', 'compsit', 'BIDDER', false);
+      res = await api('get', `/auction-items/${itemDeA}/bids/minha-situacao`, semPerfil.token).expect(200);
+      expect(res.body).toMatchObject({ permitido: false, motivo: 'PERFIL_INCOMPLETO' });
     });
   });
 
@@ -534,29 +536,6 @@ describe('Novos modulos (e2e)', () => {
       expect(res.body.resumo.totalInvestido).toBe(soma.toFixed(2));
       expect(res.body.resumo.disputadas).toBe(res.body.pecas.length);
       expect((res.body.pecas as { grupo: string }[]).every((p) => ['ADQUIRIDAS', 'EM_DISPUTA', 'ENCERRADAS'].includes(p.grupo))).toBe(true);
-    });
-
-    it('requisitos de vendedor: o servidor diz o que falta; vendedor e admin nao "podem solicitar"', async () => {
-      const novo = await criarEEntrar('Quer Requisitos', 'requis', 'BIDDER');
-      let res = await api('get', '/users/me/vendedor', novo.token).expect(200);
-      expect(res.body.podeSolicitar).toBe(false);
-      expect(res.body.requisitos.map((r: { campo: string; ok: boolean }) => [r.campo, r.ok])).toEqual([
-        ['telefone', false],
-        ['cpf', false],
-        ['endereco', false],
-      ]);
-
-      await api('patch', '/users/me', novo.token)
-        .send({ telefone: '11999997777', endereco: 'Rua X, 1', cpf: cpfDe((agora % 100000) + 33) })
-        .expect(200);
-      res = await api('get', '/users/me/vendedor', novo.token).expect(200);
-      expect(res.body.podeSolicitar).toBe(true);
-      expect(res.body.requisitos.every((r: { ok: boolean }) => r.ok)).toBe(true);
-
-      const vend = await api('get', '/users/me/vendedor', tokenSeller).expect(200);
-      expect(vend.body).toMatchObject({ jaEVendedor: true, podeSolicitar: false });
-      await api('get', '/users/me/vendedor', tokenAdmin).expect(200).expect((r) => expect(r.body.podeSolicitar).toBe(false));
-      await api('get', '/users/me/vendedor').expect(401);
     });
 
     it('indicadores do leilao trazem os percentuais prontos', async () => {

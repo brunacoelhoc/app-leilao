@@ -7,6 +7,8 @@ import { UsersController } from '../users/users.controller';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { EmailSimuladoService } from './email-simulado.service';
+import { RecuperacaoSenhaService } from './recuperacao-senha.service';
 import { JwtStrategy } from './jwt.strategy';
 
 @Module({
@@ -35,7 +37,7 @@ import { JwtStrategy } from './jwt.strategy';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RecuperacaoSenhaService, EmailSimuladoService],
   // PassportModule precisa ser reexportado: qualquer modulo que use o
   // JwtAuthGuard vai precisar importar o AuthModule por causa disso
   exports: [AuthService, PassportModule],

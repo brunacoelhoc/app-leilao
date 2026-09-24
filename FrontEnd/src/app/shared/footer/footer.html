@@ -6,10 +6,22 @@
       <h2 id="titulo-convite">Tem uma peça rara guardada?</h2>
       <p>Cadastre seu leilão e apresente a obra a quem reconhece o valor de uma boa história.</p>
     </div>
-    <a routerLink="/registrar" class="convite-botao">
-      Quero vender
+    @if (auth.papel() === 'BIDDER') {
+      <button type="button" class="convite-botao" [disabled]="modo.trocando()" (click)="modo.alternar()">
+        Quero vender
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </a>
+      </button>
+    } @else if (auth.papel() === 'SELLER') {
+      <a routerLink="/vendedor" class="convite-botao">
+        Criar meu leilão
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    } @else if (!auth.estaLogado()) {
+      <a routerLink="/registrar" class="convite-botao">
+        Quero vender
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    }
   </section>
 
   <div class="grade">

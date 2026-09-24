@@ -210,10 +210,6 @@ export class VendedorLeilao {
   }
 
   async criarItem(): Promise<void> {
-    if (!this.foto) {
-      this.erroItem.set('A foto do item é obrigatória.');
-      return;
-    }
     this.erroItem.set(null);
     this.criandoItem.set(true);
     let itemId: string | null = null;
@@ -221,7 +217,7 @@ export class VendedorLeilao {
       const item = await firstValueFrom(
         this.itensService.criar({
           titulo: this.itemTitulo.trim(),
-          descricao: this.itemDescricao.trim(),
+          descricao: this.itemDescricao.trim() || undefined, // opcional
           precoInicial: this.itemPrecoInicial!,
           incrementoMinimo: this.itemIncremento!,
           cep: somenteDigitos(this.itemCep),
@@ -230,10 +226,11 @@ export class VendedorLeilao {
         }),
       );
       itemId = item.id;
-      await firstValueFrom(this.documentosService.enviar(item.id, 'PHOTO', this.foto));
+      // Foto opcional: sem ela, o servidor usa uma capa padrao
+      if (this.foto) await firstValueFrom(this.documentosService.enviar(item.id, 'PHOTO', this.foto));
       this.modalItem.set(false);
       this.carregarItens();
-      void this.alerta.sucesso('Item cadastrado!', 'A foto foi enviada junto.');
+      void this.alerta.sucesso('Item cadastrado!', this.foto ? 'A foto foi enviada junto.' : 'Você pode enviar uma foto depois, pelo botão do item.');
     } catch (erro) {
       const mensagem = mensagemDeErro(erro, 'Não foi possível cadastrar o item');
       if (itemId) {

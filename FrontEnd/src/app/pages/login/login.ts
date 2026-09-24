@@ -23,22 +23,19 @@ export class Login {
 
   email = '';
   senha = '';
-  aceiteTermos = false;
   readonly mostrarSenha = signal(false);
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
 
   async entrar(): Promise<void> {
-    if (!this.aceiteTermos) {
-      this.erro.set('É preciso aceitar os termos de uso para continuar.');
-      return;
-    }
     this.erro.set(null);
     this.carregando.set(true);
     try {
       await this.auth.login(this.email, this.senha);
-      await this.router.navigateByUrl(destinoSeguro(this.route.snapshot.queryParamMap.get('returnUrl')));
-      void this.alerta.sucesso('Bem-vindo(a) de volta!', 'Login realizado com sucesso.');
+      // O servidor diz o que falta no perfil: quem esta incompleto e levado a completar
+      const incompleto = (this.auth.usuario()?.camposFaltando?.length ?? 0) > 0;
+      await this.router.navigateByUrl(incompleto ? '/perfil' : destinoSeguro(this.route.snapshot.queryParamMap.get('returnUrl')));
+      void this.alerta.sucesso('Bem-vindo(a) de volta!', incompleto ? 'Complete seu perfil para dar lances e criar leilões.' : 'Login realizado com sucesso.');
     } catch (erro) {
       this.erro.set(mensagemDeErro(erro, 'Não foi possível entrar'));
     } finally {

@@ -161,8 +161,6 @@ export class VendedorPainel {
     switch (campo) {
       case 'titulo':
         return vazio(this.titulo) ? 'Por favor, insira o título do leilão.' : null;
-      case 'descricao':
-        return vazio(this.descricao) ? 'Por favor, conte um pouco sobre o leilão.' : null;
       case 'dataInicio':
         return !this.dataInicio ? 'Por favor, escolha a data de início.' : null;
       case 'dataFim':
@@ -173,8 +171,6 @@ export class VendedorPainel {
         return null;
       case 'itemTitulo':
         return vazio(this.itemTitulo) ? 'Por favor, dê um nome à peça.' : null;
-      case 'itemDescricao':
-        return vazio(this.itemDescricao) ? 'Por favor, descreva a peça.' : null;
       case 'itemPreco':
         if (this.itemPrecoInicial === null) return 'Por favor, informe o preço inicial.';
         return this.itemPrecoInicial <= 0 ? 'O preço inicial deve ser maior que zero.' : null;
@@ -188,14 +184,12 @@ export class VendedorPainel {
       }
       case 'itemCategoria':
         return !this.itemCategoriaId ? 'Por favor, escolha uma categoria.' : null;
-      case 'foto':
-        return !this.foto ? 'Por favor, escolha uma foto da peça.' : null;
       default:
         return null;
     }
   }
 
-  private readonly CAMPOS = ['titulo', 'descricao', 'dataInicio', 'dataFim', 'itemTitulo', 'itemDescricao', 'itemPreco', 'itemIncremento', 'itemCep', 'itemCategoria', 'foto'];
+  private readonly CAMPOS = ['titulo', 'dataInicio', 'dataFim', 'itemTitulo', 'itemPreco', 'itemIncremento', 'itemCep', 'itemCategoria'];
 
   abrirModal(): void {
     this.tocados.set({});
@@ -247,7 +241,7 @@ export class VendedorPainel {
       const leilao = await firstValueFrom(
         this.leiloesService.criar({
           titulo: this.titulo.trim(),
-          descricao: this.descricao.trim(),
+          descricao: this.descricao.trim() || undefined, // opcional
           dataInicio: new Date(this.dataInicio).toISOString(),
           dataFim: new Date(this.dataFim).toISOString(),
         }),
@@ -258,7 +252,7 @@ export class VendedorPainel {
       const item = await firstValueFrom(
         this.itensService.criar({
           titulo: this.itemTitulo.trim(),
-          descricao: this.itemDescricao.trim(),
+          descricao: this.itemDescricao.trim() || undefined, // opcional
           precoInicial: this.itemPrecoInicial!,
           incrementoMinimo: this.itemIncremento!,
           cep: somenteDigitos(this.itemCep),
@@ -267,8 +261,8 @@ export class VendedorPainel {
         }),
       );
 
-      // 3) a foto do item
-      await firstValueFrom(this.documentosService.enviar(item.id, 'PHOTO', this.foto!));
+      // 3) a foto do item (opcional: sem foto, o servidor usa uma capa padrao)
+      if (this.foto) await firstValueFrom(this.documentosService.enviar(item.id, 'PHOTO', this.foto));
 
       this.modalAberto.set(false);
       await this.alerta.sucesso('Leilão criado!', 'Ele está como rascunho. Agende quando estiver pronto.');

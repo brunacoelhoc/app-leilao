@@ -70,6 +70,7 @@ describe('Rate limiting especifico do login/registro (e2e)', () => {
           nome: 'Rate Limit Registrar',
           email: `rate.limit.registrar.${tentativa}.${Date.now()}@teste.com`,
           senha: 'Abc12345!',
+          aceiteTermos: true,
         });
 
       if (tentativa <= 10) {

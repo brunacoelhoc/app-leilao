@@ -7,10 +7,10 @@ export class MinhaSituacaoResposta {
 
   @ApiPropertyOptional({
     nullable: true,
-    enum: ['ADMIN', 'DONO', 'LEILAO_FECHADO', 'ITEM_INDISPONIVEL'],
+    enum: ['ADMIN', 'MODO_VENDEDOR', 'DONO', 'PERFIL_INCOMPLETO', 'LEILAO_FECHADO', 'ITEM_INDISPONIVEL'],
     description: 'Por que NAO pode (null quando pode)',
   })
-  motivo: 'ADMIN' | 'DONO' | 'LEILAO_FECHADO' | 'ITEM_INDISPONIVEL' | null;
+  motivo: 'ADMIN' | 'MODO_VENDEDOR' | 'DONO' | 'PERFIL_INCOMPLETO' | 'LEILAO_FECHADO' | 'ITEM_INDISPONIVEL' | null;
 
   @ApiPropertyOptional({ nullable: true, description: 'Texto pronto para exibir (null quando pode)' })
   mensagem: string | null;

@@ -32,7 +32,7 @@ describe('Users (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
-      .send({ nome, email, senha: SENHA_TESTE });
+      .send({ nome, email, senha: SENHA_TESTE, aceiteTermos: true });
     if (papel) {
       await prisma.user.update({ where: { email }, data: { papel } });
     }

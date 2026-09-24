@@ -1,6 +1,8 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 import { Institucional } from '../../core/models';
+import { ModoService } from '../../core/modo.service';
 import { InstitucionalService } from '../../services/institucional.service';
 
 const ATUALIZAR_A_CADA_MS = 60_000;
@@ -14,6 +16,8 @@ const ATUALIZAR_A_CADA_MS = 60_000;
 })
 export class Footer {
   private readonly institucionalService = inject(InstitucionalService);
+  protected readonly auth = inject(AuthService);
+  protected readonly modo = inject(ModoService);
 
   protected readonly anoAtual = new Date().getFullYear();
   protected readonly casa = signal<Institucional | null>(null);

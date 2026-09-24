@@ -159,3 +159,18 @@
 .requisitos li.ok::before {
   content: '✓ ';
 }
+
+/* Aviso de perfil incompleto (o servidor diz o que falta) */
+.faixa-perfil {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-left: 4px solid var(--cor-dourado);
+  background: #fbf3dd;
+}
+
+.faixa-perfil p {
+  margin: 0.2rem 0 0;
+}

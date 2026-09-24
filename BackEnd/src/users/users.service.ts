@@ -6,7 +6,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { cpfValido } from '../common/utils/cpf.util';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import {
@@ -38,7 +37,7 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Cria o usuario. O papel e o ativo usam o padrao do schema (BIDDER e true)
-  criar(dados: { nome: string; email: string; senha: string; papel?: Role }): Promise<User> {
+  criar(dados: { nome: string; email: string; senha: string; papel?: Role; termosAceitosEm?: Date }): Promise<User> {
     return this.prisma.user.create({ data: dados });
   }
 
@@ -65,52 +64,19 @@ export class UsersService {
     }
   }
 
-  // As regras de "Quero vender" em um lugar so: a tela pergunta, o "Quero vender" confere de novo
-  async avaliarRequisitosVendedor(usuario: User): Promise<{
-    faltando: string[];
-    cpfInvalido: boolean;
-    cpfEmOutraConta: boolean;
-  }> {
-    const faltando: string[] = [];
-    if (!usuario.telefone) faltando.push('telefone');
-    if (!usuario.cpf) faltando.push('CPF');
-    if (!usuario.endereco) faltando.push('endereco');
-    const cpfInvalido = !!usuario.cpf && !cpfValido(usuario.cpf);
-    const cpfEmOutraConta =
-      !!usuario.cpf &&
-      !cpfInvalido &&
-      !!(await this.prisma.user.findFirst({
-        where: { cpf: usuario.cpf, papel: 'SELLER', id: { not: usuario.id } },
-        select: { id: true },
-      }));
-    return { faltando, cpfInvalido, cpfEmOutraConta };
-  }
-
-  // 🔎 "Quero vender": um COMPRADOR passa a VENDEDOR sozinho, mas so com o perfil completo
-  // (telefone, CPF valido e endereco). O CPF nao pode estar em outra conta de vendedor
-  // (evita a mesma pessoa com varias contas para inflar o proprio leilao). O papel e lido
-  // do banco a cada requisicao, entao vale na hora, sem novo login
-  async tornarVendedor(id: string): Promise<User> {
+  // 🔎 Troca de modo: a mesma conta alterna entre COMPRADOR (BIDDER) e VENDEDOR (SELLER) com um
+  // clique, sem completar perfil. Cada modo trava o outro: vendedor nao da lance e comprador nao
+  // cria leilao. O papel e lido do banco a cada requisicao, entao vale na hora, sem novo login.
+  // ADMIN nao troca de modo (moderar e outra funcao)
+  async trocarModo(id: string, modo: 'BIDDER' | 'SELLER'): Promise<User> {
     const usuario = await this.buscarPorIdOuFalhar(id);
-    if (usuario.papel === 'SELLER') {
-      throw new ConflictException('Sua conta ja e de vendedor');
+    if (usuario.papel === 'ADMIN') {
+      throw new ForbiddenException('Administradores nao trocam de modo');
     }
-    if (usuario.papel !== 'BIDDER') {
-      throw new ForbiddenException('Somente contas de comprador podem virar vendedor');
+    if (usuario.papel === modo) {
+      throw new ConflictException(modo === 'SELLER' ? 'Sua conta ja esta no modo vendedor' : 'Sua conta ja esta no modo comprador');
     }
-
-    const requisitos = await this.avaliarRequisitosVendedor(usuario);
-    if (requisitos.faltando.length > 0) {
-      throw new BadRequestException(`Complete o perfil antes de vender: falta ${requisitos.faltando.join(', ')}`);
-    }
-    if (requisitos.cpfInvalido) {
-      throw new BadRequestException('O CPF informado no perfil e invalido');
-    }
-    if (requisitos.cpfEmOutraConta) {
-      throw new ConflictException('Este CPF ja esta vinculado a outra conta de vendedor');
-    }
-
-    return this.prisma.user.update({ where: { id }, data: { papel: 'SELLER' } });
+    return this.prisma.user.update({ where: { id }, data: { papel: modo } });
   }
 
   // Usado no login, para achar a conta pelo e-mail

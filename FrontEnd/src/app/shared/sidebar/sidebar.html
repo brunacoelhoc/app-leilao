@@ -72,7 +72,15 @@
         <app-avatar [avatarUrl]="auth.usuario()?.avatarUrl" [nome]="auth.usuario()?.nome ?? '?'" [tamanho]="38" />
         <div>
           <strong>{{ auth.usuario()?.nome }}</strong>
-          <small>{{ auth.papel() }}</small>
+          @if (auth.papel() === 'BIDDER' || auth.papel() === 'SELLER') {
+            <button type="button" class="modo" [disabled]="modo.trocando()" (click)="modo.alternar(); fechar()"
+              [attr.aria-label]="auth.papel() === 'BIDDER' ? 'Modo comprador. Ativar o modo vendedor' : 'Modo vendedor. Voltar ao modo comprador'"
+              [title]="auth.papel() === 'BIDDER' ? 'Trocar para vendedor' : 'Trocar para comprador'">
+              {{ auth.papel() }} <span aria-hidden="true">⇄</span>
+            </button>
+          } @else {
+            <small>{{ auth.papel() }}</small>
+          }
         </div>
       </div>
       <a routerLink="/perfil" routerLinkActive="ativo" class="link-perfil" (click)="fechar()">

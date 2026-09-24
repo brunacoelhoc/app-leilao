@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../core/environment';
 import { paramsSemVazios } from '../core/http-params.util';
-import { Papel, RequisitosVendedor, RespostaPaginada, Usuario } from '../core/models';
+import { Papel, RespostaPaginada, Usuario } from '../core/models';
 
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
@@ -20,14 +20,9 @@ export class UsuariosService {
     });
   }
 
-  // O que falta para virar vendedor (lista decidida pelo servidor)
-  requisitosVendedor(): Observable<RequisitosVendedor> {
-    return this.http.get<RequisitosVendedor>(`${this.base}/me/vendedor`);
-  }
-
-  // "Quero vender": o comprador vira vendedor (o servidor confere perfil completo e CPF valido/unico)
-  tornarVendedor(): Observable<Usuario> {
-    return this.http.post<Usuario>(`${this.base}/me/vendedor`, {});
+  // Troca o modo da conta (BIDDER compra / SELLER vende); o servidor aplica as travas de cada modo
+  trocarModo(modo: 'BIDDER' | 'SELLER'): Observable<Usuario> {
+    return this.http.patch<Usuario>(`${this.base}/me/modo`, { modo });
   }
 
   // "senhaAtual" so e exigida pelo backend quando o e-mail muda

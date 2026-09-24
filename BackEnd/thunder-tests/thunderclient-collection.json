@@ -85,7 +85,7 @@
       "params": [],
       "body": {
         "type": "json",
-        "raw": "{\n  \"nome\": \"Seller Exemplo\",\n  \"email\": \"seller.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\"\n}"
+        "raw": "{\n  \"nome\": \"Seller Exemplo\",\n  \"email\": \"seller.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\",\n  \"aceiteTermos\": true\n}"
       },
       "tests": [],
       "docs": "Cria uma conta (nasce sempre BIDDER). Depois de criar, promova para SELLER direto no banco (papel=SELLER) se quiser testar rotas de vendedor, ou use um usuario que ja seja SELLER."
@@ -113,7 +113,7 @@
       "params": [],
       "body": {
         "type": "json",
-        "raw": "{\n  \"nome\": \"Bidder Exemplo\",\n  \"email\": \"bidder.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\"\n}"
+        "raw": "{\n  \"nome\": \"Bidder Exemplo\",\n  \"email\": \"bidder.exemplo@teste.com\",\n  \"senha\": \"Abc12345!\",\n  \"aceiteTermos\": true\n}"
       },
       "tests": []
     },

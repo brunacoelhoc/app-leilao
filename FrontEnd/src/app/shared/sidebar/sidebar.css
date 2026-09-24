@@ -176,6 +176,26 @@
   font-size: 0.72rem;
 }
 
+/* Troca de modo: parece so o rotulo do papel, mas e clicavel (sutil) */
+.usuario .modo {
+  all: unset;
+  cursor: pointer;
+  color: var(--cor-dourado-suave);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.usuario .modo:hover,
+.usuario .modo:focus-visible {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.usuario .modo:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .rodape-sidebar button.secundario {
   color: #f0e6d6;
   border-color: rgba(240, 230, 214, 0.4);

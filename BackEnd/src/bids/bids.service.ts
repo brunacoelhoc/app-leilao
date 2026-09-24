@@ -11,6 +11,8 @@ import type { ContextoRequisicao } from '../common/interfaces/contexto-requisica
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { decimalParaString } from '../common/utils/decimal.util';
+import { nomeAbreviado } from '../common/utils/nome.util';
+import { camposFaltandoNoPerfil, mensagemPerfilIncompleto } from '../common/utils/perfil-completo.util';
 import {
   calcularPaginacao,
   paginar,
@@ -41,7 +43,7 @@ function paraResposta(
   const { licitante, ...dados } = bid;
   return {
     ...dados,
-    ...(licitante ? { licitanteNome: licitante.nome } : {}),
+    ...(licitante ? { licitanteNome: nomeAbreviado(licitante.nome) } : {}),
     valor: decimalParaString(bid.valor)!,
     lanceAnterior: decimalParaString(bid.lanceAnterior),
   };
@@ -73,6 +75,15 @@ export class BidsService {
     contexto: ContextoRequisicao,
   ): Promise<BidResposta> {
     try {
+      // Regra: so da lance quem tem o perfil completo (telefone, CPF valido e endereco)
+      const licitante = await this.prisma.user.findUnique({
+        where: { id: usuario.id },
+        select: { telefone: true, cpf: true, endereco: true },
+      });
+      const faltando = licitante ? camposFaltandoNoPerfil(licitante) : [];
+      if (faltando.length > 0) {
+        throw new ForbiddenException(mensagemPerfilIncompleto(faltando, 'dar lances'));
+      }
       const { bid, proximoMinimo, incremento } = await this.prisma.$transaction(async (tx) => {
         // Trava a linha do item ate o fim desta transacao: um lance
         // concorrente no MESMO item espera aqui, e so ve o valor ja atualizado
@@ -177,7 +188,7 @@ export class BidsService {
         });
         this.lancesGateway.emitirLanceNovo(itemId, {
           lance: resposta,
-          licitanteNome: licitante?.nome ?? 'Licitante',
+          licitanteNome: nomeAbreviado(licitante?.nome),
           lanceAtual: resposta.valor,
           lanceMinimo: proximoMinimo.toString(),
           lancesSugeridos: lancesSugeridosDe(proximoMinimo, incremento),
@@ -340,6 +351,11 @@ export class BidsService {
     if (!item) throw new NotFoundException('Item nao encontrado');
 
     const euSouDono = item.leilao.vendedorId === usuario.id;
+    const eu = await this.prisma.user.findUnique({
+      where: { id: usuario.id },
+      select: { telefone: true, cpf: true, endereco: true },
+    });
+    const faltando = eu ? camposFaltandoNoPerfil(eu) : [];
     const euSouVencedor = item.vencedorId === usuario.id;
     const agora = new Date();
 
@@ -351,6 +367,12 @@ export class BidsService {
     } else if (euSouDono) {
       motivo = 'DONO';
       mensagem = 'Você é o dono deste leilão e não pode dar lances nele.';
+    } else if (usuario.papel === 'SELLER') {
+      motivo = 'MODO_VENDEDOR';
+      mensagem = 'Você está no modo vendedor. Volte para o modo comprador em "Meu perfil" para dar lances.';
+    } else if (faltando.length > 0) {
+      motivo = 'PERFIL_INCOMPLETO';
+      mensagem = mensagemPerfilIncompleto(faltando, 'dar lances');
     } else if (item.leilao.status !== AuctionStatus.OPEN || agora < item.leilao.dataInicio || agora >= item.leilao.dataFim) {
       motivo = 'LEILAO_FECHADO';
       mensagem = 'Este leilão não está recebendo lances agora.';

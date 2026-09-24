@@ -47,12 +47,24 @@ describe('Auth (e2e)', () => {
       const resposta = await request(app.getHttpServer())
         .post('/api/auth/registrar')
         .set('X-API-KEY', chave)
-        .send({ nome: 'Auth E2E', email: EMAIL_TESTE, senha: SENHA_TESTE })
+        .send({ nome: 'Auth E2E', email: EMAIL_TESTE, senha: SENHA_TESTE, aceiteTermos: true })
         .expect(201);
 
       expect(resposta.body.papel).toBe('BIDDER');
       expect(resposta.body.ativo).toBe(true);
       expect(resposta.body.senha).toBeUndefined();
+      // O servidor grava quando os termos foram aceitos
+      expect(resposta.body.termosAceitosEm).toBeTruthy();
+    });
+
+    it('registro sem aceitar os termos -> 400 (regra do servidor, nao da tela)', async () => {
+      const semAceite = { nome: 'Sem Aceite', email: 'sem.aceite.e2e@teste.com', senha: SENHA_TESTE };
+      await request(app.getHttpServer()).post('/api/auth/registrar').set('X-API-KEY', chave).send(semAceite).expect(400);
+      await request(app.getHttpServer())
+        .post('/api/auth/registrar')
+        .set('X-API-KEY', chave)
+        .send({ ...semAceite, aceiteTermos: false })
+        .expect(400);
     });
 
     it('POST /auth/login com a mesma senha devolve o token (200, nao 201)', async () => {
@@ -73,7 +85,7 @@ describe('Auth (e2e)', () => {
       const resposta = await request(app.getHttpServer())
         .post('/api/auth/registrar')
         .set('X-API-KEY', chave)
-        .send({ nome: 'A', email: 'nao-e-email', senha: '123' })
+        .send({ nome: 'A', email: 'nao-e-email', senha: '123', aceiteTermos: true })
         .expect(400);
 
       expect(resposta.body.mensagem).toEqual([
@@ -97,7 +109,7 @@ describe('Auth (e2e)', () => {
       return request(app.getHttpServer())
         .post('/api/auth/registrar')
         .set('X-API-KEY', chave)
-        .send({ nome: 'Outra Pessoa', email: EMAIL_TESTE, senha: SENHA_TESTE })
+        .send({ nome: 'Outra Pessoa', email: EMAIL_TESTE, senha: SENHA_TESTE, aceiteTermos: true })
         .expect(409);
     });
   });
@@ -155,6 +167,7 @@ describe('Auth (e2e)', () => {
           nome: 'Tentando Admin',
           email: 'tentando.admin.e2e@teste.com',
           senha: SENHA_TESTE,
+          aceiteTermos: true,
           papel: 'ADMIN',
         })
         .expect(400);

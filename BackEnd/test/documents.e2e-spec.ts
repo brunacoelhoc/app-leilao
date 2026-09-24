@@ -8,6 +8,7 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { PERFIL_COMPLETO } from './perfil-teste';
 
 describe('Documents (e2e)', () => {
   let app: INestApplication<App>;
@@ -31,10 +32,8 @@ describe('Documents (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
-      .send({ nome, email, senha: SENHA_TESTE });
-    if (papel) {
-      await prisma.user.update({ where: { email }, data: { papel } });
-    }
+      .send({ nome, email, senha: SENHA_TESTE, aceiteTermos: true });
+    await prisma.user.update({ where: { email }, data: { ...PERFIL_COMPLETO, ...(papel ? { papel } : {}) } });
     const login = await request(app.getHttpServer())
       .post('/api/auth/login')
       .set('X-API-KEY', chave)

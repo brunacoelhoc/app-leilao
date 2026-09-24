@@ -37,7 +37,7 @@ export class RankingService {
         FROM "User" u
         JOIN "Auction" a     ON a."vendedorId" = u.id
         JOIN "AuctionItem" i ON i."leilaoId" = a.id
-       WHERE u.papel = 'SELLER' AND u.ativo = true
+       WHERE u.papel <> 'ADMIN' AND u.ativo = true
        GROUP BY u.id
       HAVING COUNT(*) FILTER (WHERE i.status = 'SOLD') >= ${MINIMO_DE_VENDAS}
        ORDER BY SUM(i."lanceAtual") FILTER (WHERE i.status = 'SOLD') DESC NULLS LAST,

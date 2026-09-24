@@ -11,6 +11,7 @@ import type { ContextoRequisicao } from '../common/interfaces/contexto-requisica
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { decimalParaString } from '../common/utils/decimal.util';
+import { camposFaltandoNoPerfil, mensagemPerfilIncompleto } from '../common/utils/perfil-completo.util';
 import {
   calcularPaginacao,
   paginar,
@@ -60,6 +61,15 @@ export class AuctionsService {
     contexto: ContextoRequisicao,
   ): Promise<Auction> {
     try {
+      // Regra: so cria leilao quem tem o perfil completo (telefone, CPF valido e endereco)
+      const dono = await this.prisma.user.findUnique({
+        where: { id: usuario.id },
+        select: { telefone: true, cpf: true, endereco: true },
+      });
+      const faltando = dono ? camposFaltandoNoPerfil(dono) : [];
+      if (faltando.length > 0) {
+        throw new ForbiddenException(mensagemPerfilIncompleto(faltando, 'criar leilões'));
+      }
       const leilao = await this.prisma.auction.create({
         data: {
           titulo: dto.titulo,

@@ -1,11 +1,7 @@
-import { Component, output, signal } from '@angular/core';
-
-interface Obra {
-  arquivo: string;
-  titulo: string;
-  autor: string;
-  ano: string;
-}
+import { Component, inject, output, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { ObraAcervo as Obra } from '../../core/models';
+import { ObrasService } from '../../services/obras.service';
 
 // Seletor de fotos do acervo (obras de domínio público, em /acervo). Para quem
 // não tem uma foto do item à mão: escolher uma obra devolve um File, que segue
@@ -16,6 +12,7 @@ interface Obra {
   styleUrl: './acervo-fotos.css',
 })
 export class AcervoFotos {
+  private readonly obrasService = inject(ObrasService);
   readonly escolher = output<File>();
 
   protected readonly obras = signal<Obra[]>([]);
@@ -28,9 +25,8 @@ export class AcervoFotos {
     if (this.carregou) return;
     this.carregou = true;
     try {
-      // fetch nativo: são arquivos estáticos do próprio front, não da API
-      const resposta = await fetch('acervo/acervo.json');
-      this.obras.set((await resposta.json()) as Obra[]);
+      // A lista vem do servidor; só as imagens são arquivos estáticos do front
+      this.obras.set(await firstValueFrom(this.obrasService.acervo()));
     } catch {
       this.carregou = false;
       this.erro.set('Não foi possível carregar o acervo.');

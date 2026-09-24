@@ -29,7 +29,7 @@ export const routes: Routes = [
   },
   {
     path: 'meus-lances',
-    canActivate: [papelGuard('BIDDER', 'SELLER')],
+    canActivate: [papelGuard('BIDDER')],
     loadComponent: () => import('./pages/meus-lances/meus-lances').then((m) => m.MeusLances),
   },
   {

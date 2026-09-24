@@ -1,43 +1,30 @@
 <app-modal titulo="Recuperar senha" [largura]="460" (fechar)="fechar.emit()">
   <ol class="etapas" aria-label="Etapas da recuperação">
     <li [class.ativa]="etapa() === 'email'" [attr.aria-current]="etapa() === 'email' ? 'step' : null">1. E-mail</li>
-    <li [class.ativa]="etapa() === 'codigo'" [attr.aria-current]="etapa() === 'codigo' ? 'step' : null">2. Código</li>
-    <li [class.ativa]="etapa() === 'senha'" [attr.aria-current]="etapa() === 'senha' ? 'step' : null">3. Nova senha</li>
+    <li [class.ativa]="etapa() === 'redefinir'" [attr.aria-current]="etapa() === 'redefinir' ? 'step' : null">2. Código e nova senha</li>
   </ol>
-
-  <p class="simulacao" role="note">Simulação: nenhum e-mail é enviado e nenhuma senha é alterada.</p>
 
   @switch (etapa()) {
     @case ('email') {
-      <form (ngSubmit)="enviarCodigo()">
+      <form (ngSubmit)="pedirCodigo()">
         <div class="campo">
           <label for="rec-email">E-mail da sua conta</label>
           <input id="rec-email" name="email" type="email" [(ngModel)]="email" required autocomplete="email" placeholder="seuemail@exemplo.com" />
         </div>
         @if (erro()) { <p class="erro" role="alert">{{ erro() }}</p> }
         <div class="botoes">
-          <button type="submit" class="primario">Enviar código</button>
+          <button type="submit" class="primario" [disabled]="enviando()">{{ enviando() ? 'Enviando...' : 'Enviar código' }}</button>
           <button type="button" class="secundario" (click)="fechar.emit()">Cancelar</button>
         </div>
       </form>
     }
-    @case ('codigo') {
-      <form (ngSubmit)="conferirCodigo()">
-        <p>Enviamos um código de 6 dígitos para <strong>{{ email }}</strong>.</p>
-        <p class="caixa-codigo">Código da simulação: <strong>{{ codigoGerado }}</strong></p>
-        <div class="campo">
-          <label for="rec-codigo">Digite o código</label>
-          <input id="rec-codigo" name="codigo" type="text" inputmode="numeric" maxlength="6" [(ngModel)]="codigoDigitado" required autocomplete="one-time-code" />
-        </div>
-        @if (erro()) { <p class="erro" role="alert">{{ erro() }}</p> }
-        <div class="botoes">
-          <button type="submit" class="primario">Confirmar código</button>
-          <button type="button" class="secundario" (click)="etapa.set('email')">Voltar</button>
-        </div>
-      </form>
-    }
-    @case ('senha') {
+    @case ('redefinir') {
       <form (ngSubmit)="redefinir()">
+        @if (aviso()) { <p role="status">{{ aviso() }}</p> }
+        <div class="campo">
+          <label for="rec-codigo">Código de 6 dígitos</label>
+          <input id="rec-codigo" name="codigo" type="text" inputmode="numeric" maxlength="6" [(ngModel)]="codigo" required autocomplete="one-time-code" />
+        </div>
         <div class="campo">
           <label for="rec-nova">Nova senha</label>
           <input id="rec-nova" name="nova" [type]="mostrar() ? 'text' : 'password'" [(ngModel)]="novaSenha" required autocomplete="new-password" />
@@ -53,8 +40,8 @@
         </div>
         @if (erro()) { <p class="erro" role="alert">{{ erro() }}</p> }
         <div class="botoes">
-          <button type="submit" class="primario">Redefinir senha</button>
-          <button type="button" class="secundario" (click)="fechar.emit()">Cancelar</button>
+          <button type="submit" class="primario" [disabled]="enviando()">{{ enviando() ? 'Salvando...' : 'Redefinir senha' }}</button>
+          <button type="button" class="secundario" (click)="etapa.set('email')">Voltar</button>
         </div>
       </form>
     }

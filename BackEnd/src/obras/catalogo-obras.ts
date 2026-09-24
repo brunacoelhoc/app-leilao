@@ -4,6 +4,7 @@
 // (As peças da plataforma são reproduções de demonstração; o original está em "localAtual".)
 export interface ObraCatalogo {
   titulo: string;
+  fonte: string; // pagina da obra no Wikimedia Commons (credito)
   artista: string;
   ano: string;
   movimento: string;
@@ -17,6 +18,7 @@ export interface ObraCatalogo {
 
 export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
   'noite-estrelada': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
     titulo: 'A Noite Estrelada', artista: 'Vincent van Gogh', ano: '1889', movimento: 'Pós-impressionismo', localAtual: 'MoMA, Nova York',
     historia: 'Pintada em junho de 1889, do quarto do asilo de Saint-Rémy-de-Provence onde Van Gogh estava internado por vontade própria. O céu em turbilhão foi feito de memória; o vilarejo e o cipreste são invenções.',
     contextoHistorico: 'A França vivia a Belle Époque, com a Revolução Industrial transformando cidades e o Impressionismo já tendo rompido com a pintura acadêmica.',
@@ -25,6 +27,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O próprio artista considerava a tela um fracasso; hoje é uma das imagens mais reconhecidas do mundo.',
   },
   'moca-brinco-perola': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:1665_Girl_with_a_Pearl_Earring.jpg',
     titulo: 'Moça com Brinco de Pérola', artista: 'Johannes Vermeer', ano: 'c. 1665', movimento: 'Barroco holandês', localAtual: 'Mauritshuis, Haia',
     historia: 'Uma "tronie", estudo de rosto e expressão, e não um retrato encomendado. A luz suave e o turbante azul feito com pigmento de lápis-lazúli fazem a moça parecer prestes a falar.',
     contextoHistorico: 'A jovem República Holandesa vivia a Era de Ouro: comércio marítimo, riqueza e um mercado de arte movido por burgueses, não pela Igreja.',
@@ -33,6 +36,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Pouco se sabe sobre quem posou; Vermeer deixou cerca de 35 obras conhecidas.',
   },
   'impressao-nascer-do-sol': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Claude_Monet%2C_Impression%2C_soleil_levant.jpg',
     titulo: 'Impressão, Nascer do Sol', artista: 'Claude Monet', ano: '1872', movimento: 'Impressionismo', localAtual: 'Museu Marmottan Monet, Paris',
     historia: 'Vista do porto de Le Havre ao amanhecer, pintada com pinceladas rápidas para captar a luz do instante. Ao ser exposta em 1874, deu nome ao movimento.',
     contextoHistorico: 'A França saía da guerra franco-prussiana e da Comuna de Paris; a reconstrução de Paris e o trem levavam os pintores a trabalhar ao ar livre.',
@@ -41,6 +45,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O crítico Louis Leroy usou "impressionistas" como zombaria; o grupo adotou o nome.',
   },
   'girassois': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Vincent_van_Gogh_-_Sunflowers_-_VGM_F458.jpg',
     titulo: 'Os Girassóis', artista: 'Vincent van Gogh', ano: '1889', movimento: 'Pós-impressionismo', localAtual: 'Museu Van Gogh, Amsterdã (versão de 1889)',
     historia: 'Van Gogh pintou várias versões de girassóis em vaso para decorar o quarto do amigo Paul Gauguin em Arles. O amarelo era, para ele, a cor da amizade e da esperança.',
     contextoHistorico: 'O sul da França atraía artistas pela luz forte; Arles seria o sonho de um "ateliê do Sul" com Gauguin.',
@@ -49,6 +54,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Os girassóis aparecem murchando e em flor no mesmo vaso: vida e fim juntos.',
   },
   'grande-onda': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:The_Great_Wave_off_Kanagawa.jpg',
     titulo: 'A Grande Onda de Kanagawa', artista: 'Katsushika Hokusai', ano: 'c. 1831', movimento: 'Ukiyo-e (estampa japonesa)', localAtual: 'Várias impressões: Museu Metropolitano de Arte (Nova York), Museu Britânico (Londres) e outros',
     historia: 'Gravura em xilogravura da série "Trinta e Seis Vistas do Monte Fuji". A onda gigante ameaça barcos de pescadores enquanto o Fuji, pequeno, permanece imóvel ao fundo.',
     contextoHistorico: 'O Japão do período Edo vivia isolado do mundo (sakoku), com paz interna e uma economia de mercadores e cidades.',
@@ -57,6 +63,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'A estampa chegou à Europa no século XIX e inspirou Monet, Van Gogh e Debussy (que a viu na capa de "La Mer").',
   },
   'nascimento-venus': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
     titulo: 'O Nascimento de Vênus', artista: 'Sandro Botticelli', ano: 'c. 1485', movimento: 'Renascimento italiano', localAtual: 'Galeria Uffizi, Florença',
     historia: 'Vênus chega à praia sobre uma concha, empurrada pelos ventos, enquanto uma Hora vem cobri-la com um manto. É um dos primeiros grandes nus mitológicos desde a Antiguidade.',
     contextoHistorico: 'Florença dos Médici, cidade de banqueiros e mecenas, era o centro do Renascimento.',
@@ -65,6 +72,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'É pintada em têmpera sobre tela, algo raro para a época, quando se preferia a madeira.',
   },
   'o-beijo': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg',
     titulo: 'O Beijo', artista: 'Gustav Klimt', ano: '1908', movimento: 'Art Nouveau / Secessão Vienense', localAtual: 'Belvedere, Viena',
     historia: 'Um casal abraçado sobre um prado florido, envolto por tecidos de ouro em folha. O dourado lembra os mosaicos bizantinos que Klimt viu em Ravena.',
     contextoHistorico: 'Viena do fim do Império Austro-Húngaro fervilhava de arte, música e ciência pouco antes da Primeira Guerra.',
@@ -73,6 +81,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'A obra foi comprada pelo governo austríaco antes mesmo de ficar pronta.',
   },
   'autorretrato-rembrandt': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Rembrandt_van_Rijn_-_Self-Portrait_-_Google_Art_Project.jpg',
     titulo: 'Autorretrato', artista: 'Rembrandt van Rijn', ano: '1659', movimento: 'Barroco holandês', localAtual: 'National Gallery of Art, Washington',
     historia: 'Um dos quase cem autorretratos do pintor, feito aos 53 anos. O rosto marcado pela idade e pela falência, iluminado com franqueza, mostra um homem que já viu a glória e a queda.',
     contextoHistorico: 'A Holanda vivia o auge do comércio, mas Rembrandt, arruinado por dívidas, perdeu a casa e a coleção em 1656.',
@@ -81,6 +90,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Rembrandt se retratou ao longo de toda a vida, formando uma "autobiografia" em imagens.',
   },
   'leiteira': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Johannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg',
     titulo: 'A Leiteira', artista: 'Johannes Vermeer', ano: 'c. 1658', movimento: 'Barroco holandês', localAtual: 'Rijksmuseum, Amsterdã',
     historia: 'Uma criada derrama leite com concentração serena. Vermeer dá dignidade a um gesto cotidiano, com a luz da janela desenhando a cena.',
     contextoHistorico: 'A República Holandesa, próspera e protestante, valorizava o trabalho e a vida doméstica.',
@@ -89,6 +99,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Pontinhos de luz sobre o pão foram feitos com pinceladas que lembram gotas brilhantes.',
   },
   'domingo-grande-jatte': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Georges_Seurat_-_A_Sunday_on_La_Grande_Jatte_--_1884_-_Google_Art_Project.jpg',
     titulo: 'Um Domingo na Grande Jatte', artista: 'Georges Seurat', ano: '1886', movimento: 'Pontilhismo / Neoimpressionismo', localAtual: 'Art Institute of Chicago',
     historia: 'Parisienses passeiam num parque às margens do Sena em um domingo. Seurat levou dois anos compondo a tela com milhares de pequenos pontos de cor pura que se misturam no olhar.',
     contextoHistorico: 'A Paris industrial crescia; o domingo de lazer nasceu com o novo tempo livre da classe trabalhadora e da burguesia.',
@@ -97,6 +108,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Ela inspirou o musical "Sunday in the Park with George", de Stephen Sondheim.',
   },
   'mona-lisa': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
     titulo: 'Mona Lisa', artista: 'Leonardo da Vinci', ano: 'c. 1503', movimento: 'Alto Renascimento', localAtual: 'Museu do Louvre, Paris',
     historia: 'Retrato de Lisa Gherardini, esposa de um mercador florentino. Leonardo usou o sfumato, transições suaves sem contornos duros, e nunca entregou a obra: levou-a consigo até a França, onde morreu.',
     contextoHistorico: 'A Itália renascentista redescobria a Antiguidade; Florença, Milão e Roma disputavam artistas e sábios.',
@@ -105,6 +117,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'A obra foi roubada em 1911 e voltou ao Louvre em 1914, o que a tornou ainda mais famosa.',
   },
   'venus-de-milo': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Venus_de_Milo_Louvre_Ma399_n4.jpg',
     titulo: 'Vênus de Milo', artista: 'Alexandros de Antioquia (atribuição)', ano: 'c. 100 a.C.', movimento: 'Escultura helenística', localAtual: 'Museu do Louvre, Paris',
     historia: 'Estátua de mármore encontrada em 1820 na ilha grega de Milos, provavelmente representando Afrodite. Os braços nunca foram achados, e isso alimenta séculos de hipóteses.',
     contextoHistorico: 'O mundo helenístico sucedia o império de Alexandre, espalhando a cultura grega do Mediterrâneo ao Oriente.',
@@ -113,6 +126,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'A escultura tem cerca de 2 metros, e a pose em espiral (contrapposto) lhe dá movimento.',
   },
   'las-meninas': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Las_Meninas,_by_Diego_Vel%C3%A1zquez,_from_Prado_in_Google_Earth.jpg',
     titulo: 'As Meninas', artista: 'Diego Velázquez', ano: '1656', movimento: 'Barroco espanhol', localAtual: 'Museu do Prado, Madri',
     historia: 'A infanta Margarida e suas damas no ateliê do pintor, que se retrata pintando. Um espelho ao fundo mostra os reis, e o espectador ocupa o lugar de quem é observado.',
     contextoHistorico: 'A Espanha do Século de Ouro, ainda rica em arte, já declinava politicamente sob Filipe IV.',
@@ -121,6 +135,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Picasso pintou mais de 40 releituras da obra.',
   },
   'ronda-da-noite': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:La_ronda_de_noche,_por_Rembrandt_van_Rijn.jpg',
     titulo: 'A Ronda Noturna', artista: 'Rembrandt van Rijn', ano: '1642', movimento: 'Barroco holandês', localAtual: 'Rijksmuseum, Amsterdã',
     historia: 'Retrato coletivo de uma companhia de milícia cívica de Amsterdã em movimento. O contraste de luz e sombra cria drama, e cada figura parece prestes a agir.',
     contextoHistorico: 'A Holanda, recém-independente da Espanha, mantinha milícias cívicas para defender as cidades.',
@@ -129,6 +144,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Não é uma cena noturna: o verniz escurecido pelo tempo criou o nome "Ronda Noturna".',
   },
   'o-grito': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Edvard_Munch,_1893,_The_Scream,_oil,_tempera_and_pastel_on_cardboard,_91_x_73_cm,_National_Gallery_of_Norway.jpg',
     titulo: 'O Grito', artista: 'Edvard Munch', ano: '1893', movimento: 'Expressionismo / Simbolismo', localAtual: 'Galeria Nacional, Oslo (versão de 1893)',
     historia: 'Uma figura leva as mãos ao rosto sob um céu vermelho, numa ponte em Oslo. Munch contou ter sentido "um grito infinito atravessando a natureza" durante um passeio ao entardecer.',
     contextoHistorico: 'A Europa do fim do século XIX vivia acelerada pela industrialização e pela urbanização.',
@@ -137,6 +153,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Munch fez mais de uma versão do tema, e a de pastel foi vendida em 2012 por quase 120 milhões de dólares.',
   },
   'viajante-nevoeiro': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg',
     titulo: 'O Viajante sobre o Mar de Névoa', artista: 'Caspar David Friedrich', ano: 'c. 1818', movimento: 'Romantismo alemão', localAtual: 'Kunsthalle, Hamburgo',
     historia: 'Um homem, de costas, contempla montanhas cobertas de névoa. O espectador vê com ele: diante do sublime, cada um se sente pequeno e livre.',
     contextoHistorico: 'A Europa saía das guerras napoleônicas; os estados alemães buscavam identidade.',
@@ -145,6 +162,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'A figura de costas, a "Rückenfigur", virou marca do pintor.',
   },
   'ninfeias': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Water_Lilies_-_1906,_Ryerson.jpg',
     titulo: 'Ninfeias', artista: 'Claude Monet', ano: '1906', movimento: 'Impressionismo tardio', localAtual: 'Art Institute of Chicago (esta versão)',
     historia: 'Monet construiu o jardim aquático de Giverny e o pintou por três décadas, mais de duzentas vezes. Sem horizonte, a tela vira superfície de reflexos.',
     contextoHistorico: 'A Europa entrava no século XX, da eletricidade, do automóvel e das vanguardas.',
@@ -153,6 +171,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Quase cego pela catarata, ele seguiu pintando; as versões tardias são quase abstratas.',
   },
   'jardim-das-delicias': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:The_Garden_of_Earthly_Delights_by_Bosch_High_Resolution.jpg',
     titulo: 'O Jardim das Delícias Terrenas', artista: 'Hieronymus Bosch', ano: 'c. 1500', movimento: 'Renascimento nórdico', localAtual: 'Museu do Prado, Madri',
     historia: 'Tríptico com o Paraíso, um jardim de prazeres e o Inferno. Criaturas fantásticas e cenas enigmáticas povoam os painéis, e até hoje se discute o sentido da obra.',
     contextoHistorico: 'A Europa entre o fim da Idade Média e as grandes navegações vivia medos apocalípticos e curiosidades sobre o mundo.',
@@ -161,6 +180,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Os painéis fechados mostram a Terra no terceiro dia da Criação, em tons de cinza.',
   },
   'casal-arnolfini': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Van_Eyck_-_Arnolfini_Portrait.jpg',
     titulo: 'O Casal Arnolfini', artista: 'Jan van Eyck', ano: '1434', movimento: 'Renascimento nórdico (primitivos flamengos)', localAtual: 'National Gallery, Londres',
     historia: 'Retrato de um mercador italiano e sua esposa em Bruges. Um espelho convexo ao fundo reflete a cena e duas figuras, incluindo, talvez, o próprio pintor, com a assinatura "Jan van Eyck esteve aqui".',
     contextoHistorico: 'Bruges era um grande centro de comércio e finanças, e o ducado da Borgonha, uma potência cultural.',
@@ -169,6 +189,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Van Eyck aperfeiçoou a pintura a óleo, com camadas finas e transparentes.',
   },
   'ultima-ceia': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Leonardo_da_Vinci_-_The_Last_Supper_high_res.jpg',
     titulo: 'A Última Ceia', artista: 'Leonardo da Vinci', ano: 'c. 1498', movimento: 'Alto Renascimento', localAtual: 'Convento de Santa Maria delle Grazie, Milão',
     historia: 'Mural que retrata o momento em que Jesus anuncia que será traído. Cada apóstolo reage de um jeito, e a perspectiva conduz o olhar ao centro da cena.',
     contextoHistorico: 'Milão de Ludovico Sforza, protetor de Leonardo, era uma das cortes mais brilhantes da Itália.',
@@ -177,6 +198,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Leonardo testou uma técnica nova em parede seca, e por isso a pintura começou a se deteriorar em poucas décadas.',
   },
   'carroca-de-feno': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:John_Constable_-_The_Hay_Wain_(1821).jpg',
     titulo: 'A Carroça de Feno', artista: 'John Constable', ano: '1821', movimento: 'Romantismo inglês', localAtual: 'National Gallery, Londres',
     historia: 'Uma carroça atravessa o rio Stour, diante da casa de Willy Lott, na paisagem onde Constable cresceu. Ele pintou nuvens e luz com estudos feitos ao ar livre.',
     contextoHistorico: 'A Inglaterra vivia a Revolução Industrial: cidades e fábricas cresciam, e o campo virava lembrança.',
@@ -185,6 +207,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Na França, ganhou medalha no Salão de Paris de 1824, e Delacroix repintou partes de sua própria tela depois de vê-la.',
   },
   'liberdade-guiando-povo': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Eug%C3%A8ne_Delacroix_-_La_libert%C3%A9_guidant_le_peuple.jpg',
     titulo: 'A Liberdade Guiando o Povo', artista: 'Eugène Delacroix', ano: '1830', movimento: 'Romantismo francês', localAtual: 'Museu do Louvre, Paris',
     historia: 'Uma mulher com a bandeira tricolor lidera revolucionários sobre corpos de caídos. A cena homenageia as "Três Gloriosas", a revolta de julho de 1830 em Paris.',
     contextoHistorico: 'A Revolução de Julho derrubou Carlos X e levou Luís Filipe ao trono.',
@@ -193,6 +216,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O governo comprou a tela, mas a escondeu por anos por considerá-la subversiva.',
   },
   'almoco-remadores': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Pierre-Auguste_Renoir_-_Luncheon_of_the_Boating_Party_-_Google_Art_Project.jpg',
     titulo: 'O Almoço dos Remadores', artista: 'Pierre-Auguste Renoir', ano: '1881', movimento: 'Impressionismo', localAtual: 'Coleção Phillips, Washington',
     historia: 'Amigos do pintor almoçam numa varanda às margens do Sena, em Chatou. A cena transborda conversa, luz filtrada e alegria de viver.',
     contextoHistorico: 'A Terceira República francesa trouxe estabilidade e a Belle Époque, com trens levando parisienses ao campo aos domingos.',
@@ -201,6 +225,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Muitos dos personagens eram amigos reais de Renoir, e a futura esposa dele aparece na cena.',
   },
   'bar-folies-bergere': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Edouard_Manet,_A_Bar_at_the_Folies-Berg%C3%A8re.jpg',
     titulo: 'Um Bar no Folies-Bergère', artista: 'Édouard Manet', ano: '1882', movimento: 'Realismo / Impressionismo', localAtual: 'Instituto Courtauld, Londres',
     historia: 'Uma garçonete encara o espectador diante de um espelho que reflete a multidão do cabaré. O reflexo não bate com a perspectiva, e a distância emocional dela é o assunto do quadro.',
     contextoHistorico: 'A Paris dos cabarés e cafés-concerto era o palco da vida moderna.',
@@ -209,6 +234,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Foi a última grande tela de Manet, pintada quando já estava doente.',
   },
   'olimpia': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Edouard_Manet_-_Olympia_-_Google_Art_Project_3.jpg',
     titulo: 'Olympia', artista: 'Édouard Manet', ano: '1863', movimento: 'Realismo', localAtual: 'Museu d\'Orsay, Paris',
     historia: 'Uma mulher nua, uma cortesã, encara o espectador com olhar direto, ao lado de uma criada que traz flores. Manet reinterpretou a Vênus de Ticiano com a modernidade parisiense.',
     contextoHistorico: 'O Segundo Império de Napoleão III reformava Paris e alimentava uma cultura de luxo e prazer.',
@@ -217,6 +243,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'A criada negra, Laure, foi retratada com dignidade e hoje é tema de muitos estudos.',
   },
   'terraco-cafe-noite': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Vincent-van-gogh-cafe-terrace-on-the-place-du-forum-arles-at-night-the.jpg',
     titulo: 'Terraço de Café à Noite', artista: 'Vincent van Gogh', ano: '1888', movimento: 'Pós-impressionismo', localAtual: 'Museu Kröller-Müller, Otterlo',
     historia: 'Um café de Arles iluminado por lampiões amarelos sob um céu estrelado. Foi a primeira vez que Van Gogh pintou uma cena noturna direto ao ar livre, sem usar preto.',
     contextoHistorico: 'A luz elétrica e a vida noturna se espalhavam pelas cidades europeias.',
@@ -225,6 +252,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Uma leitura popular vê, nos apóstolos e na cruz da janela, um eco da Última Ceia, embora Van Gogh não o tenha afirmado.',
   },
   'quarto-arles': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:La_Chambre_%C3%A0_Arles,_by_Vincent_van_Gogh,_from_C2RMF.jpg',
     titulo: 'O Quarto em Arles', artista: 'Vincent van Gogh', ano: '1888', movimento: 'Pós-impressionismo', localAtual: 'Museu Van Gogh, Amsterdã (versão de 1888)',
     historia: 'O quarto simples da Casa Amarela, pintado com cores chapadas e perspectiva propositalmente estranha. Van Gogh queria transmitir repouso e descanso.',
     contextoHistorico: 'A gravura japonesa, popular em Paris, inspirou o uso de cores planas e contornos.',
@@ -233,6 +261,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Ele pintou três versões: a segunda foi feita depois de uma internação.',
   },
   'madame-x': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Madame_X_(Madame_Pierre_Gautreau),_John_Singer_Sargent,_1884_(unfree_frame_crop).jpg',
     titulo: 'Madame X', artista: 'John Singer Sargent', ano: '1884', movimento: 'Realismo / Retrato mundano', localAtual: 'Museu Metropolitano de Arte, Nova York',
     historia: 'Retrato de Virginie Gautreau, socialite parisiense conhecida pela pele muito clara. A alça do vestido, originalmente caída no ombro, causou escândalo e foi repintada pelo artista.',
     contextoHistorico: 'A Paris da Belle Époque cultuava a moda, a aparência e a reputação.',
@@ -241,6 +270,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Sargent vendeu a tela ao Met em 1916 e disse que era "a melhor coisa que já fiz".',
   },
   'primavera': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Botticelli-primavera.jpg',
     titulo: 'A Primavera', artista: 'Sandro Botticelli', ano: 'c. 1480', movimento: 'Renascimento italiano', localAtual: 'Galeria Uffizi, Florença',
     historia: 'Vênus preside um jardim onde as Três Graças dançam, Mercúrio afasta as nuvens e Flora espalha flores. Centenas de plantas foram identificadas na pintura.',
     contextoHistorico: 'Florença dos Médici vivia seu apogeu artístico e político.',
@@ -249,6 +279,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O título "Primavera" foi dado depois, por Giorgio Vasari, no século XVI.',
   },
   'escola-de-atenas': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:%22The_School_of_Athens%22_by_Raffaello_Sanzio_da_Urbino.jpg',
     titulo: 'A Escola de Atenas', artista: 'Rafael Sanzio', ano: '1511', movimento: 'Alto Renascimento', localAtual: 'Palácio Apostólico, Vaticano (Sala da Assinatura)',
     historia: 'Afresco que reúne os grandes filósofos da Antiguidade sob uma arquitetura monumental. No centro, Platão aponta para o céu e Aristóteles, para a terra.',
     contextoHistorico: 'O papa Júlio II fez de Roma o centro cultural, contratando Rafael e Michelangelo ao mesmo tempo.',
@@ -257,6 +288,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Rafael deu ao rosto de Platão as feições de Leonardo, e ao de Heráclito, as de Michelangelo.',
   },
   'criacao-de-adao': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Sistine_Chapel_ceiling,_Creation_of_Adam.jpg',
     titulo: 'O Teto da Capela Sistina', artista: 'Michelangelo', ano: '1508–1512', movimento: 'Alto Renascimento', localAtual: 'Capela Sistina, Vaticano',
     historia: 'Michelangelo pintou quase 500 m² de teto em afrescos com cenas do Gênesis. A cena mais famosa, "A Criação de Adão", mostra o quase-toque entre o dedo de Deus e o do homem.',
     contextoHistorico: 'O papa Júlio II queria glorificar o papado, e Michelangelo se considerava escultor, aceitando a tarefa a contragosto.',
@@ -265,6 +297,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Uma teoria diz que o manto de Deus lembraria a forma de um cérebro humano, mas é uma interpretação, não um fato comprovado.',
   },
   'arte-da-pintura': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Jan_Vermeer_-_The_Art_of_Painting_-_Google_Art_Project.jpg',
     titulo: 'A Arte da Pintura', artista: 'Johannes Vermeer', ano: 'c. 1668', movimento: 'Barroco holandês', localAtual: 'Museu de História da Arte, Viena',
     historia: 'Um pintor de costas trabalha diante de uma modelo coroada de louros, que representa Clio, a musa da História. Vermeer reflete sobre o próprio ofício e sua dignidade.',
     contextoHistorico: 'Os Países Baixos viviam a guerra contra a França, e o mercado de arte entrava em crise.',
@@ -273,6 +306,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Hitler a comprou em 1940, e ela foi recuperada depois da guerra.',
   },
   'judite-klimt': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Judith_1_(cropped).jpg',
     titulo: 'Judite e a Cabeça de Holofernes', artista: 'Gustav Klimt', ano: '1901', movimento: 'Simbolismo / Secessão Vienense', localAtual: 'Belvedere, Viena',
     historia: 'Klimt retrata Judite, a heroína bíblica que salvou seu povo decapitando um general inimigo, como uma mulher sensual e segura, em ouro. A cabeça de Holofernes aparece cortada na borda da tela.',
     contextoHistorico: 'A Viena de 1900 vivia o auge da Secessão e do Simbolismo.',
@@ -281,6 +315,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Por muito tempo a obra foi confundida com Salomé, outra figura bíblica.',
   },
   'adele-bloch-bauer': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Gustav_Klimt,_1907,_Adele_Bloch-Bauer_I,_Neue_Galerie_New_York.jpg',
     titulo: 'Retrato de Adele Bloch-Bauer I', artista: 'Gustav Klimt', ano: '1907', movimento: 'Art Nouveau / Período Dourado', localAtual: 'Neue Galerie, Nova York',
     historia: 'Retrato de uma mecenas da alta sociedade vienense, envolvida em folha de ouro e padrões geométricos. É o ápice do "período dourado" de Klimt.',
     contextoHistorico: 'A Viena imperial via florescer uma burguesia judaica culta e rica, mecenas das artes.',
@@ -289,6 +324,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Foi vendida em 2006 por 135 milhões de dólares, um recorde para a época.',
   },
   'caipira-picando-fumo': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Almeida_J%C3%BAnior_-_Caipira_Cutting_Tobacco_-_Google_Art_Project.jpg',
     titulo: 'Caipira Picando Fumo', artista: 'Almeida Júnior', ano: '1893', movimento: 'Realismo brasileiro', localAtual: 'Pinacoteca do Estado de São Paulo',
     historia: 'Um homem do interior paulista prepara o fumo de corda em pose descontraída, sem idealização. Almeida Júnior retratou o povo simples numa época em que a pintura acadêmica buscava temas históricos.',
     contextoHistorico: 'A abolição da escravatura (1888) e a Proclamação da República (1889) transformaram o Brasil.',
@@ -297,6 +333,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Almeida Júnior foi um dos primeiros grandes pintores brasileiros a se afastar do academicismo do Rio de Janeiro.',
   },
   'independencia-ou-morte': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Pedro_Am%C3%A9rico_-_Independ%C3%AAncia_ou_Morte_-_Google_Art_Project.jpg',
     titulo: 'Independência ou Morte', artista: 'Pedro Américo', ano: '1888', movimento: 'Academicismo / Pintura histórica', localAtual: 'Museu do Ipiranga, São Paulo',
     historia: 'Cena idealizada do "Grito do Ipiranga", em 7 de setembro de 1822, com Dom Pedro I às margens do riacho. Foi pintada mais de 60 anos depois, em Florença.',
     contextoHistorico: 'O Império do Brasil vivia seus últimos anos, e a monarquia buscava reforçar sua origem heroica.',
@@ -305,6 +342,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Uma frase clássica atribui a Dom Pedro o grito, mas não há registro exato de suas palavras.',
   },
   'primeira-missa': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Meirelles-primeiramissa2.jpg',
     titulo: 'A Primeira Missa no Brasil', artista: 'Victor Meirelles', ano: '1861', movimento: 'Academicismo romântico', localAtual: 'Museu Nacional de Belas Artes, Rio de Janeiro',
     historia: 'Encenação da missa celebrada em abril de 1500 pelos portugueses, com indígenas observando. Inspirada na carta de Pero Vaz de Caminha, é uma imagem fundadora da história oficial do Brasil.',
     contextoHistorico: 'O Segundo Reinado de Dom Pedro II buscava criar uma identidade nacional e apoiava a arte.',
@@ -313,6 +351,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Meirelles estudou em Roma e em Paris, com bolsa do Império, antes de pintar a obra.',
   },
   'fuji-vermelho': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Katsushika_Hokusai,_published_by_Nishimuraya_Yohachi_(Eijud%C5%8D)_-_Fine_Wind,_Clear_Weather_(Gaif%C5%AB_kaisei),_also_known_as_Red_Fuji,_from_the_series_Thirty-six_Views_o..._-_Google_Art_Project_-_Cropped.jpg',
     titulo: 'Vento Sul, Céu Claro (Fuji Vermelho)', artista: 'Katsushika Hokusai', ano: 'c. 1831', movimento: 'Ukiyo-e (estampa japonesa)', localAtual: 'Várias impressões em museus do mundo',
     historia: 'O Monte Fuji, avermelhado pela luz do amanhecer em certos dias de fim de verão, domina o céu. Faz parte da mesma série da "Grande Onda".',
     contextoHistorico: 'No Japão Edo, o Fuji era símbolo sagrado e destino de peregrinação.',
@@ -321,6 +360,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Hokusai tinha cerca de 70 anos quando fez a série e dizia que só aos 110 seria um verdadeiro mestre.',
   },
   'chuva-ponte-ohashi': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Hiroshige,_Sudden_shower_over_Shin-%C5%8Chashi_bridge_and_Atake,_1857.jpg',
     titulo: 'Chuva Repentina sobre a Ponte Shin-Ohashi', artista: 'Utagawa Hiroshige', ano: '1857', movimento: 'Ukiyo-e (estampa japonesa)', localAtual: 'Museu Brooklyn, Nova York (e outras coleções)',
     historia: 'Pessoas correm sob uma chuva forte na ponte sobre o rio Sumida, em Edo (atual Tóquio). As linhas diagonais da chuva dão sensação de movimento.',
     contextoHistorico: 'Edo era uma das maiores cidades do mundo, e o Japão ainda estava fechado ao Ocidente até 1853.',
@@ -329,6 +369,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Van Gogh copiou essa estampa a óleo em 1887.',
   },
   'temerario': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:The_Fighting_Temeraire,_JMW_Turner,_National_Gallery.jpg',
     titulo: 'O Último Trajeto do Temerário', artista: 'J. M. W. Turner', ano: '1839', movimento: 'Romantismo', localAtual: 'National Gallery, Londres',
     historia: 'Um veleiro de guerra glorioso, herói de Trafalgar, é rebocado por um pequeno vapor para ser desmontado, sob um pôr do sol dourado. Turner faz da cena uma elegia da era da vela.',
     contextoHistorico: 'A Grã-Bretanha era a potência industrial e naval do mundo, e o vapor substituía a vela.',
@@ -337,6 +378,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Uma pesquisa popular de 2005 elegeu a tela a maior pintura britânica de todos os tempos.',
   },
   'judite-caravaggio': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Judith_Beheading_Holofernes_-_Caravaggio.jpg',
     titulo: 'Judite Decapitando Holofernes', artista: 'Caravaggio', ano: 'c. 1599', movimento: 'Barroco italiano', localAtual: 'Galeria Nacional de Arte Antiga (Palazzo Barberini), Roma',
     historia: 'A heroína bíblica decapita o general assírio com esforço e repulsa, enquanto a criada aguarda. A luz teatral, o "tenebrismo", intensifica o drama.',
     contextoHistorico: 'A Contrarreforma católica queria uma arte que emocionasse os fiéis e reafirmasse a fé.',
@@ -345,6 +387,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O pintor levou vida turbulenta, foi condenado por homicídio e fugiu de Roma.',
   },
   'tres-de-maio': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:El_Tres_de_Mayo,_by_Francisco_de_Goya,_from_Prado_thin_black_margin.jpg',
     titulo: 'Os Fuzilamentos de 3 de Maio', artista: 'Francisco de Goya', ano: '1814', movimento: 'Romantismo espanhol', localAtual: 'Museu do Prado, Madri',
     historia: 'Civis espanhóis são executados por soldados franceses depois do levante de Madri contra Napoleão, em maio de 1808. O homem de camisa branca abre os braços em desafio.',
     contextoHistorico: 'A Guerra Peninsular (1808–1814) opôs a Espanha à ocupação napoleônica.',
@@ -353,6 +396,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'É considerada uma das primeiras grandes pinturas de protesto contra a guerra; inspirou Manet e Picasso ("Guernica").',
   },
   'menino-azul': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Thomas_Gainsborough_-_The_Blue_Boy_(c._1770).jpg',
     titulo: 'O Menino Azul', artista: 'Thomas Gainsborough', ano: 'c. 1770', movimento: 'Retrato inglês do século XVIII', localAtual: 'Biblioteca Huntington, San Marino (Califórnia)',
     historia: 'Um jovem em traje de seda azul, ao estilo do século XVII, posa com elegância. Diz-se que Gainsborough quis contrariar a regra de Reynolds de que o azul não deveria dominar um quadro.',
     contextoHistorico: 'A Inglaterra do século XVIII era rica em comércio e império, e a aristocracia encomendava retratos para afirmar status.',
@@ -361,6 +405,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Em 1922 a tela foi vendida aos Estados Unidos, e milhares de pessoas foram se despedir dela em Londres.',
   },
   'grande-odalisca': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Jean_Auguste_Dominique_Ingres,_La_Grande_Odalisque,_1814.jpg',
     titulo: 'A Grande Odalisca', artista: 'Jean-Auguste-Dominique Ingres', ano: '1814', movimento: 'Neoclassicismo', localAtual: 'Museu do Louvre, Paris',
     historia: 'Uma odalisca, mulher de harém, reclina-se com um corpo de proporções alongadas de propósito, com vértebras a mais. Ingres priorizava a linha elegante sobre a exatidão anatômica.',
     contextoHistorico: 'A França de Napoleão fascinava-se com o Oriente após as campanhas no Egito.',
@@ -369,6 +414,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Críticos da época apontaram as proporções "erradas", mas Ingres afirmava que a beleza justificava a liberdade.',
   },
   'mae-de-whistler': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Whistlers_Mother_high_res.jpg',
     titulo: 'Arranjo em Cinza e Preto (A Mãe de Whistler)', artista: 'James McNeill Whistler', ano: '1871', movimento: 'Esteticismo / Tonalismo', localAtual: 'Museu d\'Orsay, Paris',
     historia: 'A mãe do pintor, de perfil, sentada com serenidade diante de uma parede quase vazia. Whistler queria destacar harmonia de formas e tons, mais do que contar uma história.',
     contextoHistorico: 'A era vitoriana valorizava a família e a respeitabilidade.',
@@ -377,6 +423,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O título formal mostra que, para o artista, o tema era secundário: importava o arranjo de cores.',
   },
   'cigana-adormecida': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:La_Boh%C3%A9mienne_endormie.jpg',
     titulo: 'A Cigana Adormecida', artista: 'Henri Rousseau', ano: '1897', movimento: 'Arte naïf / Primitivismo', localAtual: 'MoMA, Nova York',
     historia: 'Uma mulher dorme no deserto ao luar, com um bandolim e uma jarra, enquanto um leão a cheira sem atacar. Rousseau chamou o quadro de sonho poético.',
     contextoHistorico: 'A Paris do fim do século XIX descobria a arte "ingênua" e as culturas de fora da Europa.',
@@ -385,6 +432,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Ele ofereceu o quadro à prefeitura de sua cidade, que recusou.',
   },
   'baile-moulin': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Renoir,_Pierre-Auguste_-_Dance_at_Le_Moulin_de_la_Galette,_1876.jpg',
     titulo: 'Baile no Moulin de la Galette', artista: 'Pierre-Auguste Renoir', ano: '1876', movimento: 'Impressionismo', localAtual: 'Museu d\'Orsay, Paris',
     historia: 'Uma festa dominical ao ar livre em Montmartre, com luz filtrada pelas árvores em manchas sobre as roupas. Muitos amigos de Renoir posaram.',
     contextoHistorico: 'Depois da guerra de 1870, Paris renascia com bailes populares e cafés.',
@@ -393,6 +441,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'A tela foi vendida por 78 milhões de dólares em 1990, em um dos maiores leilões da época.',
   },
   'cacadores-na-neve': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_Hunters_in_the_Snow_(Winter)_-_Google_Art_Project.jpg',
     titulo: 'Caçadores na Neve', artista: 'Pieter Bruegel, o Velho', ano: '1565', movimento: 'Renascimento flamengo', localAtual: 'Museu de História da Arte, Viena',
     historia: 'Caçadores voltam com pouca caça por uma paisagem de inverno, enquanto aldeões patinam ao fundo. Faz parte de uma série sobre as estações do ano.',
     contextoHistorico: 'O inverno de 1564–65 foi um dos mais frios da chamada Pequena Era do Gelo na Europa.',
@@ -401,6 +450,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Ela aparece em filmes como "Solaris", de Tarkovski.',
   },
   'torre-de-babel': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_(Vienna)_-_Google_Art_Project_-_edited.jpg',
     titulo: 'A Torre de Babel', artista: 'Pieter Bruegel, o Velho', ano: '1563', movimento: 'Renascimento flamengo', localAtual: 'Museu de História da Arte, Viena (versão de 1563)',
     historia: 'A torre bíblica, erguida pelo orgulho humano, aparece enorme e já desabando, inspirada no Coliseu de Roma. Trabalhadores minúsculos revelam a escala da obra.',
     contextoHistorico: 'Antuérpia era um centro cosmopolita de comércio, onde se falavam muitas línguas.',
@@ -409,6 +459,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Bruegel pintou pelo menos duas versões; a de Roterdã é menor.',
   },
   'embaixadores': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Hans_Holbein_the_Younger_-_The_Ambassadors_-_Google_Art_Project.jpg',
     titulo: 'Os Embaixadores', artista: 'Hans Holbein, o Jovem', ano: '1533', movimento: 'Renascimento do Norte', localAtual: 'National Gallery, Londres',
     historia: 'Dois franceses cultos e ricos posam ao lado de instrumentos científicos e livros. No chão, uma forma distorcida só se revela como caveira quando vista de lado.',
     contextoHistorico: 'A Reforma dividia a Europa, e a Inglaterra de Henrique VIII rompia com Roma.',
@@ -417,6 +468,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O truque da caveira usa anamorfose, técnica de perspectiva deformada.',
   },
   'venus-de-urbino': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Tiziano_-_Venere_di_Urbino_-_Google_Art_Project.jpg',
     titulo: 'A Vênus de Urbino', artista: 'Ticiano', ano: '1538', movimento: 'Renascimento veneziano', localAtual: 'Galeria Uffizi, Florença',
     historia: 'Uma mulher nua reclina-se num quarto com um cão adormecido, enquanto criadas procuram roupas num baú. Encomendada pelo duque de Urbino, a obra funde mitologia e vida doméstica.',
     contextoHistorico: 'Veneza, república comercial, rivalizava com Florença e Roma como centro da arte.',
@@ -425,6 +477,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Inspirou "Olympia", de Manet, três séculos depois.',
   },
   'jangada-da-medusa': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:JEAN_LOUIS_TH%C3%89ODORE_G%C3%89RICAULT_-_La_Balsa_de_la_Medusa_(Museo_del_Louvre,_1818-19).jpg',
     titulo: 'A Jangada da Medusa', artista: 'Théodore Géricault', ano: '1819', movimento: 'Romantismo francês', localAtual: 'Museu do Louvre, Paris',
     historia: 'Sobreviventes de um naufrágio de 1816 lutam à deriva numa jangada e avistam um navio distante. Géricault entrevistou os sobreviventes e estudou cadáveres para pintar a cena.',
     contextoHistorico: 'O naufrágio da fragata Méduse ocorreu no retorno da monarquia Bourbon, e o capitão incompetente era ligado à corte.',
@@ -433,6 +486,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'A tela mede mais de 7 metros de largura, com figuras em tamanho natural.',
   },
   'respigadoras': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Jean-Fran%C3%A7ois_Millet_-_Gleaners_-_Google_Art_Project_2.jpg',
     titulo: 'As Respigadoras', artista: 'Jean-François Millet', ano: '1857', movimento: 'Realismo (Escola de Barbizon)', localAtual: 'Museu d\'Orsay, Paris',
     historia: 'Três camponesas recolhem espigas deixadas na colheita, um direito dos mais pobres. Ao fundo, a fartura dos proprietários contrasta com a curvatura delas.',
     contextoHistorico: 'Depois da Revolução de 1848, a França discutia a condição dos trabalhadores.',
@@ -441,6 +495,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Van Gogh admirava Millet e copiou várias de suas obras.',
   },
   'angelus': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Jean-Fran%C3%A7ois_Millet_(II)_001.jpg',
     titulo: 'O Ângelus', artista: 'Jean-François Millet', ano: '1859', movimento: 'Realismo (Escola de Barbizon)', localAtual: 'Museu d\'Orsay, Paris',
     historia: 'Um casal de camponeses interrompe o trabalho para rezar o Ângelus, ao toque do sino ao entardecer. O silêncio do campo é o assunto.',
     contextoHistorico: 'A França rural ainda era profundamente católica, apesar da industrialização.',
@@ -449,6 +504,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Salvador Dalí dedicou-se a analisar o quadro e escreveu um livro sobre ele.',
   },
   'campo-de-papoulas': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Poppy_Field_-_Google_Art_Project.jpg',
     titulo: 'Campo de Papoulas', artista: 'Claude Monet', ano: '1873', movimento: 'Impressionismo', localAtual: 'Museu d\'Orsay, Paris',
     historia: 'Uma mulher com sombrinha e uma criança caminham num campo de papoulas perto de Argenteuil. As manchas vermelhas quase vibram contra o verde.',
     contextoHistorico: 'A França se reconstruía depois de 1870, e o trem levava artistas ao campo.',
@@ -457,6 +513,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'É provável que as figuras sejam a esposa de Monet, Camille, e o filho Jean, repetidos na mesma cena.',
   },
   'mulher-com-sombrinha': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Woman_with_a_Parasol_-_Madame_Monet_and_Her_Son_-_Google_Art_Project.jpg',
     titulo: 'Mulher com Sombrinha', artista: 'Claude Monet', ano: '1875', movimento: 'Impressionismo', localAtual: 'National Gallery of Art, Washington',
     historia: 'Camille Monet e o filho Jean em uma colina ventosa, vistos de baixo, com nuvens rápidas ao fundo. A obra parece um instante flagrado, não um pose.',
     contextoHistorico: 'Os impressionistas expunham por conta própria e enfrentavam a crítica.',
@@ -465,6 +522,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Monet pintou uma versão parecida, com o rosto da mulher em destaque, mais de dez anos depois.',
   },
   'catedral-de-rouen': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Claude_Monet,_Rouen_Cathedral,_West_Fa%C3%A7ade,_Sunlight,_1894,_NGA_46654.jpg',
     titulo: 'Catedral de Rouen', artista: 'Claude Monet', ano: '1894', movimento: 'Impressionismo', localAtual: 'Museu d\'Orsay, Paris (uma das cerca de 30 versões)',
     historia: 'Monet pintou a mesma fachada gótica em mais de 30 telas, em diferentes horas e climas. A pedra se dissolve em cor e luz.',
     contextoHistorico: 'A França vivia estabilidade e progresso, e a fotografia se popularizava.',
@@ -473,6 +531,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Ele trabalhava em várias telas ao mesmo tempo, trocando conforme a luz mudava.',
   },
   'jogadores-de-cartas': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Les_Joueurs_de_cartes,_par_Paul_C%C3%A9zanne.jpg',
     titulo: 'Os Jogadores de Cartas', artista: 'Paul Cézanne', ano: '1895', movimento: 'Pós-impressionismo', localAtual: 'Museu d\'Orsay, Paris (uma das cinco versões)',
     historia: 'Dois camponeses jogam cartas em silêncio, absortos, numa composição de formas sólidas e equilibradas. Cézanne a pintou em cinco versões.',
     contextoHistorico: 'A França provinciana de Aix-en-Provence contrastava com a agitação de Paris.',
@@ -481,6 +540,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Uma das versões foi comprada em 2011 pelo Catar por uma cifra estimada em 250 milhões de dólares.',
   },
   'montanha-sainte-victoire': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Paul_Cezanne_-_Mont_Sainte-Victoire_and_Ch%C3%A2teau_Noir_-_Google_Art_Project.jpg',
     titulo: 'A Montanha Sainte-Victoire', artista: 'Paul Cézanne', ano: '1904', movimento: 'Pós-impressionismo', localAtual: 'Museu de Arte da Filadélfia (uma das versões)',
     historia: 'Cézanne pintou a montanha de sua terra, perto de Aix-en-Provence, dezenas de vezes. Ao longo dos anos, as formas viraram blocos de cor cada vez mais estruturados.',
     contextoHistorico: 'A França do início do século XX preparava o terreno para as vanguardas.',
@@ -489,6 +549,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Picasso e Matisse disseram que Cézanne foi "o pai de todos nós".',
   },
   'campo-de-trigo-corvos': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Korenveld_met_kraaien_-_s0149V1962_-_Van_Gogh_Museum.jpg',
     titulo: 'Campo de Trigo com Corvos', artista: 'Vincent van Gogh', ano: '1890', movimento: 'Pós-impressionismo', localAtual: 'Museu Van Gogh, Amsterdã',
     historia: 'Um céu carregado sobre um trigal em Auvers-sur-Oise, com caminhos que levam a lugar nenhum. Foi pintada nas últimas semanas de vida do artista.',
     contextoHistorico: 'A Europa vivia rápida mudança social, e o campo virava refúgio de artistas.',
@@ -497,6 +558,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Não é comprovado que seja sua última obra, apesar de muitas vezes ser apontada assim.',
   },
   'autorretrato-van-gogh': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Self-Portrait_with_a_Bandaged_Ear_-_Vincent_van_Gogh.jpg',
     titulo: 'Autorretrato com Orelha Enfaixada', artista: 'Vincent van Gogh', ano: '1889', movimento: 'Pós-impressionismo', localAtual: 'Instituto Courtauld, Londres',
     historia: 'Pintado semanas depois de cortar parte da própria orelha, em dezembro de 1888. Van Gogh se retrata sereno, de gorro e casaco, com um cavalete e uma gravura japonesa ao fundo.',
     contextoHistorico: 'A gravura japonesa influenciava muitos artistas europeus.',
@@ -505,6 +567,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Ele fez este autorretrato e outro semelhante, com cachimbo, logo depois do episódio.',
   },
   'ofelia': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:John_Everett_Millais_-_Ophelia_-_Google_Art_Project.jpg',
     titulo: 'Ofélia', artista: 'John Everett Millais', ano: '1852', movimento: 'Pré-rafaelita', localAtual: 'Tate Britain, Londres',
     historia: 'A personagem de "Hamlet" flutua num rio cercado de flores, cantando, pouco antes de se afogar. Cada flor tem um significado simbólico.',
     contextoHistorico: 'A Inglaterra vitoriana vivia o auge do Império e da industrialização.',
@@ -513,6 +576,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Millais pintou a paisagem ao ar livre durante meses, à beira do rio Hogsmill.',
   },
   'mucha-job': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Alphonse_Mucha_-_Advertisment_for_Job_cigarettes,_1896.jpg',
     titulo: 'Cartaz Job', artista: 'Alphonse Mucha', ano: '1896', movimento: 'Art Nouveau', localAtual: 'Coleções de museus de arte gráfica em vários países',
     historia: 'Cartaz publicitário de papel de cigarro, com uma mulher de cabelos longos e fumaça em curvas. O estilo de Mucha definiu a imagem do Art Nouveau.',
     contextoHistorico: 'A litografia colorida popularizou o cartaz nas ruas de Paris.',
@@ -521,6 +585,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Mucha ficou famoso da noite para o dia com um cartaz para a atriz Sarah Bernhardt.',
   },
   'ameixeiras-kameido': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:De_pruimenboomgaard_te_Kameido-Rijksmuseum_RP-P-1956-743.jpeg',
     titulo: 'Jardim de Ameixeiras em Kameido', artista: 'Utagawa Hiroshige', ano: '1857', movimento: 'Ukiyo-e (estampa japonesa)', localAtual: 'Coleções de museus em vários países',
     historia: 'Um galho de ameixeira em primeiro plano corta a cena e revela um jardim visto de perto. Faz parte de "Cem Vistas Famosas de Edo".',
     contextoHistorico: 'No Japão Edo, a floração das ameixeiras anunciava a primavera e era festejada.',
@@ -529,6 +594,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Van Gogh também copiou esta estampa, em 1887.',
   },
   'batalha-guararapes': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Victor_Meirelles_-_%27Battle_of_Guararapes%27,_1879,_oil_on_canvas,_Museu_Nacional_de_Belas_Artes,_Rio_de_Janeiro.JPG',
     titulo: 'A Batalha dos Guararapes', artista: 'Victor Meirelles', ano: '1879', movimento: 'Academicismo romântico', localAtual: 'Museu Nacional de Belas Artes, Rio de Janeiro',
     historia: 'A tela retrata a vitória de forças luso-brasileiras sobre os holandeses em Pernambuco, em 1648–49. É considerada uma das maiores pinturas de batalha do país.',
     contextoHistorico: 'O Brasil colonial disputava território com holandeses, que ocuparam o Nordeste no século XVII.',
@@ -537,6 +603,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O quadro tem mais de 9 metros de largura e ocupa uma sala inteira do museu.',
   },
   'tempestade-de-neve': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Joseph_Mallord_William_Turner_-_Snow_Storm_-_Steam-Boat_off_a_Harbour%27s_Mouth_-_WGA23178.jpg',
     titulo: 'Tempestade de Neve: Barco a Vapor', artista: 'J. M. W. Turner', ano: '1842', movimento: 'Romantismo', localAtual: 'Tate Britain, Londres',
     historia: 'Um vapor luta contra o mar revolto e a neve, em um turbilhão de luz e cor. Turner disse ter se amarrado ao mastro por quatro horas para vivenciar a tempestade.',
     contextoHistorico: 'A navegação a vapor transformava o comércio e as viagens.',
@@ -545,6 +612,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'Muitos veem em Turner um precursor da pintura abstrata.',
   },
   'vista-de-delft': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:View_of_Delft,_by_Johannes_Vermeer.jpg',
     titulo: 'Vista de Delft', artista: 'Johannes Vermeer', ano: 'c. 1660', movimento: 'Barroco holandês', localAtual: 'Mauritshuis, Haia',
     historia: 'A cidade natal de Vermeer, vista do outro lado do rio sob nuvens que deixam a luz cair em manchas. Ele usou pontos de luz que lembram gotículas na superfície.',
     contextoHistorico: 'A Holanda estava no auge econômico, mas ameaçada por guerras contra Inglaterra e França.',
@@ -553,6 +621,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O escritor Marcel Proust chamou a obra de "o mais belo quadro do mundo".',
   },
   'licao-de-anatomia': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Rembrandt_-_The_Anatomy_Lesson_of_Dr_Nicolaes_Tulp.jpg',
     titulo: 'A Lição de Anatomia do Dr. Tulp', artista: 'Rembrandt van Rijn', ano: '1632', movimento: 'Barroco holandês', localAtual: 'Mauritshuis, Haia',
     historia: 'Dr. Nicolaes Tulp dissecando um braço diante de colegas da guilda dos cirurgiões de Amsterdã. Foi o primeiro grande retrato de grupo de Rembrandt, ainda com 26 anos.',
     contextoHistorico: 'Amsterdã tornava-se um polo científico: dissecações públicas eram eventos anuais.',
@@ -561,6 +630,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'O cadáver era o de um criminoso executado, e o braço mostra tendões com precisão anatômica notável.',
   },
   'arvore-da-vida': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Klimt_-_Nine_Cartoons_for_the_Stoclet_Frieze-_Part_4,_Part_of_the_tree_of_life_(1910-11).jpg',
     titulo: 'A Árvore da Vida', artista: 'Gustav Klimt', ano: '1909', movimento: 'Art Nouveau / Secessão Vienense', localAtual: 'Museu de Artes Aplicadas (MAK), Viena',
     historia: 'Espirais douradas de uma árvore simbolizam a ligação entre vida e morte. O painel fazia parte do friso do Palácio Stoclet, em Bruxelas.',
     contextoHistorico: 'A Europa às vésperas da Primeira Guerra vivia a última grande luz do Art Nouveau.',
@@ -569,6 +639,7 @@ export const CATALOGO_OBRAS: Record<string, ObraCatalogo> = {
     curiosidade: 'É considerada uma das obras decorativas mais luxuosas do Art Nouveau.',
   },
   'dr-gachet': {
+    fonte: 'https://commons.wikimedia.org/wiki/File:Vincent_van_Gogh_-_Dr_Paul_Gachet_-_Google_Art_Project.jpg',
     titulo: 'Retrato do Dr. Gachet', artista: 'Vincent van Gogh', ano: '1890', movimento: 'Pós-impressionismo', localAtual: 'Versões no Museu d\'Orsay (Paris) e em coleção particular',
     historia: 'O médico que cuidou de Van Gogh em Auvers-sur-Oise aparece de cabeça apoiada na mão, com olhar melancólico. Van Gogh disse ter pintado "a expressão de tristeza do nosso tempo".',
     contextoHistorico: 'Em 1890, Van Gogh estava a poucas semanas do fim da vida.',

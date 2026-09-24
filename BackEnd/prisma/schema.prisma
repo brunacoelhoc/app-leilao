@@ -59,6 +59,8 @@ model User {
   endereco           String? // opcional, texto livre (nao usado em nenhuma regra de negocio)
   cpf                String? // opcional, so numeros (11 digitos); mascarado nas telas do front
   avatarUrl          String? // opcional: identificador de um avatar pronto (ex.: "raposa") ou uma imagem pequena em base64
+  termosAceitosEm    DateTime? // quando aceitou os termos de uso (o servidor grava no cadastro)
+  redefinicoesSenha  PasswordReset[]
   criadoEm           DateTime               @default(now()) // data de criacao, preenchida sozinha
   atualizadoEm       DateTime               @updatedAt // o Prisma atualiza a cada alteracao
   leiloes            Auction[] // lista dos leiloes que este usuario criou
@@ -221,4 +223,18 @@ model ChatMessage {
   criadoEm DateTime @default(now())
 
   @@index([leilaoId, criadoEm]) // deixa rapido buscar a conversa de um leilao em ordem
+}
+
+// Pedido de recuperacao de senha: guarda so o HASH do codigo (nunca o codigo), com validade e limite de tentativas
+model PasswordReset {
+  id         String    @id @default(uuid())
+  usuarioId  String
+  usuario    User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade) // conta removida leva os pedidos junto
+  codigoHash String // hash bcrypt do codigo de 6 digitos
+  expiraEm   DateTime // depois disso o codigo nao vale mais
+  tentativas Int       @default(0) // palpites errados ou certos ja feitos (maximo 5)
+  usadoEm    DateTime? // preenchido quando o codigo foi usado, substituido por outro ou queimado por excesso de tentativas
+  criadoEm   DateTime  @default(now())
+
+  @@index([usuarioId, criadoEm])
 }

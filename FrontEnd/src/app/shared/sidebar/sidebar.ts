@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
+import { ModoService } from '../../core/modo.service';
 import { Avatar } from '../avatar/avatar';
 
 const CHAVE_RECOLHIDA = 'menu-recolhido';
@@ -15,6 +16,7 @@ const CHAVE_RECOLHIDA = 'menu-recolhido';
 })
 export class Sidebar {
   protected readonly auth = inject(AuthService);
+  protected readonly modo = inject(ModoService);
   private readonly router = inject(Router);
 
   readonly aberta = signal(false); // celular: menu deslizante aberto

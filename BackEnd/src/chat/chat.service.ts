@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { AuctionStatus } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { LancesGateway } from '../realtime/lances.gateway';
+import { nomeAbreviado } from '../common/utils/nome.util';
 import type { MensagemResposta } from './dto/mensagem-resposta.dto';
 
 const LIMITE_PADRAO = 50;
@@ -24,7 +25,7 @@ function paraResposta(m: MensagemComAutor): MensagemResposta {
     texto: m.texto,
     leilaoId: m.leilaoId,
     autorId: m.autorId,
-    autorNome: m.autor.nome,
+    autorNome: nomeAbreviado(m.autor.nome),
     autorPapel: m.autor.papel,
     // So avatares prontos (nomes curtos): imagens em base64 deixariam cada mensagem pesada
     autorAvatar: m.autor.avatarUrl && m.autor.avatarUrl.length <= 40 ? m.autor.avatarUrl : null,

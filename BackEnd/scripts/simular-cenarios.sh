@@ -106,18 +106,19 @@ req "admin cria categoria" 201 POST $B/categories -H "$AK" -H "$AA" -H "$CT" -d 
 req "admin remove categoria vazia" 204 DELETE $B/categories/$CID -H "$AK" -H "$AA"
 req "categoria em uso nao some" 409 DELETE $B/categories/$CAT -H "$AK" -H "$AA"
 
-echo "== Uma conta compra e vende (\"Quero vender\")"
-CPF=$(node -e "const d=String(100000000+(($SUF+1)*7919)%899999999).slice(0,9).split('').map(Number);const dv=n=>{const r=(n.reduce((a,v,i)=>a+v*(n.length+1-i),0)*10)%11;return r===10?0:r};d.push(dv(d));d.push(dv(d));console.log(d.join(''))")
-req "admin cria comprador C" 201 POST $B/users -H "$AK" -H "$AA" -H "$CT" -d "{\"nome\":\"Comprador Vendedor Sim $SUF\",\"email\":\"c.$SUF@sim.com\",\"senha\":\"Demo@12345\",\"papel\":\"BIDDER\"}"
+echo "== Modo comprador / vendedor (um clique, travas em cada modo)"
+req "admin cria comprador C (sem perfil completo)" 201 POST $B/users -H "$AK" -H "$AA" -H "$CT" -d "{\"nome\":\"Comprador Vendedor Sim $SUF\",\"email\":\"c.$SUF@sim.com\",\"senha\":\"Demo@12345\",\"papel\":\"BIDDER\"}"
 TC=$(login c.$SUF@sim.com Demo@12345); AC="Authorization: Bearer $TC"
-req "comprador C perfil incompleto NAO vira vendedor" 400 POST $B/users/me/vendedor -H "$AK" -H "$AC"
-req "comprador C ainda NAO cria leilao" 403 POST $B/auctions -H "$AK" -H "$AC" -H "$CT" -d "{\"titulo\":\"Ainda nao\",\"dataInicio\":\"$INI\",\"dataFim\":\"$FIM\"}"
+req "comprador C NAO cria leilao (modo comprador)" 403 POST $B/auctions -H "$AK" -H "$AC" -H "$CT" -d "{\"titulo\":\"Ainda nao\",\"dataInicio\":\"$INI\",\"dataFim\":\"$FIM\"}"
+req "C sem perfil completo NAO da lance" 403 POST $B/auction-items/$IID/bids -H "$AK" -H "$AC" -H "$CT" -d '{"valor":950}'
+req "C troca para o modo vendedor (um clique, mesmo token)" 200 PATCH $B/users/me/modo -H "$AK" -H "$AC" -H "$CT" -d '{"modo":"SELLER"}'
+req "C ja esta no modo vendedor" 409 PATCH $B/users/me/modo -H "$AK" -H "$AC" -H "$CT" -d '{"modo":"SELLER"}'
+req "C sem perfil completo NAO cria leilao" 403 POST $B/auctions -H "$AK" -H "$AC" -H "$CT" -d "{\"titulo\":\"Sem perfil\",\"dataInicio\":\"$INI\",\"dataFim\":\"$FIM\"}"
+CPF=$(node -e "const d=String(100000000+(($SUF+1)*7919)%899999999).slice(0,9).split('').map(Number);const dv=n=>{const r=(n.reduce((a,v,i)=>a+v*(n.length+1-i),0)*10)%11;return r===10?0:r};d.push(dv(d));d.push(dv(d));console.log(d.join(''))")
 req "C completa o perfil (telefone, CPF, endereco)" 200 PATCH $B/users/me -H "$AK" -H "$AC" -H "$CT" -d "{\"telefone\":\"11999998888\",\"endereco\":\"Rua Teste, 10 - Sao Paulo/SP\",\"cpf\":\"$CPF\"}"
-req "C vira vendedor (efeito imediato, mesmo token)" 200 POST $B/users/me/vendedor -H "$AK" -H "$AC"
-req "C ja vendedor: pedir de novo" 409 POST $B/users/me/vendedor -H "$AK" -H "$AC"
 req "C agora cria leilao" 201 POST $B/auctions -H "$AK" -H "$AC" -H "$CT" -d "{\"titulo\":\"Leilao Sim C $SUF\",\"dataInicio\":\"$INI\",\"dataFim\":\"$FIM\"}"; L2=$(json id)
-req "ADMIN NAO vira vendedor" 403 POST $B/users/me/vendedor -H "$AK" -H "$AA"
-echo "  (o mesmo CPF em outra conta de vendedor e recusado com 409 -- coberto pelos testes e2e)"
+req "C no modo vendedor NAO da lance" 403 POST $B/auction-items/$IID/bids -H "$AK" -H "$AC" -H "$CT" -d '{"valor":950}'
+req "ADMIN NAO troca de modo" 403 PATCH $B/users/me/modo -H "$AK" -H "$AA" -H "$CT" -d '{"modo":"SELLER"}'
 
 echo "== Limite de tentativas (por ultimo)"
 COD=""; for i in $(seq 1 12); do COD=$(curl -s -o /dev/null -w "%{http_code}" -H "$AK" -H "$CT" -d '{"email":"x@x.com","senha":"Errada@123"}' $B/auth/login); done

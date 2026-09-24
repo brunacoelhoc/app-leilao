@@ -14,11 +14,11 @@ import type { LoginDto } from './dto/login.dto';
 import type { RegistrarUsuarioDto } from './dto/registrar-usuario.dto';
 
 // Quantas "voltas" o bcrypt da para gerar o hash. Cada +1 dobra o tempo (e a seguranca)
-const CUSTO_DO_HASH = 12;
+export const CUSTO_DO_HASH = 12;
 
 // Hash de um valor que nunca sera a senha de ninguem. Serve so para "gastar tempo"
 // quando o e-mail nao existe, para o tempo de resposta nao denunciar se a conta existe
-const HASH_FICTICIO =
+export const HASH_FICTICIO =
   '$2b$12$CwTycUXWue0Thq9StjUM0uJ8i6ZjLPr.p.LqM0Q9Y5C2X.MvJ8bYK';
 
 export interface RespostaLogin {
@@ -48,6 +48,7 @@ export class AuthService {
         nome: dto.nome,
         email: dto.email,
         senha: senhaComHash,
+        termosAceitosEm: new Date(),
       });
 
       await this.auditLogService.registrar({

@@ -21,26 +21,5 @@
   font-weight: 700;
 }
 
-.simulacao {
-  margin: 0 0 1rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  background: var(--cor-superficie-alt);
-  border: 1px dashed var(--cor-dourado);
-}
 
-.caixa-codigo {
-  padding: 0.6rem;
-  text-align: center;
-  border-radius: 8px;
-  background: var(--cor-superficie-alt);
-  border: 1px solid var(--cor-borda);
-}
 
-.caixa-codigo strong {
-  font-family: var(--fonte-titulo);
-  font-size: 1.4rem;
-  letter-spacing: 0.25em;
-  color: var(--cor-bordo);
-}

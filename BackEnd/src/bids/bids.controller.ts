@@ -59,11 +59,11 @@ export class BidsController {
 
   @Post('auction-items/:itemId/bids')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('BIDDER', 'SELLER')
+  @Roles('BIDDER')
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('jwt')
   @ApiOperation({
-    summary: 'Da um lance em um item (BIDDER ou SELLER; nunca no proprio leilao)',
+    summary: 'Da um lance em um item (so BIDDER; nunca no proprio leilao)',
     description:
       'Concorrencia protegida por lock pessimista (SELECT ... FOR UPDATE): ' +
       'dois lances simultaneos no mesmo item nunca "vencem" juntos.',
@@ -121,9 +121,9 @@ export class BidsController {
   // Um card por PECA disputada, com a situacao (arrematei / liderando / superado / perdi)
   @Get('bids/minhas-pecas')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('BIDDER', 'SELLER')
+  @Roles('BIDDER')
   @ApiBearerAuth('jwt')
-  @ApiOperation({ summary: 'Resumo por peca dos lances do usuario logado (BIDDER ou SELLER)' })
+  @ApiOperation({ summary: 'Resumo por peca dos lances do usuario logado (BIDDER)' })
   @ApiOkResponse({ type: MinhasPecasResposta })
   @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
   @ApiForbiddenResponse({ description: 'ADMIN nao participa de leiloes', type: ErroResposta })
@@ -134,9 +134,9 @@ export class BidsController {
   // Consulta por relacionamento: os lances do proprio usuario logado
   @Get('bids/meus')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('BIDDER', 'SELLER')
+  @Roles('BIDDER')
   @ApiBearerAuth('jwt')
-  @ApiOperation({ summary: 'Lista os lances do proprio usuario logado, paginado, do mais recente pro mais antigo (BIDDER ou SELLER)' })
+  @ApiOperation({ summary: 'Lista os lances do proprio usuario logado, paginado, do mais recente pro mais antigo (BIDDER)' })
   @ApiPaginacaoQuery()
   @ApiRespostaPaginada(BidResposta)
   @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })

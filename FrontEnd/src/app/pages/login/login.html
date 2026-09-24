@@ -32,11 +32,6 @@
         </div>
       </div>
 
-      <div class="campo-checkbox">
-        <input id="termos" name="termos" type="checkbox" [(ngModel)]="aceiteTermos" required />
-        <label for="termos">Li e aceito os termos de uso e a política de privacidade.</label>
-      </div>
-
       <button type="button" class="link-esqueci" (click)="recuperando.set(true)">Esqueci minha senha</button>
 
       @if (erro()) {

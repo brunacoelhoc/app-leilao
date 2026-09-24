@@ -11,8 +11,23 @@
     <div class="acoes">
       <button type="button" class="primario" (click)="abrirEdicao()">Editar perfil</button>
       <button type="button" class="secundario" (click)="abrirSenha()">Alterar senha</button>
+      @if (usuario().papel === 'BIDDER' || usuario().papel === 'SELLER') {
+        <button type="button" class="secundario" [disabled]="modo.trocando()" (click)="modo.alternar()">
+          {{ usuario().papel === 'BIDDER' ? 'Trocar para vendedor (SELLER)' : 'Trocar para comprador (BIDDER)' }}
+        </button>
+      }
     </div>
   </section>
+
+  @if (usuario().camposFaltando?.length) {
+    <section class="cartao faixa-perfil" role="alert">
+      <div>
+        <strong>Complete seu perfil</strong>
+        <p>Para dar lances e criar leilões, informe: {{ usuario().camposFaltando.join(', ') }}.</p>
+      </div>
+      <button type="button" class="primario" (click)="abrirEdicao()">Completar agora</button>
+    </section>
+  }
 
   <section class="cartao">
     <h2>Informações pessoais</h2>
@@ -48,31 +63,6 @@
       </div>
     </dl>
   </section>
-
-  @if (usuario().papel === 'BIDDER') {
-    <section class="cartao quero-vender" id="quero-vender">
-      <h2>Quer vender suas peças?</h2>
-      <p class="lista-vazia">
-        Uma mesma conta pode comprar e vender. Para vender, complete seu perfil: o servidor confere telefone, CPF válido e endereço.
-        Você continua podendo dar lances, só não no seu próprio leilão.
-      </p>
-      @if (requisitosVendedor(); as r) {
-        <ul class="requisitos" aria-label="Requisitos para vender">
-          @for (item of r.requisitos; track item.campo) {
-            <li [class.ok]="item.ok" [title]="item.ok ? '' : item.ajuda">{{ item.rotulo }}</li>
-          }
-        </ul>
-        @for (item of r.requisitos; track item.campo) {
-          @if (!item.ok) {
-            <p class="lista-vazia" role="status">{{ item.ajuda }}.</p>
-          }
-        }
-      }
-      <button type="button" class="primario" [disabled]="virandoVendedor()" (click)="queroVender()">
-        {{ virandoVendedor() ? 'Verificando...' : 'Quero vender' }}
-      </button>
-    </section>
-  }
 </div>
 
 @if (editando()) {

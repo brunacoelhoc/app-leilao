@@ -19,6 +19,7 @@ import { AuditLogService } from '../audit/audit-log.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ContextoDaRequisicao } from '../common/decorators/contexto-requisicao.decorator';
 import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
+import { camposFaltandoDaConta } from '../common/utils/perfil-completo.util';
 import { mascararCpf, mascararEmail, mascararEndereco, mascararTelefone } from '../common/utils/mascara.util';
 import { ApiPaginacaoQuery, ApiRespostaPaginada } from '../common/dto/api-resposta-paginada.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -33,7 +34,7 @@ import { AuditResult, Role, type User } from '../generated/prisma/client';
 import { AlterarSenhaDto } from './dto/alterar-senha.dto';
 import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 import { CriarUsuarioAdminDto } from './dto/criar-usuario-admin.dto';
-import { RequisitosVendedorResposta } from './dto/requisitos-vendedor-resposta.dto';
+import { TrocarModoDto } from './dto/trocar-modo.dto';
 import { ListarUsuariosQueryDto } from './dto/listar-usuarios-query.dto';
 import { UsersService } from './users.service';
 import { UsuarioEntity } from './usuario.entity';
@@ -46,6 +47,7 @@ function mascarado(usuario: User): UsuarioEntity {
     telefone: mascararTelefone(usuario.telefone),
     cpf: mascararCpf(usuario.cpf),
     endereco: mascararEndereco(usuario.endereco),
+    camposFaltando: camposFaltandoDaConta(usuario),
   });
 }
 
@@ -93,54 +95,29 @@ export class UsersController {
     return new UsuarioEntity(atualizado);
   }
 
-  @Get('me/vendedor')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: 'O que falta para eu virar vendedor? (a lista de requisitos e decidida pelo servidor)',
-  })
-  @ApiOkResponse({ type: RequisitosVendedorResposta })
-  async requisitosVendedor(@CurrentUser() usuario: UsuarioAutenticado): Promise<RequisitosVendedorResposta> {
-    const eu = await this.usersService.buscarPorIdOuFalhar(usuario.id);
-    const r = await this.usersService.avaliarRequisitosVendedor(eu);
-    const requisitos = [
-      { campo: 'telefone', rotulo: 'Telefone', ok: !r.faltando.includes('telefone'), ajuda: 'Informe seu telefone no perfil' },
-      {
-        campo: 'cpf',
-        rotulo: 'CPF válido',
-        ok: !r.faltando.includes('CPF') && !r.cpfInvalido && !r.cpfEmOutraConta,
-        ajuda: r.cpfInvalido ? 'O CPF informado é inválido' : r.cpfEmOutraConta ? 'Este CPF já está em outra conta de vendedor' : 'Informe seu CPF no perfil',
-      },
-      { campo: 'endereco', rotulo: 'Endereço', ok: !r.faltando.includes('endereco'), ajuda: 'Informe seu endereço no perfil' },
-    ];
-    return {
-      jaEVendedor: eu.papel === 'SELLER',
-      podeSolicitar: eu.papel === 'BIDDER' && requisitos.every((x) => x.ok),
-      requisitos,
-    };
-  }
-
-  @Post('me/vendedor')
+  @Patch('me/modo')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Quero vender: o proprio COMPRADOR passa a VENDEDOR (perfil completo exigido)',
+    summary: 'Troca o modo da conta: COMPRADOR (da lances) <-> VENDEDOR (cria leiloes)',
     description:
-      'Exige telefone, CPF valido e endereco no perfil; o CPF nao pode estar em outra conta de vendedor. ' +
-      'Depois disso a mesma conta continua podendo comprar (nunca no proprio leilao). Efeito imediato.',
+      'Um clique, sem completar perfil. Modo vendedor: cria leiloes e NAO da lances. Modo comprador: da lances e ' +
+      'NAO cria leiloes. Ninguem da lance no proprio leilao, seja qual for o modo. ADMIN nao troca de modo. Efeito imediato.',
   })
-  @ApiOkResponse({ description: 'Conta agora e SELLER', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Perfil incompleto ou CPF invalido', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'ADMIN nao vira vendedor', type: ErroResposta })
-  @ApiConflictResponse({ description: 'Ja e vendedor, ou o CPF ja esta em outra conta de vendedor', type: ErroResposta })
-  async tornarVendedor(
+  @ApiOkResponse({ description: 'Conta no novo modo', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'modo diferente de BIDDER/SELLER', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'ADMIN nao troca de modo', type: ErroResposta })
+  @ApiConflictResponse({ description: 'A conta ja esta nesse modo', type: ErroResposta })
+  async trocarModo(
     @CurrentUser() usuario: UsuarioAutenticado,
+    @Body() dto: TrocarModoDto,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
   ): Promise<UsuarioEntity> {
-    const atualizado = await this.usersService.tornarVendedor(usuario.id);
+    const atualizado = await this.usersService.trocarModo(usuario.id, dto.modo);
     await this.auditLogService.registrar({
       usuarioId: usuario.id,
-      papel: 'SELLER' as Role,
-      acao: 'USUARIO_TORNOU_VENDEDOR',
+      papel: dto.modo as Role,
+      acao: 'USUARIO_TROCOU_MODO',
       entidade: 'User',
       entidadeId: usuario.id,
       resultado: AuditResult.SUCCESS,

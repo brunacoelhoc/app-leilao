@@ -215,7 +215,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 5 suítes / 30 testes (e2e: 15 suítes / 207 testes)
+npm run test         # unitários (Jest) -- 5 suítes / 30 testes (e2e: 16 suítes / 218 testes)
 npm run test:e2e      # end-to-end, contra o banco real (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -286,6 +286,12 @@ requisição (nunca manipulável trocando um ID no corpo/URL).
 | Ver os próprios lances (`/bids/meus`) |       |   ✅   |                 |       |
 | Enviar foto/documento do item |       |        |       ✅        |  ✅   |
 
+**Modo comprador / vendedor.** Toda conta nasce BIDDER. Com um clique (`PATCH /users/me/modo`) ela alterna entre os modos, sem completar perfil: no modo **vendedor** cria leilões e **não dá lance**; no modo **comprador** dá lance e **não cria leilão**. Nenhum modo permite lance no próprio leilão. ADMIN não troca de modo.
+
+**Privacidade.** O histórico de lances, o evento em tempo real e o chat (leitura pública) mostram só o primeiro nome e a inicial do segundo ("Maria S."); a abreviação é feita pelo servidor.
+
+**Perfil completo.** Para **dar lance** e para **criar leilão**, o servidor exige telefone, CPF válido e endereço (`403` dizendo o que falta). A regra vive só no back-end; o front apenas exibe a mensagem.
+
 ¹ O `ADMIN` pode **editar/mudar status/remover** qualquer leilão como
 override administrativo, mas **não cria** leilão (criação é só do `SELLER`,
 que passa a ser automaticamente o dono).
@@ -300,8 +306,10 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 
 | Método | Rota | Auth | Body | Respostas |
 | --- | --- | --- | --- | --- |
-| POST | `/auth/registrar` | Livre | `{ nome, email, senha }` | `201` usuário criado (BIDDER, sem senha) · `400` inválido · `409` e-mail já cadastrado |
+| POST | `/auth/registrar` | Livre | `{ nome, email, senha, aceiteTermos }` | `201` usuário criado (BIDDER, sem senha; o servidor grava `termosAceitosEm`) · `400` inválido ou termos não aceitos · `409` e-mail já cadastrado |
 | POST | `/auth/login` | Livre | `{ email, senha }` | `200` `{ accessToken, usuario }` · `400` inválido · `401` credenciais inválidas · `403` conta desativada |
+| POST | `/auth/esqueci-senha` | Livre | `{ email }` | `200` resposta **sempre igual**, o e-mail existindo ou não (gera um código de 6 dígitos, válido por 15 min, guardado só como hash; entrega simulada no log do servidor; máx. 3 pedidos/hora por conta; pedido novo cancela o anterior) · `400` e-mail inválido · `429` limite por IP |
+| POST | `/auth/redefinir-senha` | Livre | `{ email, codigo, novaSenha }` | `200` senha trocada (código de uso único) · `400` corpo inválido **ou** código incorreto/expirado/usado (mesma mensagem; máx. 5 tentativas, depois o código é queimado) · `429` limite por IP |
 
 ### Users (`/users`)
 
@@ -310,8 +318,7 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | GET | `/users/me` | Autenticado | — | `200` o próprio perfil · `401` |
 | PATCH | `/users/me` | Autenticado | `{ nome?, email?, telefone?, endereco?, cpf?, avatarUrl?, senhaAtual? }` | `200` · `400` (formato inválido; **trocar o e-mail exige `senhaAtual` correta**) · `401` · `409` (e-mail já cadastrado) |
 | PATCH | `/users/me/senha` | Autenticado | `{ senhaAtual, novaSenha }` | `204` · `400` (senha atual errada ou nova fraca) · `401` |
-| GET | `/users/me/vendedor` | Autenticado | — | `200` lista de requisitos que faltam para virar vendedor (calculada pelo servidor) · `401` |
-| POST | `/users/me/vendedor` | Autenticado | — | `200` o comprador passa a SELLER (exige perfil completo e **CPF único**) · `400` perfil incompleto ou CPF inválido · `401` · `403` ADMIN não vira vendedor · `409` já é vendedor ou CPF em uso |
+| PATCH | `/users/me/modo` | Autenticado | `{ modo: "BIDDER" ou "SELLER" }` | `200` troca o modo da conta na hora, **sem completar perfil** (vendedor cria leilões e não dá lance; comprador dá lance e não cria leilão) · `400` modo inválido · `401` · `403` ADMIN não troca de modo · `409` já está nesse modo |
 | POST | `/users` | ADMIN | `{ nome, email, senha, papel }` | `201` cria usuário já com o papel escolhido · `400` · `401` · `403` · `409` |
 | GET | `/users/:id` | ADMIN | — | `200` dados **completos** (a consulta é auditada) · `400` · `401` · `403` · `404` |
 | GET | `/users` | ADMIN | — | `200` lista de usuários (sem senha; e-mail, telefone, CPF e endereço **mascarados** pelo backend) · `401` · `403` |
@@ -419,6 +426,7 @@ encerrados (mais recentes). Rascunho e cancelado nunca aparecem. Cada card traz
 | Método | Rota | Auth | Respostas |
 | --- | --- | --- | --- |
 | GET | `/ranking/vendedores` | Livre (só `X-API-KEY`) | `200` melhores vendedores por total arrecadado |
+| GET | `/obras/acervo` | Livre (só `X-API-KEY`) | `200` obras do acervo de domínio público (título, autor, ano, fonte); as imagens ficam em `FrontEnd/public/acervo/` |
 | GET | `/auction-items/:id/historia` | Livre (só `X-API-KEY`) | `200` história da obra e contexto da época · `404` |
 | GET | `/auctions/:leilaoId/chat` | Livre (só `X-API-KEY`) | `200` últimas mensagens, da mais antiga para a mais nova |
 | POST | `/auctions/:leilaoId/chat` | Autenticado | `201` envia mensagem (**só com o leilão `OPEN`**) · `400` · `401` · `404` leilão inexistente · `409` leilão não aberto |

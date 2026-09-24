@@ -13,6 +13,8 @@ export interface Usuario {
   endereco: string | null;
   cpf: string | null;
   avatarUrl: string | null;
+  // O que falta no perfil para dar lances e criar leiloes (calculado pelo servidor)
+  camposFaltando: string[];
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -281,15 +283,17 @@ export interface MinhasPecas {
 // O que o usuario logado pode fazer numa peca (GET /auction-items/:id/bids/minha-situacao)
 export interface MinhaSituacao {
   permitido: boolean;
-  motivo: 'ADMIN' | 'DONO' | 'LEILAO_FECHADO' | 'ITEM_INDISPONIVEL' | null;
+  motivo: 'ADMIN' | 'MODO_VENDEDOR' | 'DONO' | 'PERFIL_INCOMPLETO' | 'LEILAO_FECHADO' | 'ITEM_INDISPONIVEL' | null;
   mensagem: string | null;
   euSouDono: boolean;
   euSouVencedor: boolean;
 }
 
-// O que falta para virar vendedor (GET /users/me/vendedor)
-export interface RequisitosVendedor {
-  jaEVendedor: boolean;
-  podeSolicitar: boolean;
-  requisitos: { campo: string; rotulo: string; ok: boolean; ajuda: string }[];
+// Obra do acervo (GET /obras/acervo)
+export interface ObraAcervo {
+  arquivo: string;
+  titulo: string;
+  autor: string;
+  ano: string;
+  fonte: string;
 }

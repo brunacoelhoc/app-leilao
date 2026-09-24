@@ -266,10 +266,10 @@ export class ItemDetalhe {
   // periodo e disponibilidade) e a tela so exibe. O botao apenas obedece.
   readonly minhaSituacao = signal<MinhaSituacao | null>(null);
 
-  // Aviso quando o motivo e "sou administrador" ou "sou o dono" (os demais casos ja tem texto proprio)
+  // Aviso quando o motivo e "sou administrador", "estou no modo vendedor" ou "sou o dono" (os demais casos ja tem texto proprio)
   readonly avisoDeRestricao = computed(() => {
     const m = this.minhaSituacao();
-    return m && (m.motivo === 'ADMIN' || m.motivo === 'DONO') && !this.indisponivel() ? m.mensagem : null;
+    return m && (m.motivo === 'ADMIN' || m.motivo === 'MODO_VENDEDOR' || m.motivo === 'PERFIL_INCOMPLETO' || m.motivo === 'DONO') && !this.indisponivel() ? m.mensagem : null;
   });
 
   podeDarLance(): boolean {
@@ -278,13 +278,6 @@ export class ItemDetalhe {
 
   pedirLogin(): void {
     this.login.abrir(`/itens/${this.itemId}`);
-  }
-
-  // "Maria Silva Santos" -> "Maria S." (o histórico é público; o ganhador é exibido por inteiro)
-  nomeAbreviado(nome?: string): string {
-    if (!nome) return 'Licitante';
-    const partes = nome.trim().split(/\s+/);
-    return partes.length > 1 ? `${partes[0]} ${partes[1][0]}.` : partes[0];
   }
 
   ehMeuLance(lance: Lance): boolean {
