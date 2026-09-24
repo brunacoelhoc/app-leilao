@@ -88,7 +88,7 @@ export class DocumentsController {
   @ApiOperation({
     summary: 'Envia uma foto/documento do item (dono do leilao ou ADMIN)',
     description:
-      'Tipos aceitos: image/jpeg, image/png, application/pdf (mimetype ' +
+      'Tipos aceitos: image/jpeg, image/png, application/pdf (mimetype e assinatura real do arquivo, ' +
       'real, nao a extensao do nome). Tamanho maximo configuravel via ' +
       'UPLOAD_MAX_SIZE_MB do .env. Nome de arquivo salvo em disco e sempre ' +
       'gerado (UUID), nunca o nome original.',

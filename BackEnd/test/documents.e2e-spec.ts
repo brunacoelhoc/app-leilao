@@ -28,7 +28,8 @@ describe('Documents (e2e)', () => {
   const nomesArquivosGerados: string[] = [];
 
   const SENHA_TESTE = 'Abc12345!';
-  const BUFFER_FOTO = Buffer.from('conteudo falso de uma foto, so para o teste');
+  // Comeca com a assinatura real de um JPEG (FF D8 FF): o servidor confere os primeiros bytes
+  const BUFFER_FOTO = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from('conteudo de uma foto, so para o teste')]);
 
   async function criarUsuario(nome: string, email: string, papel?: string) {
     await request(app.getHttpServer())
@@ -172,6 +173,41 @@ describe('Documents (e2e)', () => {
       expect(resposta.body.mensagem).toContain('Arquivo e obrigatorio');
     });
 
+    it('executavel disfarcado de foto (mimetype image/jpeg, conteudo "MZ") -> 400 pela assinatura real', async () => {
+      const executavel = Buffer.concat([Buffer.from('MZ'), Buffer.from('programa disfarcado')]);
+      const resposta = await request(app.getHttpServer())
+        .post(`/api/auction-items/${itemId}/documents`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenSeller}`)
+        .field('tipo', 'PHOTO')
+        .attach('arquivo', executavel, 'foto.jpg');
+      expect(resposta.status).toBe(400);
+      expect(resposta.body.mensagem).toContain('nao corresponde');
+    });
+
+    it('PNG enviado como .jpg (tipo diferente do conteudo) -> 400', async () => {
+      const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('dados')]);
+      const resposta = await request(app.getHttpServer())
+        .post(`/api/auction-items/${itemId}/documents`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenSeller}`)
+        .field('tipo', 'PHOTO')
+        .attach('arquivo', png, 'foto.jpg');
+      expect(resposta.status).toBe(400);
+      expect(resposta.body.mensagem).toContain('nao corresponde');
+    });
+
+    it('PDF de verdade (comeca com %PDF-) e aceito como DOCUMENT', async () => {
+      const pdf = Buffer.concat([Buffer.from('%PDF-1.4'), Buffer.from('laudo de teste')]);
+      const resposta = await request(app.getHttpServer())
+        .post(`/api/auction-items/${itemId}/documents`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenSeller}`)
+        .field('tipo', 'DOCUMENT')
+        .attach('arquivo', pdf, 'laudo.pdf');
+      expect(resposta.status).toBe(201);
+    });
+
     it('tipo de arquivo nao aceito (.exe) -> 400', async () => {
       const resposta = await request(app.getHttpServer())
         .post(`/api/auction-items/${itemId}/documents`)
@@ -184,7 +220,7 @@ describe('Documents (e2e)', () => {
     });
 
     it('arquivo maior que o limite configurado (UPLOAD_MAX_SIZE_MB) -> 400', async () => {
-      const bufferGigante = Buffer.alloc(6 * 1024 * 1024, 'x'); // 6MB > limite de 5MB do .env
+      const bufferGigante = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(6 * 1024 * 1024, 'x')]); // 6MB > limite de 5MB do .env
       const resposta = await request(app.getHttpServer())
         .post(`/api/auction-items/${itemId}/documents`)
         .set('X-API-KEY', chave)

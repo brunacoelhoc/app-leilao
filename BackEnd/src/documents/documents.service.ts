@@ -12,6 +12,7 @@ import { extname, join } from 'path';
 import { AuditLogService } from '../audit/audit-log.service';
 import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { tipoRealDoArquivo } from '../common/utils/assinatura-arquivo.util';
 import {
   calcularPaginacao,
   paginar,
@@ -54,6 +55,11 @@ export class DocumentsService {
         throw new BadRequestException(
           `Tipo de arquivo nao permitido. Aceitos: ${TIPOS_ACEITOS.join(', ')}`,
         );
+      }
+
+      // O mimetype vem do cliente e pode mentir: o CONTEUDO (magic bytes) tem que ser do mesmo tipo
+      if (tipoRealDoArquivo(arquivo.buffer) !== arquivo.mimetype) {
+        throw new BadRequestException('O conteudo do arquivo nao corresponde ao tipo informado');
       }
 
       // Tamanho maximo configuravel pelo .env (o FileInterceptor ja tem um
