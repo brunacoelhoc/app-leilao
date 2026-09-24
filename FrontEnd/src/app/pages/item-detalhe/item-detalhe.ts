@@ -61,6 +61,8 @@ export class ItemDetalhe {
   // segundos restantes vêm prontos do servidor. Aqui só se conta o tempo que
   // o servidor informou, com o relógio do navegador só como cronômetro.
   private readonly agora = signal(Date.now());
+  // Aviso "prazo estendido" que aparece quando um lance de ultima hora estende o leilao ao vivo
+  protected readonly prazoEstendidoAgora = signal(false);
   private fimContagem: number | null = null; // instante local em que a contagem zera
   private ultimaSincronia = 0;
   private celebrado = false;
@@ -179,8 +181,13 @@ export class ItemDetalhe {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((evento) => {
         if (evento.tipo === 'lance-novo') {
-          const { lance, licitanteNome, lanceAtual, lanceMinimo, lancesSugeridos } = evento.dados;
-          this.item.update((i) => (i ? { ...i, lanceAtual, lanceMinimo, lancesSugeridos, totalLances: i.totalLances + 1 } : i));
+          const { lance, licitanteNome, lanceAtual, lanceMinimo, lancesSugeridos, prazo } = evento.dados;
+          this.item.update((i) =>
+            i ? { ...i, lanceAtual, lanceMinimo, lancesSugeridos, totalLances: i.totalLances + 1, prorrogacoes: prazo.prorrogacoes } : i,
+          );
+          // Anti-sniping: o servidor pode ter estendido o prazo; o cronometro so acompanha o novo tempo
+          this.fimContagem = Date.now() + prazo.segundosParaMudanca * 1000;
+          if (prazo.estendido) this.prazoEstendidoAgora.set(true);
           this.lances.update((r) =>
             r && !r.dados.some((l) => l.id === lance.id)
               ? { ...r, dados: [{ ...lance, licitanteNome }, ...r.dados], total: r.total + 1 }

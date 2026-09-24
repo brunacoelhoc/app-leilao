@@ -97,6 +97,7 @@ export interface ItemLeilao {
   situacao: SituacaoItem;
   lanceMinimo: string;
   segundosParaMudanca: number | null;
+  prorrogacoes: number; // quantas vezes o anti-sniping estendeu o prazo do leilao
   totalLances: number;
   cep: string;
   logradouro: string | null;

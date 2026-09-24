@@ -11,6 +11,8 @@ export interface LanceNovoEvento {
   lanceAtual: string;
   lanceMinimo: string;
   lancesSugeridos: string[];
+  // Prazo depois do lance (o anti-sniping do servidor pode ter estendido)
+  prazo: { dataFim: string; segundosParaMudanca: number; prorrogacoes: number; estendido: boolean };
 }
 
 export interface ItemFinalizadoEvento {

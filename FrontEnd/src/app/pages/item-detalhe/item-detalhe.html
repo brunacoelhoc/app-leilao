@@ -64,6 +64,11 @@
           <div class="contagem" [class.urgente]="c.urgente" role="timer" aria-live="off">
             <small>{{ c.rotulo }}</small>
             <strong>{{ c.texto }}</strong>
+            @if (it.prorrogacoes > 0) {
+              <small class="prazo-estendido" [class.novo]="prazoEstendidoAgora()" role="status">
+                Prazo estendido {{ it.prorrogacoes === 1 ? '1 vez' : it.prorrogacoes + ' vezes' }} por lance de última hora
+              </small>
+            }
           </div>
         }
 

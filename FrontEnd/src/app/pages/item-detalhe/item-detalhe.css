@@ -43,6 +43,32 @@
   opacity: 0.8;
 }
 
+.contagem .prazo-estendido {
+  margin-top: 0.35rem;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.78rem;
+  color: var(--cor-dourado-suave);
+  opacity: 1;
+}
+
+.contagem .prazo-estendido.novo {
+  animation: pulsar-prazo 1.2s ease-in-out 3;
+}
+
+@keyframes pulsar-prazo {
+  50% {
+    color: #fff;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contagem .prazo-estendido.novo {
+    animation: none;
+  }
+}
+
 .contagem strong {
   font-family: var(--fonte-texto);
   font-weight: 800;
