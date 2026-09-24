@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../core/environment';
 import { paramsSemVazios } from '../core/http-params.util';
-import { Papel, RespostaPaginada, Usuario } from '../core/models';
+import { Papel, RequisitosVendedor, RespostaPaginada, Usuario } from '../core/models';
 
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
@@ -14,10 +14,20 @@ export class UsuariosService {
     return this.http.get<Usuario>(`${this.base}/me`);
   }
 
-  listar(params: { pagina?: number; limite?: number; papel?: Papel; ativo?: boolean } = {}): Observable<RespostaPaginada<Usuario>> {
+  listar(params: { pagina?: number; limite?: number; papel?: Papel; ativo?: boolean; busca?: string } = {}): Observable<RespostaPaginada<Usuario>> {
     return this.http.get<RespostaPaginada<Usuario>>(this.base, {
       params: paramsSemVazios({ pagina: 1, limite: 50, ...params }),
     });
+  }
+
+  // O que falta para virar vendedor (lista decidida pelo servidor)
+  requisitosVendedor(): Observable<RequisitosVendedor> {
+    return this.http.get<RequisitosVendedor>(`${this.base}/me/vendedor`);
+  }
+
+  // "Quero vender": o comprador vira vendedor (o servidor confere perfil completo e CPF valido/unico)
+  tornarVendedor(): Observable<Usuario> {
+    return this.http.post<Usuario>(`${this.base}/me/vendedor`, {});
   }
 
   // "senhaAtual" so e exigida pelo backend quando o e-mail muda

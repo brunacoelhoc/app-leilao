@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AlertaService } from '../../core/alerta.service';
@@ -13,7 +13,9 @@ import {
   ROTULO_STATUS_LEILAO,
   classeSeloLeilao,
 } from '../../core/status.util';
+import { AdminService } from '../../services/admin.service';
 import { CategoriasService } from '../../services/categorias.service';
+import { DocumentosService } from '../../services/documentos.service';
 import { LeiloesService } from '../../services/leiloes.service';
 import { UsuariosService } from '../../services/usuarios.service';
 import { Avatar } from '../../shared/avatar/avatar';
@@ -22,17 +24,21 @@ import { Paginacao } from '../../shared/paginacao/paginacao';
 
 type Aba = 'categorias' | 'usuarios' | 'leiloes';
 
+import { Voltar } from '../../shared/botao-voltar/botao-voltar';
+
 @Component({
   selector: 'app-admin-painel',
-  imports: [FormsModule, DatePipe, RouterLink, Avatar, Modal, Paginacao],
+  imports: [Voltar, FormsModule, DatePipe, RouterLink, Avatar, Modal, Paginacao],
   templateUrl: './admin-painel.html',
   styleUrl: './admin-painel.css',
 })
 export class AdminPainel {
   private readonly categoriasService = inject(CategoriasService);
   private readonly usuariosService = inject(UsuariosService);
+  private readonly adminService = inject(AdminService);
   private readonly leiloesService = inject(LeiloesService);
   private readonly alerta = inject(AlertaService);
+  private readonly documentosService = inject(DocumentosService);
 
   protected readonly ROTULO_STATUS_LEILAO = ROTULO_STATUS_LEILAO;
   protected readonly classeSeloLeilao = classeSeloLeilao;
@@ -44,7 +50,7 @@ export class AdminPainel {
   // ---------------- Categorias ----------------
   readonly categorias = signal<RespostaPaginada<Categoria> | null>(null);
   private paginaCategorias = 1;
-  limiteCategorias = 5;
+  limiteCategorias = 10;
 
   readonly modalCategoria = signal(false);
   categoriaEditandoId: string | null = null;
@@ -56,8 +62,10 @@ export class AdminPainel {
   // ---------------- Usuarios ----------------
   readonly usuarios = signal<RespostaPaginada<Usuario> | null>(null);
   private paginaUsuarios = 1;
-  limiteUsuarios = 5;
+  limiteUsuarios = 6;
   filtroPapel: Papel | '' = '';
+  buscaUsuarios = '';
+  private temporizadorBuscaUsuarios?: ReturnType<typeof setTimeout>;
   readonly usuarioAberto = signal<Usuario | null>(null);
 
   // ---------------- Leiloes ----------------
@@ -69,8 +77,47 @@ export class AdminPainel {
   protected readonly statusOpcoes = Object.entries(ROTULO_STATUS_LEILAO) as [AuctionStatus, string][];
   private temporizadorBuscaLeiloes?: ReturnType<typeof setTimeout>;
 
+  // Totais das tres areas (as abas mostram o numero)
+  readonly resumo = signal<{ categorias: number; usuarios: number; leiloes: number } | null>(null);
+
+
+  protected readonly papeis: { valor: Papel | ''; rotulo: string }[] = [
+    { valor: '', rotulo: 'Todos' },
+    { valor: 'BIDDER', rotulo: 'Licitantes' },
+    { valor: 'SELLER', rotulo: 'Vendedores' },
+    { valor: 'ADMIN', rotulo: 'Admins' },
+  ];
+
   constructor() {
     this.carregarCategorias();
+    this.carregarResumo();
+    inject(DestroyRef).onDestroy(() => {
+      clearTimeout(this.temporizadorBuscaLeiloes);
+      clearTimeout(this.temporizadorBuscaUsuarios);
+    });
+  }
+
+  // Os totais vem prontos do servidor (uma consulta so)
+  carregarResumo(): void {
+    this.adminService.resumo().subscribe({ next: (r) => this.resumo.set(r) });
+  }
+
+  escolherPapel(papel: Papel | ''): void {
+    this.filtroPapel = papel;
+    this.mudarFiltroPapel();
+  }
+
+  escolherStatusLeiloes(status: AuctionStatus | ''): void {
+    this.statusLeiloes = status;
+    this.aplicarFiltrosLeiloes();
+  }
+
+  capaDe(leilao: Leilao): string | null {
+    return leilao.capaDocumentoId ? this.documentosService.urlFoto(leilao.capaDocumentoId) : (leilao.capaPadrao ?? null);
+  }
+
+  inicial(nome: string): string {
+    return nome.trim().charAt(0).toUpperCase();
   }
 
   trocarAba(aba: Aba): void {
@@ -156,7 +203,12 @@ export class AdminPainel {
   // ===== Usuarios =====
   carregarUsuarios(): void {
     this.usuariosService
-      .listar({ pagina: this.paginaUsuarios, limite: this.limiteUsuarios, papel: this.filtroPapel || undefined })
+      .listar({
+        pagina: this.paginaUsuarios,
+        limite: this.limiteUsuarios,
+        papel: this.filtroPapel || undefined,
+        busca: this.buscaUsuarios.trim(),
+      })
       .subscribe({
         next: (r) => this.usuarios.set(r),
         error: (e) => void this.alerta.erro('Erro ao carregar usuários', mensagemDeErro(e)),
@@ -172,6 +224,13 @@ export class AdminPainel {
     this.limiteUsuarios = limite;
     this.paginaUsuarios = 1;
     this.carregarUsuarios();
+  }
+
+  // Espera o usuario parar de digitar (300ms) antes de buscar
+  aoDigitarBuscaUsuarios(texto: string): void {
+    this.buscaUsuarios = texto;
+    clearTimeout(this.temporizadorBuscaUsuarios);
+    this.temporizadorBuscaUsuarios = setTimeout(() => this.mudarFiltroPapel(), 300);
   }
 
   mudarFiltroPapel(): void {
@@ -216,7 +275,9 @@ export class AdminPainel {
         status: this.statusLeiloes,
       })
       .subscribe({
-        next: (r) => this.leiloes.set(r),
+        next: (r) => {
+          this.leiloes.set(r);
+        },
         error: (e) => void this.alerta.erro('Erro ao carregar leilões', mensagemDeErro(e)),
       });
   }

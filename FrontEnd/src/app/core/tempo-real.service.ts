@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { io } from 'socket.io-client';
 import { environment } from './environment';
-import { Lance } from './models';
+import { Lance, MensagemChat } from './models';
 
 // Eventos que o backend (lances.gateway.ts) envia
 export interface LanceNovoEvento {
@@ -10,6 +10,7 @@ export interface LanceNovoEvento {
   licitanteNome: string;
   lanceAtual: string;
   lanceMinimo: string;
+  lancesSugeridos: string[];
 }
 
 export interface ItemFinalizadoEvento {
@@ -45,6 +46,25 @@ export class TempoRealService {
       });
       return () => {
         socket.emit('sair-item', itemId);
+        socket.disconnect();
+      };
+    });
+  }
+
+  // Chat do leilao: entra na sala do leilao e devolve as mensagens novas.
+  // "conectado" avisa a tela para buscar o que perdeu (dispara tambem nas reconexoes)
+  observarChat(leilaoId: string): Observable<{ tipo: 'conectado' } | { tipo: 'mensagem'; dados: MensagemChat }> {
+    return new Observable((assinante) => {
+      const socket = io(this.url, { transports: ['websocket'] });
+      socket.on('connect', () => {
+        socket.emit('entrar-leilao', leilaoId);
+        assinante.next({ tipo: 'conectado' });
+      });
+      socket.on('mensagem-nova', (dados: MensagemChat) => {
+        if (dados.leilaoId === leilaoId) assinante.next({ tipo: 'mensagem', dados });
+      });
+      return () => {
+        socket.emit('sair-leilao', leilaoId);
         socket.disconnect();
       };
     });

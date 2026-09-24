@@ -1,0 +1,306 @@
+:host {
+  display: block;
+  scroll-margin-top: 1rem;
+}
+
+/* A seção é sempre escura (como o hero), em qualquer tema */
+.hall {
+  position: relative;
+  isolation: isolate;
+  margin: 2.5rem 0 1rem;
+  padding: 2.25rem 1.5rem 1.25rem;
+  border-radius: 18px;
+  color: #f7efe0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(229, 200, 133, 0.22), transparent 55%),
+    linear-gradient(180deg, #2a0a10, #170a08);
+  border-bottom: 3px solid var(--cor-dourado-suave);
+  box-shadow: var(--sombra-media);
+}
+
+/* Fios dourados discretos no fundo */
+.hall::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.08;
+  background-image: repeating-linear-gradient(45deg, #e5c885 0 1px, transparent 1px 22px);
+}
+
+.cabeca {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.sobre {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #e6c883;
+}
+
+.cabeca h2 {
+  margin: 0.35rem 0 0.4rem;
+  color: #fff;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+}
+
+.sub {
+  margin: 0;
+  font-family: var(--fonte-elegante);
+  font-size: 1.2rem;
+  color: #f0e3c8;
+}
+
+/* ---- Pódio: 2º, 1º, 3º ---- */
+.podio {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.75rem;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.lugar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.25rem;
+  padding-top: 0.5rem;
+  animation: subir 0.6s ease backwards;
+}
+
+.l1 { order: 2; --metal: #e5c885; --metal-escuro: #a9802f; animation-delay: 0.1s; }
+.l2 { order: 1; --metal: #d6d9dc; --metal-escuro: #8f979d; animation-delay: 0.25s; }
+.l3 { order: 3; --metal: #d99a68; --metal-escuro: #96602f; animation-delay: 0.4s; }
+
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.coroa {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--metal);
+  filter: drop-shadow(0 0 10px rgba(229, 200, 133, 0.7));
+  animation: flutuar 3s ease-in-out infinite;
+}
+
+@keyframes flutuar {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.anel {
+  position: relative;
+  display: grid;
+  padding: 4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--metal), var(--metal-escuro));
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.l1 .anel {
+  box-shadow: 0 0 0 5px rgba(229, 200, 133, 0.18), 0 0 34px rgba(229, 200, 133, 0.45), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.medalha {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  font-family: var(--fonte-titulo);
+  font-weight: 800;
+  color: #2a0a10;
+  background: linear-gradient(135deg, var(--metal), var(--metal-escuro));
+  border: 2px solid #2a0a10;
+}
+
+.lugar h3 {
+  margin: 0.5rem 0 0;
+  max-width: 100%;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.valor {
+  font-family: var(--fonte-texto);
+  font-size: clamp(1.2rem, 3vw, 1.7rem);
+  font-weight: 800;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--metal);
+}
+
+.l1 .valor {
+  font-size: clamp(1.5rem, 3.6vw, 2.1rem);
+}
+
+.mini {
+  font-size: 0.78rem;
+  color: #e6d6b5;
+}
+
+/* Degrau do pódio */
+.degrau {
+  display: grid;
+  place-items: start center;
+  width: 100%;
+  margin-top: 0.75rem;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--metal) 35%, transparent), rgba(255, 255, 255, 0.03));
+  border: 1px solid color-mix(in srgb, var(--metal) 45%, transparent);
+  border-bottom: none;
+}
+
+.degrau b {
+  padding-top: 0.5rem;
+  font-family: var(--fonte-titulo);
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--metal);
+  opacity: 0.8;
+}
+
+.l1 .degrau { height: 5.5rem; }
+.l2 .degrau { height: 3.8rem; }
+.l3 .degrau { height: 2.8rem; }
+
+/* ---- Demais posições ---- */
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 1rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(229, 200, 133, 0.18);
+  transition: background 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+
+.linha:hover {
+  background: rgba(229, 200, 133, 0.1);
+  border-color: rgba(229, 200, 133, 0.5);
+  transform: translateX(4px);
+}
+
+.pos {
+  flex: none;
+  width: 2rem;
+  font-family: var(--fonte-titulo);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #e6c883;
+}
+
+.quem {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.quem strong {
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quem small {
+  font-size: 0.75rem;
+  color: #d9c8a4;
+}
+
+.barra {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.barra i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #a9802f, #e5c885);
+}
+
+.valor-linha {
+  flex: none;
+  font-family: var(--fonte-texto);
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: #f1d894;
+}
+
+.rodape {
+  margin-top: 1.25rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(229, 200, 133, 0.2);
+  text-align: center;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #d9c8a4;
+}
+
+.rodape span {
+  margin-right: 0.35rem;
+  color: #e6c883;
+}
+
+@media (max-width: 560px) {
+  .hall {
+    padding-inline: 0.75rem;
+  }
+  .podio {
+    gap: 0.4rem;
+  }
+  .mini {
+    display: none;
+  }
+  .linha {
+    padding-inline: 0.7rem;
+  }
+  .quem small {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lugar,
+  .coroa {
+    animation: none;
+  }
+}

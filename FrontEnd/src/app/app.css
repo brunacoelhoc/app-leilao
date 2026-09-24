@@ -5,6 +5,7 @@
 
 .area-conteudo {
   margin-left: var(--largura-sidebar);
+  transition: margin-left 0.25s ease;
   display: flex;
   flex-direction: column;
   min-height: 100dvh;

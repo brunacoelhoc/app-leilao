@@ -1,22 +1,27 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { mensagemDeErro } from '../../core/erro.util';
 import { AuctionStatus, Leilao, RespostaPaginada } from '../../core/models';
 import { ROTULO_STATUS_LEILAO, classeSeloLeilao } from '../../core/status.util';
+import { DocumentosService } from '../../services/documentos.service';
 import { LeiloesService } from '../../services/leiloes.service';
 import { CarrosselDestaques } from '../../shared/carrossel-destaques/carrossel-destaques';
 import { Hero } from '../../shared/hero/hero';
 import { Paginacao } from '../../shared/paginacao/paginacao';
+import { RankingVendedores } from '../../shared/ranking-vendedores/ranking-vendedores';
 
 @Component({
   selector: 'app-leiloes-lista',
-  imports: [RouterLink, DatePipe, FormsModule, Paginacao, Hero, CarrosselDestaques],
+  imports: [RouterLink, DatePipe, FormsModule, Paginacao, Hero, CarrosselDestaques, RankingVendedores],
   templateUrl: './leiloes-lista.html',
+  styleUrl: './leiloes-lista.css',
 })
 export class LeiloesLista {
   private readonly leiloesService = inject(LeiloesService);
+  private readonly documentosService = inject(DocumentosService);
+
 
   protected readonly ROTULO_STATUS_LEILAO = ROTULO_STATUS_LEILAO;
   protected readonly classeSeloLeilao = classeSeloLeilao;
@@ -35,6 +40,12 @@ export class LeiloesLista {
 
   constructor() {
     this.carregar();
+    inject(DestroyRef).onDestroy(() => {
+    });
+  }
+
+  capaDe(leilao: Leilao): string | null {
+    return leilao.capaDocumentoId ? this.documentosService.urlFoto(leilao.capaDocumentoId) : (leilao.capaPadrao ?? null);
   }
 
   carregar(): void {

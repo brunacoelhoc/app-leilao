@@ -3,6 +3,8 @@
 <div class="pagina">
   <app-carrossel-destaques />
 
+  <app-ranking-vendedores id="ranking" />
+
   <h2 id="todos-leiloes">Todos os leilões</h2>
   <p class="subtitulo">Peças raras, obras de arte e antiguidades à espera do seu lance.</p>
 
@@ -39,16 +41,26 @@
       <p class="lista-vazia">Nenhum leilão encontrado.</p>
     } @else {
       @for (leilao of r.dados; track leilao.id) {
-        <a [routerLink]="['/leiloes', leilao.id]" class="cartao cartao-clicavel" style="display: block; text-decoration: none; color: inherit">
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem">
-            <div>
-              <h3 style="margin-bottom: 0.25rem">{{ leilao.titulo }}</h3>
-              <p class="lista-vazia" style="margin: 0">
-                {{ leilao.dataInicio | date: 'dd/MM/yyyy' }} — {{ leilao.dataFim | date: 'dd/MM/yyyy' }}
-              </p>
-            </div>
-            <span [class]="classeSeloLeilao(leilao.status)">{{ ROTULO_STATUS_LEILAO[leilao.status] }}</span>
-          </div>
+        <a [routerLink]="['/leiloes', leilao.id]" class="cartao cartao-clicavel leilao-card">
+          <span class="capa">
+            @if (capaDe(leilao); as capa) {
+              <img [src]="capa" alt="" loading="lazy" />
+            } @else {
+              <span class="sem-capa" aria-hidden="true">⚜</span>
+            }
+          </span>
+          <span class="corpo">
+            <span class="topo">
+              <h3>{{ leilao.titulo }}</h3>
+              <span [class]="classeSeloLeilao(leilao.status)">{{ ROTULO_STATUS_LEILAO[leilao.status] }}</span>
+            </span>
+            @if (leilao.descricao) {
+              <span class="descricao">{{ leilao.descricao }}</span>
+            }
+            <span class="datas">
+              {{ leilao.dataInicio | date: 'dd/MM/yyyy' }} — {{ leilao.dataFim | date: 'dd/MM/yyyy' }}
+            </span>
+          </span>
         </a>
       }
 

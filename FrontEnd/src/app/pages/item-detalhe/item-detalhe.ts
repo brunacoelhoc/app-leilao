@@ -5,8 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AlertaService } from '../../core/alerta.service';
 import { AuthService } from '../../core/auth.service';
+import { LoginNecessario } from '../../core/login-necessario.service';
 import { mensagemDeErro } from '../../core/erro.util';
-import { Documento, ItemLeilao, Lance, Leilao, RespostaPaginada, SituacaoItem } from '../../core/models';
+import { Documento, ItemLeilao, Lance, Leilao, MinhaSituacao, RespostaPaginada, SituacaoItem } from '../../core/models';
 import { ROTULO_STATUS_ITEM, classeSeloItem } from '../../core/status.util';
 import { ItemFinalizadoEvento, TempoRealService } from '../../core/tempo-real.service';
 import { DocumentosService } from '../../services/documentos.service';
@@ -22,9 +23,11 @@ interface FotoCarregada {
 
 const INTERVALO_SINCRONIA_MS = 5000;
 
+import { Voltar } from '../../shared/botao-voltar/botao-voltar';
+
 @Component({
   selector: 'app-item-detalhe',
-  imports: [RouterLink, DatePipe, FormsModule, Visualizador3d],
+  imports: [Voltar, RouterLink, DatePipe, FormsModule, Visualizador3d],
   templateUrl: './item-detalhe.html',
   styleUrl: './item-detalhe.css',
 })
@@ -38,6 +41,7 @@ export class ItemDetalhe {
   private readonly alerta = inject(AlertaService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(AuthService);
+  private readonly login = inject(LoginNecessario);
 
   protected readonly ROTULO_STATUS_ITEM = ROTULO_STATUS_ITEM;
   protected readonly classeSeloItem = classeSeloItem;
@@ -101,12 +105,14 @@ export class ItemDetalhe {
   constructor() {
     this.itemId = this.route.snapshot.paramMap.get('id')!;
     this.carregarTudo();
+    if (this.auth.estaLogado()) {
+      this.lancesService.minhaSituacao(this.itemId).subscribe({ next: (m) => this.minhaSituacao.set(m) });
+    }
     this.ouvirTempoReal();
 
     const relogio = setInterval(() => this.batida(), 1000);
     this.destroyRef.onDestroy(() => {
       clearInterval(relogio);
-      for (const foto of this.fotos()) URL.revokeObjectURL(foto.url);
     });
   }
 
@@ -160,12 +166,7 @@ export class ItemDetalhe {
       next: (resposta) => {
         for (const documento of resposta.dados) {
           if (documento.tipo !== 'PHOTO') continue;
-          this.documentosService.baixar(documento.id).subscribe({
-            next: (blob) => {
-              const url = URL.createObjectURL(blob);
-              this.fotos.update((atual) => [...atual, { documento, url }]);
-            },
-          });
+          this.fotos.update((atual) => [...atual, { documento, url: this.documentosService.urlFoto(documento.id) }]);
         }
       },
     });
@@ -178,8 +179,8 @@ export class ItemDetalhe {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((evento) => {
         if (evento.tipo === 'lance-novo') {
-          const { lance, licitanteNome, lanceAtual, lanceMinimo } = evento.dados;
-          this.item.update((i) => (i ? { ...i, lanceAtual, lanceMinimo, totalLances: i.totalLances + 1 } : i));
+          const { lance, licitanteNome, lanceAtual, lanceMinimo, lancesSugeridos } = evento.dados;
+          this.item.update((i) => (i ? { ...i, lanceAtual, lanceMinimo, lancesSugeridos, totalLances: i.totalLances + 1 } : i));
           this.lances.update((r) =>
             r && !r.dados.some((l) => l.id === lance.id)
               ? { ...r, dados: [{ ...lance, licitanteNome }, ...r.dados], total: r.total + 1 }
@@ -236,6 +237,14 @@ export class ItemDetalhe {
     this.valorLance = this.lanceMinimo();
   }
 
+  // Os valores dos atalhos (minimo, +1, +2 e +5 incrementos) chegam calculados do servidor;
+  // aqui so se escolhe um deles para preencher o campo
+  protected readonly ROTULOS_ATALHO = ['Mínimo', '+1×', '+2×', '+5×'];
+
+  usarValor(valor: string): void {
+    this.valorLance = Number(valor);
+  }
+
   darLance(): void {
     if (!this.valorLance || !this.podeDarLance()) return;
     this.erroLance.set(null);
@@ -253,8 +262,22 @@ export class ItemDetalhe {
     });
   }
 
+  // 🔎 Quem pode dar lance NAO e decidido aqui: o servidor responde (papel, dono do leilao,
+  // periodo e disponibilidade) e a tela so exibe. O botao apenas obedece.
+  readonly minhaSituacao = signal<MinhaSituacao | null>(null);
+
+  // Aviso quando o motivo e "sou administrador" ou "sou o dono" (os demais casos ja tem texto proprio)
+  readonly avisoDeRestricao = computed(() => {
+    const m = this.minhaSituacao();
+    return m && (m.motivo === 'ADMIN' || m.motivo === 'DONO') && !this.indisponivel() ? m.mensagem : null;
+  });
+
   podeDarLance(): boolean {
-    return this.auth.papel() === 'BIDDER' && this.situacao() === 'ABERTO' && !this.indisponivel();
+    return !!this.minhaSituacao()?.permitido && this.situacao() === 'ABERTO' && !this.indisponivel();
+  }
+
+  pedirLogin(): void {
+    this.login.abrir(`/itens/${this.itemId}`);
   }
 
   // "Maria Silva Santos" -> "Maria S." (o histórico é público; o ganhador é exibido por inteiro)

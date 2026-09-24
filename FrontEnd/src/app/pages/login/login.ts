@@ -1,19 +1,24 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AlertaService } from '../../core/alerta.service';
 import { AuthService } from '../../core/auth.service';
 import { mensagemDeErro } from '../../core/erro.util';
 import { RecuperarSenha } from '../../shared/recuperar-senha/recuperar-senha';
 
+import { Voltar } from '../../shared/botao-voltar/botao-voltar';
+
+import { destinoSeguro } from '../../core/retorno.util';
+
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, RouterLink, RecuperarSenha],
+  imports: [Voltar, FormsModule, RouterLink, RecuperarSenha],
   templateUrl: './login.html',
 })
 export class Login {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly alerta = inject(AlertaService);
 
   email = '';
@@ -32,7 +37,7 @@ export class Login {
     this.carregando.set(true);
     try {
       await this.auth.login(this.email, this.senha);
-      await this.router.navigateByUrl('/');
+      await this.router.navigateByUrl(destinoSeguro(this.route.snapshot.queryParamMap.get('returnUrl')));
       void this.alerta.sucesso('Bem-vindo(a) de volta!', 'Login realizado com sucesso.');
     } catch (erro) {
       this.erro.set(mensagemDeErro(erro, 'Não foi possível entrar'));

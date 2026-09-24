@@ -29,6 +29,13 @@
   --sombra-media: 0 8px 28px rgba(47, 28, 17, 0.14);
 }
 
+/* Menu lateral recolhido (computador): o conteudo ocupa a tela toda */
+@media (min-width: 901px) {
+  :root[data-menu-recolhido] {
+    --largura-sidebar: 0px;
+  }
+}
+
 :root[data-tema='escuro'] {
   --cor-fundo: #1c140d;
   --cor-superficie: #241a12;
@@ -269,7 +276,20 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   padding: 2rem 1.25rem;
-  background: radial-gradient(circle at top, var(--cor-superficie-alt), var(--cor-fundo) 70%);
+  position: relative;
+  isolation: isolate;
+  /* Cena de galeria (public/hero-galeria.svg), a mesma da home, com um veu escuro por cima */
+  background:
+    linear-gradient(rgba(20, 8, 6, 0.55), rgba(20, 8, 6, 0.75)),
+    url('/hero-galeria.svg') center / cover no-repeat,
+    #2a0a10;
+}
+
+/* O cartao de login "flutua" sobre o fundo */
+.pagina-central .cartao-auth {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  border-top: 4px solid var(--cor-dourado-suave);
+  animation: entrada-pagina 0.5s ease backwards;
 }
 
 .cartao-auth {
@@ -446,4 +466,83 @@ textarea:focus {
 .campo select.ng-valid.ng-touched,
 .campo textarea.ng-valid.ng-touched {
   border-color: var(--cor-sucesso);
+}
+
+/* ---- Transicoes suaves em tudo ----
+   Vem depois do bloco "sem animacoes" acima de proposito: quem desliga as
+   animacoes (ou usa prefers-reduced-motion) continua sem nenhum movimento. */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a,
+button,
+input,
+select,
+textarea,
+.selo,
+.cartao {
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.25s ease,
+    filter 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.25s ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Cada pagina nova entra com um fade + leve subida */
+@keyframes entrada-pagina {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+router-outlet + * {
+  animation: entrada-pagina 0.35s ease backwards;
+}
+
+/* Blocos que aparecem depois de carregar (listas, avisos, erros) */
+.cartao,
+.lista-vazia,
+.erro {
+  animation: entrada-pagina 0.3s ease backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Botao "Voltar": no topo das paginas e, no login/cadastro, no canto da tela */
+.voltar-topo {
+  margin-bottom: 1rem;
+}
+
+.pagina-central > .voltar-canto {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 2;
 }

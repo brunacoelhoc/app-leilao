@@ -23,9 +23,10 @@ export class DocumentosService {
     return this.http.post<Documento>(`${this.base}/auction-items/${itemId}/documents`, formData);
   }
 
-  // O download exige a X-API-KEY (o interceptor cuida disso via HttpClient);
-  // por isso baixamos como blob em vez de usar um <a href> direto
-  baixar(id: string): Observable<Blob> {
-    return this.http.get(`${this.base}/documents/${id}/download`, { responseType: 'blob' });
+  // 🔎 URL publica da foto de uma peca: a tag <img> (e o visualizador 3D) carregam sozinhas, com
+  // cache do navegador. Quem serve e valida e o servidor; a tela nao baixa nem guarda nada
+  urlFoto(id: string): string {
+    return `${this.base}/documents/${id}/foto`;
   }
+
 }

@@ -38,12 +38,15 @@
               </span>
               <span class="info">
                 <strong class="nome">{{ item.destaque.titulo }}</strong>
+                @if (item.destaque.descricao) {
+                  <span class="descricao">{{ item.destaque.descricao }}</span>
+                }
                 <time [attr.datetime]="item.destaque.dataInicio">{{ item.destaque.dataInicio | date: 'dd/MM/yyyy · HH:mm' }}</time>
               </span>
             </button>
-            <a class="participar" [routerLink]="destinoParticipar(item.destaque)" [attr.tabindex]="item.deslocamento === 0 ? 0 : -1">
-              {{ rotuloAcao(item.destaque) }}
-            </a>
+            <button type="button" class="participar" (click)="participar(item.destaque)" [attr.tabindex]="item.deslocamento === 0 ? 0 : -1">
+              {{ item.destaque.rotuloAcao }}
+            </button>
           </article>
         }
       </div>
@@ -80,7 +83,7 @@
       </dl>
 
       <div class="acoes">
-        <a class="botao-ouro" [routerLink]="destinoParticipar(d)" (click)="aberto.set(null)">{{ rotuloAcao(d) }}</a>
+        <button type="button" class="botao-ouro" (click)="participar(d)">{{ d.rotuloAcao }}</button>
         <a class="botao-borda" [routerLink]="['/leiloes', d.id]" (click)="aberto.set(null)">Ver todos os itens</a>
       </div>
     </div>

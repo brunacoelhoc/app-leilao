@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   bottom: 0;
-  width: var(--largura-sidebar);
+  width: 250px; /* fixa: --largura-sidebar vira 0 quando recolhido e espremeria o conteudo */
   background: linear-gradient(180deg, var(--cor-marrom-escuro), var(--cor-marrom));
   color: #f0e6d6;
   display: flex;
@@ -49,7 +49,8 @@
   overflow-y: auto;
 }
 
-.links a {
+.links a,
+.link-perfil {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -69,11 +70,13 @@
   text-align: center;
 }
 
-.links a:hover {
+.links a:hover,
+.link-perfil:hover {
   background: rgba(240, 230, 214, 0.08);
 }
 
-.links a.ativo {
+.links a.ativo,
+.link-perfil.ativo {
   background: color-mix(in srgb, var(--cor-dourado) 22%, transparent);
   color: var(--cor-dourado-suave);
   font-weight: 600;
@@ -276,5 +279,69 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 99;
+  }
+}
+
+/* ---- Recolher o menu (computador) ---- */
+.seta-menu {
+  position: fixed;
+  top: 50%;
+  left: calc(var(--largura-sidebar) - 14px);
+  z-index: 110;
+  width: 28px;
+  height: 56px;
+  margin-top: -28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--cor-dourado-suave);
+  border-radius: 8px;
+  background: var(--cor-marrom-escuro);
+  color: var(--cor-dourado-suave);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  transition: left 0.25s ease, background 0.2s ease;
+}
+
+.seta-menu:hover {
+  background: var(--cor-bordo);
+}
+
+.seta-menu:focus-visible {
+  outline: 3px solid var(--cor-dourado-suave);
+  outline-offset: 2px;
+}
+
+.seta-menu svg {
+  transition: transform 0.25s ease;
+}
+
+.seta-menu.recolhida {
+  left: 0;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+}
+
+.seta-menu.recolhida svg {
+  transform: rotate(180deg);
+}
+
+@media (min-width: 901px) {
+  .sidebar {
+    transition: transform 0.25s ease, visibility 0s;
+  }
+
+  /* Some de vez depois de deslizar para fora: nada do menu fica visivel nem focavel */
+  .sidebar.recolhida {
+    transform: translateX(-100%);
+    box-shadow: none;
+    visibility: hidden;
+    transition: transform 0.25s ease, visibility 0s 0.25s;
+  }
+}
+
+@media (max-width: 900px) {
+  .seta-menu {
+    display: none;
   }
 }

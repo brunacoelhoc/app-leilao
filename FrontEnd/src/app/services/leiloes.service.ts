@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../core/environment';
 import { paramsSemVazios } from '../core/http-params.util';
-import { AuctionStatus, IndicadoresLeilao, Leilao, RespostaPaginada } from '../core/models';
+import { AuctionStatus, IndicadoresLeilao, Leilao, RespostaPaginada, ResumoLeiloes } from '../core/models';
 
 @Injectable({ providedIn: 'root' })
 export class LeiloesService {
@@ -16,6 +16,11 @@ export class LeiloesService {
     return this.http.get<RespostaPaginada<Leilao>>(this.base, {
       params: paramsSemVazios({ pagina: 1, limite: 20, ...params }),
     });
+  }
+
+  // Quantos leiloes em cada status (o servidor conta; a tela so exibe)
+  resumo(vendedorId?: string): Observable<ResumoLeiloes> {
+    return this.http.get<ResumoLeiloes>(`${this.base}/resumo`, { params: paramsSemVazios({ vendedorId }) });
   }
 
   buscarPorId(id: string): Observable<Leilao> {

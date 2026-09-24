@@ -120,9 +120,11 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end; /* botoes no canto direito */
   gap: 0.5rem;
   /* o menu lateral e fixo e ocupa o canto esquerdo: a barra comeca depois dele */
   margin-left: var(--largura-sidebar);
+  transition: margin-left 0.25s ease;
   padding: 0.35rem 1.25rem;
   background: var(--cor-marrom-escuro);
   color: #f0e6d6;

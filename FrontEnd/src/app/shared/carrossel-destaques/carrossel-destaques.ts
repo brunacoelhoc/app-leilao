@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { LoginNecessario } from '../../core/login-necessario.service';
 import { Destaque } from '../../core/models';
 import { DestaquesService } from '../../services/destaques.service';
 import { DocumentosService } from '../../services/documentos.service';
@@ -24,6 +25,8 @@ interface CardPosicionado {
 export class CarrosselDestaques {
   private readonly destaquesService = inject(DestaquesService);
   private readonly documentosService = inject(DocumentosService);
+  private readonly router = inject(Router);
+  private readonly login = inject(LoginNecessario);
 
   readonly destaques = signal<Destaque[]>([]);
   readonly carregando = signal(true);
@@ -31,8 +34,6 @@ export class CarrosselDestaques {
   readonly centro = signal(0);
   readonly aberto = signal<Destaque | null>(null);
   // Capas já baixadas: id do documento -> URL local (blob)
-  readonly capas = signal<Record<string, string>>({});
-  private readonly baixando = new Set<string>();
 
   readonly visiveis = computed<CardPosicionado[]>(() => {
     const lista = this.destaques();
@@ -65,7 +66,6 @@ export class CarrosselDestaques {
         // Começa no meio dos "abertos"/primeiros: o primeiro da lista é o mais relevante
         this.centro.set(0);
         this.carregando.set(false);
-        this.baixarCapasVisiveis();
       },
       error: () => {
         this.erro.set(true);
@@ -73,7 +73,6 @@ export class CarrosselDestaques {
       },
     });
     inject(DestroyRef).onDestroy(() => {
-      for (const url of Object.values(this.capas())) URL.revokeObjectURL(url);
     });
   }
 
@@ -87,7 +86,6 @@ export class CarrosselDestaques {
 
   irPara(indice: number): void {
     this.centro.set(this.indiceReal(indice));
-    this.baixarCapasVisiveis();
   }
 
   aoTeclar(evento: KeyboardEvent): void {
@@ -100,23 +98,8 @@ export class CarrosselDestaques {
     }
   }
 
-  // Baixa só as capas que estão na tela agora (e uma de folga em cada lado)
-  private baixarCapasVisiveis(): void {
-    const lista = this.destaques();
-    const centro = this.centro();
-    for (let i = centro - VISIVEIS_DE_CADA_LADO - 1; i <= centro + VISIVEIS_DE_CADA_LADO + 1; i++) {
-      const id = lista[this.indiceReal(i)]?.capaDocumentoId;
-      if (!id || this.baixando.has(id)) continue;
-      this.baixando.add(id);
-      this.documentosService.baixar(id).subscribe({
-        next: (blob) => this.capas.update((atual) => ({ ...atual, [id]: URL.createObjectURL(blob) })),
-        error: () => this.baixando.delete(id),
-      });
-    }
-  }
-
   capaDe(destaque: Destaque): string | null {
-    return destaque.capaDocumentoId ? (this.capas()[destaque.capaDocumentoId] ?? null) : null;
+    return destaque.capaDocumentoId ? this.documentosService.urlFoto(destaque.capaDocumentoId) : destaque.capaPadrao;
   }
 
   // "Participar" vai direto para a sala se o leilão tem um item só; senão, para a lista de itens
@@ -124,8 +107,12 @@ export class CarrosselDestaques {
     return destaque.itemUnicoId ? ['/itens', destaque.itemUnicoId] : ['/leiloes', destaque.id];
   }
 
-  rotuloAcao(destaque: Destaque): string {
-    return destaque.status === 'CLOSED' ? 'Ver resultado' : 'Participar';
+  // "Participar" exige conta: visitante ve o pop-up de login; quem ja entrou segue para a sala
+  participar(destaque: Destaque): void {
+    const destino = this.destinoParticipar(destaque);
+    if (destaque.rotuloAcao === 'Participar' && !this.login.exigir(this.router.createUrlTree(destino).toString())) return;
+    this.aberto.set(null);
+    void this.router.navigate(destino);
   }
 
   classeEtiqueta(destaque: Destaque): string {

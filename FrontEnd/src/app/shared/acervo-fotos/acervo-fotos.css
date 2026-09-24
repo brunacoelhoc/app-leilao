@@ -18,6 +18,9 @@ summary {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr));
   gap: 0.4rem;
+  max-height: 15rem;
+  overflow-y: auto;
+  padding: 0.2rem;
 }
 
 .obra {

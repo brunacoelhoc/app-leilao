@@ -1,0 +1,78 @@
+<section class="chat" aria-label="Chat do leilão">
+  <header class="topo">
+    <h2>Chat do leilão</h2>
+    @if (status() === 'OPEN') {
+      <span class="ao-vivo"><i aria-hidden="true"></i> Ao vivo</span>
+    } @else if (status() === 'SCHEDULED') {
+      <span class="estado">Em breve</span>
+    } @else if (status()) {
+      <span class="estado">Encerrado</span>
+    }
+  </header>
+
+  <div class="lista" #lista (scroll)="aoRolar()" role="log" aria-live="polite" aria-label="Mensagens do chat">
+    @if (carregando()) {
+      <p class="vazio">Carregando conversa…</p>
+    } @else if (mensagens().length === 0) {
+      <p class="vazio">
+        <span aria-hidden="true">💬</span>
+        {{ status() === 'OPEN' ? 'Ninguém disse nada ainda. Seja o primeiro a comentar!' : 'Nenhuma mensagem neste leilão.' }}
+      </p>
+    }
+
+    @for (m of mensagens(); track m.id) {
+      <article class="msg" [class.minha]="ehMinha(m)">
+        <app-avatar [avatarUrl]="m.autorAvatar" [nome]="m.autorNome" [tamanho]="32" />
+        <div class="balao">
+          <header>
+            <strong class="nome">{{ ehMinha(m) ? 'Você' : m.autorNome }}</strong>
+            @if (rotuloPapel(m); as papel) {
+              <span class="papel">{{ papel }}</span>
+            }
+            <time [attr.datetime]="m.criadoEm">{{ m.criadoEm | date: 'HH:mm' }}</time>
+          </header>
+          <p>{{ m.texto }}</p>
+        </div>
+      </article>
+    }
+
+    @if (novasAbaixo() > 0) {
+      <button type="button" class="novas" (click)="rolarParaFim()">
+        ↓ {{ novasAbaixo() === 1 ? '1 mensagem nova' : novasAbaixo() + ' mensagens novas' }}
+      </button>
+    }
+  </div>
+
+  @if (podeEscrever()) {
+    <form class="form" (ngSubmit)="enviar()">
+      <label for="msg-chat" class="so-leitor">Sua mensagem</label>
+      <div class="linha">
+        <input
+          id="msg-chat"
+          name="texto"
+          type="text"
+          autocomplete="off"
+          placeholder="Comente sobre a peça…"
+          [maxlength]="LIMITE_TEXTO"
+          [(ngModel)]="texto"
+          (keydown)="aoTeclar($event)"
+        />
+        <button type="submit" class="primario" [disabled]="!texto.trim() || enviando()" aria-label="Enviar mensagem">
+          {{ enviando() ? '…' : 'Enviar' }}
+        </button>
+      </div>
+      <small class="contador" [class.limite]="texto.length >= LIMITE_TEXTO - 20">{{ texto.length }}/{{ LIMITE_TEXTO }}</small>
+      @if (erro()) {
+        <p class="erro" role="alert">{{ erro() }}</p>
+      }
+    </form>
+  } @else {
+    <p class="aviso">
+      @if (status() !== 'OPEN') {
+        {{ status() === 'SCHEDULED' ? 'A conversa abre junto com o leilão.' : 'A conversa está encerrada, mas você pode reler tudo acima.' }}
+      } @else {
+        <a routerLink="/login">Entre</a> para participar da conversa.
+      }
+    </p>
+  }
+</section>

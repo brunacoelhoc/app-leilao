@@ -1,71 +1,148 @@
 <div class="pagina">
+  <app-voltar class="voltar-topo" />
   @if (erro()) {
     <p class="erro">{{ erro() }}</p>
   }
 
   @if (leilao(); as l) {
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem">
-      <div>
+    <header class="capa-leilao" [class.com-foto]="capaDoLeilao()" [style.--foto]="capaDoLeilao() ? 'url(' + capaDoLeilao() + ')' : null">
+      <div class="capa-conteudo">
+        <span [class]="classeSeloLeilao(l.status)">{{ ROTULO_STATUS_LEILAO[l.status] }}</span>
         <h1>{{ l.titulo }}</h1>
-        <p class="lista-vazia">
-          {{ l.dataInicio | date: 'dd/MM/yyyy HH:mm' }} — {{ l.dataFim | date: 'dd/MM/yyyy HH:mm' }}
+        <p class="periodo">
+          <time [attr.datetime]="l.dataInicio">{{ l.dataInicio | date: "dd 'de' MMMM 'de' yyyy, HH:mm" }}</time>
+          <span aria-hidden="true">→</span>
+          <time [attr.datetime]="l.dataFim">{{ l.dataFim | date: "dd 'de' MMMM 'de' yyyy, HH:mm" }}</time>
         </p>
+        @if (l.descricao) {
+          <p class="resumo">{{ l.descricao }}</p>
+        }
       </div>
-      <span [class]="classeSeloLeilao(l.status)">{{ ROTULO_STATUS_LEILAO[l.status] }}</span>
-    </div>
-
-    @if (l.descricao) {
-      <p>{{ l.descricao }}</p>
-    }
+    </header>
 
     @if (indicadores(); as ind) {
-      <div class="cartao">
-        <h3>Indicadores</h3>
-        <div style="display: flex; gap: 2rem; flex-wrap: wrap">
-          <div><strong>{{ ind.totalItens }}</strong><br /><small>itens</small></div>
-          <div><strong>{{ ind.totalLances }}</strong><br /><small>lances</small></div>
-          <div><strong>{{ ind.maiorLance ?? '—' }}</strong><br /><small>maior lance</small></div>
-          <div><strong>{{ ind.itensVendidos }}</strong><br /><small>vendidos</small></div>
-          <div><strong>{{ ind.itensDisponiveis }}</strong><br /><small>disponíveis</small></div>
-          <div><strong>R$ {{ ind.arrecadadoTotal }}</strong><br /><small>arrecadado</small></div>
-        </div>
-      </div>
-    }
-  }
-
-  <h2>Itens</h2>
-  <div class="campo">
-    <label for="busca-itens">Buscar item por título ou descrição</label>
-    <input
-      id="busca-itens"
-      type="search"
-      placeholder="Digite parte do texto..."
-      maxlength="100"
-      [ngModel]="busca"
-      (ngModelChange)="aoDigitarBusca($event)"
-    />
-  </div>
-
-  @if (carregando()) {
-    <p class="lista-vazia">Carregando...</p>
-  } @else if (itens()!.dados.length === 0) {
-    <p class="lista-vazia">
-      {{ busca.trim() ? 'Nenhum item encontrado para essa busca.' : 'Este leilão ainda não tem itens.' }}
-    </p>
-  } @else {
-    @for (item of itens()!.dados; track item.id) {
-      <a [routerLink]="['/itens', item.id]" class="cartao" style="display: block; text-decoration: none">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem">
-          <div>
-            <h3 style="margin-bottom: 0.25rem">{{ item.titulo }}</h3>
-            <p class="lista-vazia" style="margin: 0">
-              {{ item.cidade }}/{{ item.uf }} · lance atual: R$ {{ item.lanceAtual ?? item.precoInicial }} ·
-              {{ item.totalLances }} lance(s)
-            </p>
+      <section class="painel" aria-label="Indicadores do leilão">
+        <div class="tiles">
+          <div class="tile">
+            <span class="ornamento" aria-hidden="true">⚜</span>
+            <span class="rotulo">Peças no leilão</span>
+            <strong class="valor">{{ n(ind.totalItens) }}</strong>
+            <span class="legenda">{{ ind.itensVendidos }} vendida(s) · {{ ind.itensDisponiveis }} à venda</span>
           </div>
-          <span [class]="classeSeloItem(item.status)">{{ ROTULO_STATUS_ITEM[item.status] }}</span>
+          <div class="tile">
+            <span class="ornamento" aria-hidden="true">⚖</span>
+            <span class="rotulo">Lances dados</span>
+            <strong class="valor">{{ n(ind.totalLances) }}</strong>
+            <span class="legenda">registrados e imutáveis</span>
+          </div>
+          <div class="tile ouro">
+            <span class="ornamento" aria-hidden="true">♛</span>
+            <span class="rotulo">Maior lance</span>
+            <strong class="valor">{{ ind.maiorLance ? moedaAnimada(ind.maiorLance) : '—' }}</strong>
+            <span class="legenda">{{ ind.maiorLance ? 'a peça mais disputada' : 'nenhum lance ainda' }}</span>
+          </div>
+          <div class="tile">
+            <span class="ornamento" aria-hidden="true">❖</span>
+            <span class="rotulo">Arrecadado</span>
+            <strong class="valor">{{ moedaAnimada(ind.arrecadadoTotal) }}</strong>
+            <span class="legenda">em peças vendidas</span>
+          </div>
         </div>
-      </a>
+
+        @if (fatias(); as f) {
+          <div class="andamento">
+            <div class="barra" role="img" [attr.aria-label]="ind.itensVendidos + ' vendidas, ' + ind.itensDisponiveis + ' à venda, ' + ind.itensNaoVendidos + ' não vendidas'">
+              <span class="f-vendida" [style.width.%]="f.vendidos * progresso()"></span>
+              <span class="f-disponivel" [style.width.%]="f.disponiveis * progresso()"></span>
+              <span class="f-nao" [style.width.%]="f.naoVendidos * progresso()"></span>
+            </div>
+            <ul class="legenda-barra">
+              <li><i class="p-vendida"></i>Vendidas ({{ ind.itensVendidos }})</li>
+              <li><i class="p-disponivel"></i>À venda ({{ ind.itensDisponiveis }})</li>
+              <li><i class="p-nao"></i>Não vendidas ({{ ind.itensNaoVendidos }})</li>
+            </ul>
+          </div>
+        }
+      </section>
     }
   }
+
+  <div class="grade">
+    <section aria-labelledby="titulo-itens">
+      <h2 id="titulo-itens">Peças do leilão</h2>
+      <div class="campo">
+        <label for="busca-itens">Buscar peça por título ou descrição</label>
+        <input
+          id="busca-itens"
+          type="search"
+          placeholder="Digite parte do texto..."
+          maxlength="100"
+          [ngModel]="busca"
+          (ngModelChange)="aoDigitarBusca($event)"
+        />
+      </div>
+
+      @if (carregando()) {
+        <p class="lista-vazia">Carregando...</p>
+      } @else if (itens()!.dados.length === 0) {
+        <p class="lista-vazia">
+          {{ busca.trim() ? 'Nenhuma peça encontrada para essa busca.' : 'Este leilão ainda não tem peças.' }}
+        </p>
+      } @else {
+        @for (item of itens()!.dados; track item.id) {
+          <article class="peca">
+            <a [routerLink]="['/itens', item.id]" class="foto" [attr.aria-label]="'Abrir ' + item.titulo">
+              @if (capaDe(item); as capa) {
+                <img [src]="capa" [alt]="'Foto de ' + item.titulo" loading="lazy" />
+              } @else {
+                <span class="sem-foto" aria-hidden="true">⚜</span>
+              }
+            </a>
+
+            <div class="detalhes">
+              <div class="linha-titulo">
+                <h3>{{ item.titulo }}</h3>
+                <span [class]="classeSeloItem(item.status)">{{ ROTULO_STATUS_ITEM[item.status] }}</span>
+              </div>
+
+              @if (item.descricao) {
+                <p class="descricao">{{ item.descricao }}</p>
+              }
+
+              @if (ficha(item); as campos) {
+                @if (campos.length > 0) {
+                  <dl class="ficha">
+                    @for (c of campos; track c.rotulo) {
+                      <div><dt>{{ c.rotulo }}</dt><dd>{{ c.valor }}</dd></div>
+                    }
+                  </dl>
+                }
+              }
+
+              @if (item.procedencia) {
+                <p class="procedencia"><strong>Procedência:</strong> {{ item.procedencia }}</p>
+              }
+
+              <div class="rodape-peca">
+                <div class="preco">
+                  <small>{{ item.lanceAtual ? 'Lance atual' : 'Lance inicial' }}</small>
+                  <strong>{{ moeda(item.lanceAtual ?? item.precoInicial) }}</strong>
+                  <span>{{ item.totalLances }} lance(s) · {{ item.cidade }}/{{ item.uf }}</span>
+                </div>
+                @if (item.rotuloAcao === 'Participar') {
+                  <button type="button" class="acao" (click)="participar(item)">{{ item.rotuloAcao }}</button>
+                } @else {
+                  <a [routerLink]="['/itens', item.id]" class="acao">{{ item.rotuloAcao }}</a>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      }
+    </section>
+
+    <aside class="lateral" aria-label="Conversa ao vivo">
+      <app-chat-leilao [leilaoId]="idDoLeilao" [status]="leilao()?.status ?? null" />
+    </aside>
+  </div>
 </div>

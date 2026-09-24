@@ -1,17 +1,22 @@
 <div class="pagina sala">
+  <app-voltar class="voltar-topo" />
   @if (erro()) {
     <p class="erro">{{ erro() }}</p>
   }
 
   @if (item(); as it) {
     <header class="cabecalho-sala">
-      <div>
+      <div class="titulos">
         @if (leilao(); as l) {
           <a [routerLink]="['/leiloes', l.id]" class="voltar">← {{ l.titulo }}</a>
         }
+        <p class="lote-rotulo">Peça em leilão</p>
         <h1>{{ it.titulo }}</h1>
         @if (it.cidade) {
-          <p class="lista-vazia">{{ it.logradouro ? it.logradouro + ', ' : '' }}{{ it.cidade }}/{{ it.uf }}</p>
+          <p class="local">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg>
+            Retirada em {{ it.cidade }}/{{ it.uf }}
+          </p>
         }
       </div>
       <span [class]="classeSeloItem(it.status)">
@@ -25,9 +30,21 @@
         @if (fotos().length > 1) {
           <p class="lista-vazia">{{ fotos().length }} fotos disponíveis para este lote.</p>
         }
-        @if (it.descricao) {
-          <p class="descricao">{{ it.descricao }}</p>
-        }
+        <div class="placa">
+          @if (it.descricao) {
+            <p class="descricao">{{ it.descricao }}</p>
+          }
+          @if (it.autor || it.periodo || it.tecnica || it.dimensoes || it.conservacao || it.procedencia) {
+            <dl class="ficha-tecnica" aria-label="Ficha técnica">
+              @if (it.autor) { <div><dt>Autor</dt><dd>{{ it.autor }}</dd></div> }
+              @if (it.periodo) { <div><dt>Época</dt><dd>{{ it.periodo }}</dd></div> }
+              @if (it.tecnica) { <div><dt>Técnica</dt><dd>{{ it.tecnica }}</dd></div> }
+              @if (it.dimensoes) { <div><dt>Dimensões</dt><dd>{{ it.dimensoes }}</dd></div> }
+              @if (it.conservacao) { <div><dt>Conservação</dt><dd>{{ it.conservacao }}</dd></div> }
+              @if (it.procedencia) { <div><dt>Procedência</dt><dd>{{ it.procedencia }}</dd></div> }
+            </dl>
+          }
+        </div>
       </section>
 
       <section class="painel-lote" aria-label="Painel do lote">
@@ -50,14 +67,16 @@
           </div>
         }
 
+        <div class="preco-heroi" [class.sem-lance]="!it.lanceAtual">
+          <span class="rotulo">{{ it.lanceAtual ? 'Lance atual' : 'Lance inicial' }}</span>
+          <strong class="valor-heroi" aria-live="polite">{{ moeda(it.lanceAtual ?? it.precoInicial) }}</strong>
+          <span class="sub">{{ it.totalLances === 0 ? 'Nenhum lance ainda' : it.totalLances === 1 ? '1 lance registrado' : it.totalLances + ' lances registrados' }}</span>
+        </div>
+
         <dl class="valores">
           <div>
             <dt>Valor inicial</dt>
             <dd>{{ moeda(it.precoInicial) }}</dd>
-          </div>
-          <div class="destaque">
-            <dt>Lance atual</dt>
-            <dd aria-live="polite">{{ it.lanceAtual ? moeda(it.lanceAtual) : 'sem lances' }}</dd>
           </div>
           <div>
             <dt>Incremento mínimo</dt>
@@ -66,21 +85,27 @@
         </dl>
 
         <form (ngSubmit)="darLance()" class="form-lance">
-          <label for="valor">Seu lance (R$)</label>
-          <div class="linha-lance">
+          <label for="valor">Seu lance</label>
+          <div class="campo-valor">
+            <span class="prefixo" aria-hidden="true">R$</span>
             <input
               id="valor"
               name="valor"
               type="number"
               step="0.01"
+              placeholder="0,00"
               [min]="lanceMinimo()"
               [(ngModel)]="valorLance"
               [disabled]="!podeDarLance()"
               required
             />
-            <button type="button" class="secundario" (click)="usarMinimo()" [disabled]="!podeDarLance()">
-              Mínimo: {{ moeda(lanceMinimo()) }}
-            </button>
+          </div>
+          <div class="atalhos" role="group" aria-label="Valores rápidos">
+            @for (v of it.lancesSugeridos; track $index) {
+              <button type="button" class="atalho" (click)="usarValor(v)" [disabled]="!podeDarLance()">
+                <small>{{ ROTULOS_ATALHO[$index] }}</small>{{ moeda(v) }}
+              </button>
+            }
           </div>
           <button type="submit" class="primario" [disabled]="!podeDarLance() || enviandoLance() || !valorLance">
             @if (indisponivel()) {
@@ -93,9 +118,9 @@
             <p class="erro" role="alert">{{ erroLance() }}</p>
           }
           @if (!auth.estaLogado() && !indisponivel()) {
-            <p class="lista-vazia"><a routerLink="/login">Entre</a> como licitante para dar um lance.</p>
-          } @else if (auth.estaLogado() && auth.papel() !== 'BIDDER' && !indisponivel()) {
-            <p class="lista-vazia">Somente licitantes podem dar lances.</p>
+            <p class="lista-vazia"><button type="button" class="link-entrar" (click)="pedirLogin()">Entre ou cadastre-se</button> para dar um lance.</p>
+          } @else if (avisoDeRestricao(); as aviso) {
+            <p class="lista-vazia">{{ aviso }}</p>
           } @else if (situacao() === 'EM_BREVE') {
             <p class="lista-vazia">Os lances abrem quando o leilão começar.</p>
           }
@@ -104,23 +129,26 @@
     </div>
   }
 
-  <h2>Histórico de lances <small class="ao-vivo" aria-hidden="true">● ao vivo</small></h2>
-  @if (lances(); as l) {
-    @if (l.dados.length === 0) {
-      <p class="lista-vazia">Nenhum lance ainda.</p>
-    } @else {
-      <ol class="historico" aria-live="polite">
-        @for (lance of l.dados; track lance.id; let primeiro = $first) {
-          <li [class.lider]="primeiro" [class.meu]="ehMeuLance(lance)">
-            <span class="quem">{{ ehMeuLance(lance) ? 'Você' : nomeAbreviado(lance.licitanteNome) }}</span>
-            <strong>{{ moeda(lance.valor) }}</strong>
-            <time [attr.datetime]="lance.criadoEm">{{ lance.criadoEm | date: 'dd/MM HH:mm:ss' }}</time>
-            @if (primeiro) {
-              <span class="selo status-open">{{ situacao() === 'VENDIDO' ? 'Vencedor' : 'Maior lance' }}</span>
-            }
-          </li>
-        }
-      </ol>
+  <section class="secao-historico" aria-labelledby="titulo-historico">
+    <h2 id="titulo-historico">Histórico de lances <small class="ao-vivo" aria-hidden="true">● ao vivo</small></h2>
+    @if (lances(); as l) {
+      @if (l.dados.length === 0) {
+        <p class="lista-vazia">Nenhum lance ainda. O primeiro pode ser o seu.</p>
+      } @else {
+        <ol class="historico" aria-live="polite">
+          @for (lance of l.dados; track lance.id; let primeiro = $first) {
+            <li [class.lider]="primeiro" [class.meu]="ehMeuLance(lance)">
+              <span class="ponto" aria-hidden="true"></span>
+              <span class="quem">{{ ehMeuLance(lance) ? 'Você' : nomeAbreviado(lance.licitanteNome) }}</span>
+              @if (primeiro) {
+                <span class="selo status-open">{{ situacao() === 'VENDIDO' ? 'Vencedor' : 'Maior lance' }}</span>
+              }
+              <strong class="valor-lance">{{ moeda(lance.valor) }}</strong>
+              <time [attr.datetime]="lance.criadoEm">{{ lance.criadoEm | date: 'dd/MM HH:mm:ss' }}</time>
+            </li>
+          }
+        </ol>
+      }
     }
-  }
+  </section>
 </div>

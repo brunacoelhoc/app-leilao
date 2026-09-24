@@ -1,18 +1,23 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AlertaService } from '../../core/alerta.service';
 import { AuthService } from '../../core/auth.service';
 import { mensagemDeErro } from '../../core/erro.util';
 
+import { Voltar } from '../../shared/botao-voltar/botao-voltar';
+
+import { destinoSeguro } from '../../core/retorno.util';
+
 @Component({
   selector: 'app-registrar',
-  imports: [FormsModule, RouterLink],
+  imports: [Voltar, FormsModule, RouterLink],
   templateUrl: './registrar.html',
 })
 export class Registrar {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly alerta = inject(AlertaService);
 
   nome = '';
@@ -34,7 +39,7 @@ export class Registrar {
       // Registro sempre cria a conta como BIDDER (regra do backend, nao ha
       // como escolher outro papel por aqui -- de proposito)
       await this.auth.registrar(this.nome, this.email, this.senha);
-      await this.router.navigateByUrl('/');
+      await this.router.navigateByUrl(destinoSeguro(this.route.snapshot.queryParamMap.get('returnUrl')));
       void this.alerta.sucesso('Conta criada!', `Seja bem-vindo(a), ${this.nome.split(' ')[0]}.`);
     } catch (erro) {
       this.erro.set(mensagemDeErro(erro, 'Não foi possível criar a conta'));

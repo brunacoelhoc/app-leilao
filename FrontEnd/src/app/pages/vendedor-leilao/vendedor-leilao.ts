@@ -21,9 +21,11 @@ import { AcervoFotos } from '../../shared/acervo-fotos/acervo-fotos';
 import { Modal } from '../../shared/modal/modal';
 import { Paginacao } from '../../shared/paginacao/paginacao';
 
+import { Voltar } from '../../shared/botao-voltar/botao-voltar';
+
 @Component({
   selector: 'app-vendedor-leilao',
-  imports: [AcervoFotos, DatePipe, FormsModule, RouterLink, Modal, Paginacao],
+  imports: [Voltar, AcervoFotos, DatePipe, FormsModule, RouterLink, Modal, Paginacao],
   templateUrl: './vendedor-leilao.html',
   styleUrl: './vendedor-leilao.css',
 })
