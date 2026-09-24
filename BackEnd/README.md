@@ -215,7 +215,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 5 suítes / 30 testes
+npm run test         # unitários (Jest) -- 5 suítes / 30 testes (e2e: 15 suítes / 207 testes)
 npm run test:e2e      # end-to-end, contra o banco real (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -310,6 +310,9 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | GET | `/users/me` | Autenticado | — | `200` o próprio perfil · `401` |
 | PATCH | `/users/me` | Autenticado | `{ nome?, email?, telefone?, endereco?, cpf?, avatarUrl?, senhaAtual? }` | `200` · `400` (formato inválido; **trocar o e-mail exige `senhaAtual` correta**) · `401` · `409` (e-mail já cadastrado) |
 | PATCH | `/users/me/senha` | Autenticado | `{ senhaAtual, novaSenha }` | `204` · `400` (senha atual errada ou nova fraca) · `401` |
+| GET | `/users/me/vendedor` | Autenticado | — | `200` lista de requisitos que faltam para virar vendedor (calculada pelo servidor) · `401` |
+| POST | `/users/me/vendedor` | Autenticado | — | `200` o comprador passa a SELLER (exige perfil completo e **CPF único**) · `400` perfil incompleto ou CPF inválido · `401` · `403` ADMIN não vira vendedor · `409` já é vendedor ou CPF em uso |
+| POST | `/users` | ADMIN | `{ nome, email, senha, papel }` | `201` cria usuário já com o papel escolhido · `400` · `401` · `403` · `409` |
 | GET | `/users/:id` | ADMIN | — | `200` dados **completos** (a consulta é auditada) · `400` · `401` · `403` · `404` |
 | GET | `/users` | ADMIN | — | `200` lista de usuários (sem senha; e-mail, telefone, CPF e endereço **mascarados** pelo backend) · `401` · `403` |
 | PATCH | `/users/:id/desativar` | ADMIN | — | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação) |
@@ -410,6 +413,17 @@ Ordem decidida no backend: abertos (encerram primeiro), em breve (abrem primeiro
 encerrados (mais recentes). Rascunho e cancelado nunca aparecem. Cada card traz
 `etiqueta` (Aberto, Em breve, Encerrado), totais, maior lance, `capaDocumentoId` e
 `itemUnicoId` (preenchido se o leilão tem um item só).
+
+### Ranking, obras, chat, institucional e painel admin
+
+| Método | Rota | Auth | Respostas |
+| --- | --- | --- | --- |
+| GET | `/ranking/vendedores` | Livre (só `X-API-KEY`) | `200` melhores vendedores por total arrecadado |
+| GET | `/auction-items/:id/historia` | Livre (só `X-API-KEY`) | `200` história da obra e contexto da época · `404` |
+| GET | `/auctions/:leilaoId/chat` | Livre (só `X-API-KEY`) | `200` últimas mensagens, da mais antiga para a mais nova |
+| POST | `/auctions/:leilaoId/chat` | Autenticado | `201` envia mensagem (**só com o leilão `OPEN`**) · `400` · `401` · `404` leilão inexistente · `409` leilão não aberto |
+| GET | `/institucional` | Livre (só `X-API-KEY`) | `200` dados da casa de leilões para o rodapé |
+| GET | `/admin/resumo` | ADMIN | `200` totais da plataforma para o painel · `401` · `403` |
 
 ### Saúde
 
@@ -565,6 +579,11 @@ src/
   documents/          upload de fotos/documentos
   cep/                integração externa (ViaCEP) via HttpService + GET /cep/:cep
   destaques/          carrossel da home (GET /destaques)
+  ranking/            ranking de vendedores
+  obras/              história e contexto da obra (GET /auction-items/:id/historia)
+  chat/               chat por leilão (mensagens só com o leilão aberto)
+  institucional/      dados da casa de leilões (rodapé)
+  admin/              resumo da plataforma para o painel ADMIN
   realtime/           gateway Socket.io (lances ao vivo) e adaptador de CORS
   saude/              health check
   prisma/             PrismaService (driver adapter)
