@@ -11,3 +11,6 @@
 
 # Configuracao local do Claude Code (nao e parte do projeto)
 /.claude/
+
+backups/
+/ALTERACOES-LIMPEZA-DADOS.md

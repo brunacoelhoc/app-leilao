@@ -501,6 +501,16 @@ async function completarContasDemo() {
     },
   });
   await prisma.user.updateMany({ where: { nome: 'Henrique Lacerda Guedes', avatarUrl: { startsWith: 'acervo/' } }, data: { avatarUrl: 'cachorro' } });
+
+  // Contas criadas nos testes manuais (Teste Rec / Termos / Modo) viram pessoas com perfil completo
+  const deTeste = [
+    { antigo: 'Teste Rec', nome: 'Luciana Prado Villaça', email: 'luciana.villaca@gmail.com', telefone: '27998143265', cpf: cpfDe(203), endereco: 'Rua Joaquim Lírio, 210, apto 604 - Praia do Canto, Vitória/ES', avatarUrl: 'gato' },
+    { antigo: 'Teste Termos', nome: 'Diego Ferraz Montenegro', email: 'diego.montenegro@outlook.com', telefone: '92991827436', cpf: cpfDe(207), endereco: 'Avenida Djalma Batista, 1.661, sala 12 - Chapada, Manaus/AM', avatarUrl: 'aguia' },
+    { antigo: 'Teste Modo', nome: 'Amanda Cordeiro Leitão', email: 'amanda.leitao@icloud.com', telefone: '84996215478', cpf: cpfDe(211), endereco: 'Avenida Roberto Freire, 2.180, apto 301 - Capim Macio, Natal/RN', avatarUrl: 'cisne' },
+  ];
+  for (const { antigo, ...dadosNovos } of deTeste) {
+    await prisma.user.updateMany({ where: { nome: antigo, telefone: null }, data: dadosNovos });
+  }
 }
 
 // ---- Vendas de exemplo: leiloes encerrados de cada vendedor, com lances e compradores ----
@@ -553,8 +563,10 @@ const VENDEDORES_VENDAS = [
 ];
 
 async function criarVendasDeExemplo(categorias: Record<string, { id: string }>) {
+  // So pessoas do proprio seed (nao contas criadas por testes, que acumulam no banco de dev)
+  const emailsDoSeed = PESSOAS.filter((p) => p.papel === 'BIDDER' && p.ativo !== false).map((p) => p.email);
   const compradores = await prisma.user.findMany({
-    where: { papel: 'BIDDER', ativo: true },
+    where: { email: { in: emailsDoSeed } },
     orderBy: { email: 'asc' },
     select: { id: true },
   });
