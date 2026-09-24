@@ -216,7 +216,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 6 suítes / 32 testes (e2e: 17 suítes / 235 testes)
+npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 18 suítes / 241 testes)
 npm run test:e2e      # end-to-end, contra um banco de TESTE separado (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -392,7 +392,14 @@ e deve rodar em **uma única instância** da API.
 Cada item também volta com valores **calculados pelo servidor**: `situacao`
 (`EM_BREVE`, `ABERTO`, `ENCERRANDO`, `VENDIDO`, `NAO_VENDIDO`, `CANCELADO`),
 `lanceMinimo` (menor lance aceito agora), `segundosParaMudanca` (contagem até
-abrir/encerrar) e `vencedorNome`.
+abrir/encerrar), `prorrogacoes` (quantas vezes o **anti-sniping** estendeu o prazo) e `vencedorNome`.
+
+**Anti-sniping** (`src/auctions/anti-sniping.ts`): um lance que chega quando faltam **menos de
+2 minutos** para o fim do leilão faz o prazo passar a ser **"agora + 2 minutos"**. Cada novo lance na
+janela estende de novo, e o leilão só fecha quando ninguém mais dá lance nos minutos finais. A
+extensão acontece **na mesma transação do lance** (sob o mesmo lock) — lance rejeitado nunca estende —,
+fica na auditoria (`LEILAO_PRAZO_ESTENDIDO`) e o `dataFim`/`prorrogacoes` do leilão refletem o novo prazo.
+O robô de encerramento sempre olha o prazo atual.
 
 Campos de dinheiro (`precoInicial`, `incrementoMinimo`, `lanceAtual`) sempre
 voltam como **string** na resposta (ex.: `"150.50"`), nunca como número —
@@ -465,7 +472,7 @@ Socket.io no namespace **`/lances`** (`src/realtime/`), com uma sala por item
 | Direção | Evento | Dados |
 | --- | --- | --- |
 | cliente → servidor | `entrar-item` / `sair-item` | `itemId` |
-| servidor → sala | `lance-novo` | `{ lance, licitanteNome, lanceAtual, lanceMinimo }` |
+| servidor → sala | `lance-novo` | `{ lance, licitanteNome, lanceAtual, lanceMinimo, lancesSugeridos, prazo: { dataFim, segundosParaMudanca, prorrogacoes, estendido } }` (o `prazo` já traz a extensão do anti-sniping; a tela só acompanha o cronômetro) |
 | servidor → sala | `item-finalizado` | `{ itemId, status, vencedorId, vencedorNome, valorFinal }` |
 
 Os eventos só **leem** dados públicos e por isso não exigem a `X-API-KEY` (o

@@ -59,6 +59,7 @@ A matriz completa de permissões por endpoint está em [`BackEnd/README.md`](Bac
 ## Funcionalidades
 
 - **Lances em tempo real** (Socket.io) e **chat** por leilão.
+- **Anti-sniping**: lance nos últimos 2 minutos estende o prazo (+2 min), decidido pelo servidor na mesma transação do lance; o cronômetro de todos sobe ao vivo e a tela mostra "prazo estendido".
 - **Indicadores por leilão**: total de lances, maior lance, itens vendidos e total arrecadado (`Decimal`, nunca `Float`).
 - **Ranking de vendedores** por valor arrecadado e **destaques** na página inicial.
 - **Ficha técnica** das obras (autor, época, técnica, dimensões, conservação, procedência) e **visualizador 3D** da peça.

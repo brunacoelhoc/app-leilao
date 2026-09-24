@@ -53,7 +53,9 @@ public/       logo, cena de galeria do Hero, ilustrações de avatares (SVG) e a
 ## Destaques técnicos
 
 - **Tempo real:** `TempoRealService` entra na sala do item e a tela atualiza lance
-  atual, histórico e o fim do lote sem recarregar. O botão de lance é bloqueado na
+  atual, histórico e o fim do lote sem recarregar. O evento de lance traz o `prazo` já
+  calculado pelo servidor (anti-sniping): o cronômetro só passa a contar até o novo fim e
+  aparece o aviso "prazo estendido". O botão de lance é bloqueado na
   hora em que o tempo zera.
 - **3D:** `Visualizador3d` (Three.js/WebGL) mostra a foto do lote em uma moldura
   dourada, ou uma ânfora quando não há foto. Gira sozinho, aceita mouse, toque e
