@@ -23,7 +23,7 @@ class VariaveisAmbiente {
   })
   JWT_SECRET: string;
 
-  @IsNotEmpty({ message: 'JWT_EXPIRES_IN e obrigatoria (ex.: 1d)' })
+  @IsNotEmpty({ message: 'JWT_EXPIRES_IN e obrigatoria (ex.: 15m)' })
   JWT_EXPIRES_IN: string;
 
   // Se a PORT nao vier no .env, usa 3000

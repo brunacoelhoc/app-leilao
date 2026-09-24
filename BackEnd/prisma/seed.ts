@@ -487,6 +487,12 @@ async function completarContasDemo() {
       data: { avatarUrl: avatar },
     });
   }
+  // As contas de exemplo 'aceitaram' os termos de uso (contas reais gravam isso no cadastro)
+  await prisma.user.updateMany({
+    where: { termosAceitosEm: null, email: { in: [...preencher.map((p) => p.email), ...PESSOAS.map((p) => p.email)] } },
+    data: { termosAceitosEm: new Date() },
+  });
+
   // Nomes de demonstracao viram nomes de pessoas
   await prisma.user.updateMany({ where: { nome: 'Comprador Exemplo' }, data: { nome: 'Helena Duarte Vasconcelos' } });
   await prisma.user.updateMany({ where: { nome: 'Teste Docker' }, data: { nome: 'Henrique Lacerda Guedes' } });

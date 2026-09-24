@@ -10,7 +10,10 @@ import type { ContextoRequisicao } from '../common/interfaces/contexto-requisica
 import { AuditResult, Prisma } from '../generated/prisma/client';
 import { UsersService } from '../users/users.service';
 import { UsuarioEntity } from '../users/usuario.entity';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import type { LoginDto } from './dto/login.dto';
+import type { RefreshDto } from './dto/refresh.dto';
+import { SessaoService } from './sessao.service';
 import type { RegistrarUsuarioDto } from './dto/registrar-usuario.dto';
 
 // Quantas "voltas" o bcrypt da para gerar o hash. Cada +1 dobra o tempo (e a seguranca)
@@ -23,6 +26,7 @@ export const HASH_FICTICIO =
 
 export interface RespostaLogin {
   accessToken: string;
+  refreshToken: string;
   usuario: UsuarioEntity;
 }
 
@@ -32,6 +36,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly auditLogService: AuditLogService,
+    private readonly sessaoService: SessaoService,
   ) {}
 
   async registrar(
@@ -124,9 +129,12 @@ export class AuthService {
       );
     }
 
+    // Cada login abre uma SESSAO; o access token (curto) leva o id dela e o refresh token renova o acesso
+    const { sessaoId, refreshToken } = await this.sessaoService.criar(usuario.id, contexto);
     const accessToken = await this.jwtService.signAsync({
       sub: usuario.id,
       papel: usuario.papel,
+      sid: sessaoId,
     });
 
     await this.auditLogService.registrar({
@@ -138,6 +146,45 @@ export class AuthService {
       ...contexto,
     });
 
-    return { accessToken, usuario: new UsuarioEntity(usuario) };
+    return { accessToken, refreshToken, usuario: new UsuarioEntity(usuario) };
+  }
+
+  // Troca o refresh token (de uso unico) por um par novo. Qualquer falha devolve a mesma mensagem
+  async renovar(dto: RefreshDto, contexto: ContextoRequisicao = {}): Promise<RespostaLogin> {
+    const resultado = await this.sessaoService.renovar(dto.refreshToken);
+    const recusar = async (motivo: string, usuarioId?: string, reuso = false): Promise<never> => {
+      await this.auditLogService.registrar({
+        usuarioId,
+        acao: reuso ? 'REFRESH_REUSO_DETECTADO' : 'REFRESH',
+        resultado: AuditResult.REJECTED,
+        motivo,
+        statusHttp: 401,
+        ...contexto,
+      });
+      throw new UnauthorizedException('Sessao invalida ou expirada. Entre novamente.');
+    };
+    if (!resultado.ok) return recusar(resultado.motivo, resultado.usuarioId, resultado.reuso);
+
+    const usuario = await this.usersService.buscarPorId(resultado.usuarioId);
+    if (!usuario || !usuario.ativo) {
+      await this.sessaoService.revogar(resultado.sessaoId);
+      return recusar('Usuario inexistente ou desativado', resultado.usuarioId);
+    }
+
+    const accessToken = await this.jwtService.signAsync({ sub: usuario.id, papel: usuario.papel, sid: resultado.sessaoId });
+    return { accessToken, refreshToken: resultado.refreshToken, usuario: new UsuarioEntity(usuario) };
+  }
+
+  // Encerra a sessao do token usado: ele (e o refresh token dele) param de funcionar na hora
+  async encerrarSessao(usuario: UsuarioAutenticado, contexto: ContextoRequisicao = {}): Promise<void> {
+    await this.sessaoService.revogar(usuario.sessaoId);
+    await this.auditLogService.registrar({
+      usuarioId: usuario.id,
+      papel: usuario.papel as never,
+      acao: 'LOGOUT',
+      resultado: AuditResult.SUCCESS,
+      statusHttp: 204,
+      ...contexto,
+    });
   }
 }

@@ -16,6 +16,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuditLogService } from '../audit/audit-log.service';
+import { SessaoService } from '../auth/sessao.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ContextoDaRequisicao } from '../common/decorators/contexto-requisicao.decorator';
 import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
@@ -64,6 +65,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly auditLogService: AuditLogService,
+    private readonly sessaoService: SessaoService,
   ) {}
 
   @Get('me')
@@ -141,6 +143,8 @@ export class UsersController {
     @Body() dto: AlterarSenhaDto,
   ): Promise<void> {
     await this.usersService.alterarSenha(usuario.id, dto);
+    // Trocou a senha: os outros aparelhos/sessoes sao derrubados; so esta continua
+    await this.sessaoService.revogarTodas(usuario.id, usuario.sessaoId);
   }
 
   @Post()

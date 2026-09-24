@@ -136,6 +136,8 @@ export class RecuperacaoSenhaService {
     await this.prisma.$transaction([
       this.prisma.user.update({ where: { id: usuario.id }, data: { senha: novoHash } }),
       this.prisma.passwordReset.updateMany({ where: { usuarioId: usuario.id, usadoEm: null }, data: { usadoEm: new Date() } }),
+      // Senha redefinida: quem tinha a senha antiga (inclusive um invasor) perde todas as sessoes
+      this.prisma.session.updateMany({ where: { usuarioId: usuario.id, revogadaEm: null }, data: { revogadaEm: new Date() } }),
     ]);
 
     await this.auditLogService.registrar({

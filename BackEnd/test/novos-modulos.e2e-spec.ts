@@ -33,7 +33,9 @@ describe('Novos modulos (e2e)', () => {
   // esses dois endpoints tem limite de 10 por minuto e esta suite cria mais contas que isso
   async function criarEEntrar(nome: string, quem: string, papel: 'BIDDER' | 'SELLER' | 'ADMIN', perfilCompleto = true) {
     const usuario = await prisma.user.create({ data: { nome, email: email(quem), senha: 'x', papel, ...(perfilCompleto ? PERFIL_COMPLETO : {}) } });
-    const token = app.get(JwtService, { strict: false }).sign({ sub: usuario.id, papel });
+    // O token so vale com uma SESSAO ativa: cria a sessao e assina o token com o id dela
+    const sessao = await prisma.session.create({ data: { usuarioId: usuario.id, refreshHash: 'teste', expiraEm: new Date(Date.now() + 86_400_000) } });
+    const token = app.get(JwtService, { strict: false }).sign({ sub: usuario.id, papel, sid: sessao.id });
     return { token, id: usuario.id };
   }
 

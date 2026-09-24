@@ -1,9 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiBearerAuth,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiSecurity,
@@ -20,6 +22,10 @@ import { UsuarioEntity } from '../users/usuario.entity';
 import { AuthService, RespostaLogin } from './auth.service';
 import { EsqueciSenhaDto } from './dto/esqueci-senha.dto';
 import { RedefinirSenhaDto } from './dto/redefinir-senha.dto';
+import { RefreshDto } from './dto/refresh.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import { RecuperacaoSenhaService } from './recuperacao-senha.service';
 import { LoginDto } from './dto/login.dto';
 import { RegistrarUsuarioDto } from './dto/registrar-usuario.dto';
@@ -119,5 +125,45 @@ export class AuthController {
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
   ): Promise<{ mensagem: string }> {
     return this.recuperacaoSenhaService.redefinir(dto, contexto);
+  }
+
+  // Renova o acesso com o refresh token (de uso unico: cada renovacao devolve um refresh token novo)
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Renova o access token com o refresh token',
+    description:
+      'O access token dura poucos minutos. O refresh token e rotativo e de uso unico: a resposta traz um par novo e o ' +
+      'anterior deixa de valer. Se um refresh token ja usado aparecer de novo (possivel roubo), a sessao inteira e revogada. ' +
+      'A sessao expira apos 7 dias sem uso.',
+  })
+  @ApiOkResponse({ description: 'Par novo: { accessToken, refreshToken, usuario }', headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'refreshToken ausente ou mal formado', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Refresh token invalido, ja usado, revogado ou expirado (mensagem unica)', type: ErroResposta })
+  @ApiTooManyRequestsResponse({ description: 'Mais de 20 renovacoes no ultimo minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
+  renovar(
+    @Body() dto: RefreshDto,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<RespostaLogin> {
+    return this.authService.renovar(dto, contexto);
+  }
+
+  // Logout de verdade: revoga a sessao no servidor (o token deixa de funcionar na hora)
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth('jwt')
+  @ApiOperation({
+    summary: 'Encerra a sessao atual (logout que invalida o token)',
+    description: 'O access token usado e o refresh token da mesma sessao param de funcionar imediatamente.',
+  })
+  @ApiNoContentResponse({ description: 'Sessao encerrada', headers: HEADER_REQUEST_ID })
+  @ApiUnauthorizedResponse({ description: 'Token ausente, invalido ou sessao ja encerrada', type: ErroResposta })
+  async sair(
+    @CurrentUser() usuario: UsuarioAutenticado,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<void> {
+    await this.authService.encerrarSessao(usuario, contexto);
   }
 }

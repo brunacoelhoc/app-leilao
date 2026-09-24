@@ -4,10 +4,12 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import { UsersService } from '../users/users.service';
+import { SessaoService } from './sessao.service';
 
 interface PayloadDoToken {
   sub: string;
   papel: string;
+  sid?: string; // id da sessao de login
 }
 
 @Injectable()
@@ -15,6 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
     private readonly usersService: UsersService,
+    private readonly sessaoService: SessaoService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -35,6 +38,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Sessao invalida ou usuario desativado');
     }
 
-    return { id: usuario.id, papel: usuario.papel };
+    // 🔎 O token so vale enquanto a SESSAO dele estiver ativa: logout, troca de senha e reuso suspeito
+    // do refresh token a revogam, e o token para de funcionar na hora (nao espera expirar)
+    if (!payload.sid || !(await this.sessaoService.estaAtiva(payload.sid, usuario.id))) {
+      throw new UnauthorizedException('Sessao encerrada ou expirada. Entre novamente.');
+    }
+
+    return { id: usuario.id, papel: usuario.papel, sessaoId: payload.sid };
   }
 }

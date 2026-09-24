@@ -61,6 +61,7 @@ model User {
   avatarUrl          String? // opcional: identificador de um avatar pronto (ex.: "raposa") ou uma imagem pequena em base64
   termosAceitosEm    DateTime? // quando aceitou os termos de uso (o servidor grava no cadastro)
   redefinicoesSenha  PasswordReset[]
+  sessoes             Session[]
   criadoEm           DateTime               @default(now()) // data de criacao, preenchida sozinha
   atualizadoEm       DateTime               @updatedAt // o Prisma atualiza a cada alteracao
   leiloes            Auction[] // lista dos leiloes que este usuario criou
@@ -237,4 +238,22 @@ model PasswordReset {
   criadoEm   DateTime  @default(now())
 
   @@index([usuarioId, criadoEm])
+}
+
+// Sessao de login: uma por login. O access token (curto) carrega o id da sessao; o refresh token
+// (longo, so o HASH fica no banco) renova o acesso. Revogar a sessao derruba os tokens dela na hora
+model Session {
+  id                  String    @id @default(uuid())
+  usuarioId           String
+  usuario             User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade) // conta removida leva as sessoes junto
+  refreshHash         String // sha256 do segredo do refresh token atual
+  refreshHashAnterior String? // do refresh token anterior: se aparecer de novo, e sinal de roubo
+  expiraEm            DateTime // 7 dias sem uso
+  revogadaEm          DateTime? // logout, troca de senha ou reuso suspeito
+  ipOrigem            String?
+  userAgent           String?
+  criadoEm            DateTime  @default(now())
+  ultimoUsoEm         DateTime  @default(now())
+
+  @@index([usuarioId])
 }
