@@ -21,6 +21,7 @@ export interface Usuario {
 
 export interface RespostaLogin {
   accessToken: string;
+  refreshToken: string;
   usuario: Usuario;
 }
 

@@ -77,8 +77,8 @@ export class Sidebar {
     this.aberta.set(false);
   }
 
-  sair(): void {
-    this.auth.logout();
+  async sair(): Promise<void> {
+    await this.auth.logout(); // o servidor encerra a sessao (o token para de valer na hora)
     this.fechar();
     void this.router.navigateByUrl('/');
   }
