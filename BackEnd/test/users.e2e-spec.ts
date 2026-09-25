@@ -28,7 +28,7 @@ describe('Users (e2e)', () => {
   const SENHA_TESTE = 'Abc12345!';
   const SENHA_NOVA = 'Nova@12345';
 
-  async function criarUsuario(nome: string, email: string, papel?: string) {
+  async function criarUsuario(nome: string, email: string, papel?: 'BIDDER' | 'SELLER' | 'ADMIN') {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)

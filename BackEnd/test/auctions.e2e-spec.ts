@@ -28,7 +28,7 @@ describe('Auctions (e2e)', () => {
   const SENHA_TESTE = 'Abc12345!';
 
   // Ajuda a registrar+logar um usuario e (se precisar) promove-lo a outro papel
-  async function criarUsuario(nome: string, email: string, papel?: string) {
+  async function criarUsuario(nome: string, email: string, papel?: 'BIDDER' | 'SELLER' | 'ADMIN') {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)

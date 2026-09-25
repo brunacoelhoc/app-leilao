@@ -12,6 +12,7 @@ import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { CorsIoAdapter } from './../src/realtime/cors-io.adapter';
 import { PERFIL_COMPLETO } from './perfil-teste';
+import type { AddressInfo, Server } from 'node:net';
 
 // Espera o proximo evento de um socket (ou falha em 5s)
 function esperar<T>(socket: Socket, evento: string): Promise<T> {
@@ -64,7 +65,7 @@ describe('Tempo real (e2e)', () => {
     configurarAplicacao(app);
     app.useWebSocketAdapter(new CorsIoAdapter(app));
     await app.listen(0); // porta livre qualquer: o socket precisa de servidor de verdade
-    const porta = (app.getHttpServer().address() as { port: number }).port;
+    const porta = ((app.getHttpServer() as unknown as Server).address() as AddressInfo).port;
 
     chave = app.get(ConfigService).getOrThrow<string>('API_KEY');
     prisma = app.get(PrismaService);

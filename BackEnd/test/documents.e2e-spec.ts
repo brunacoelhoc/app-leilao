@@ -31,7 +31,7 @@ describe('Documents (e2e)', () => {
   // Comeca com a assinatura real de um JPEG (FF D8 FF): o servidor confere os primeiros bytes
   const BUFFER_FOTO = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from('conteudo de uma foto, so para o teste')]);
 
-  async function criarUsuario(nome: string, email: string, papel?: string) {
+  async function criarUsuario(nome: string, email: string, papel?: 'BIDDER' | 'SELLER' | 'ADMIN') {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
