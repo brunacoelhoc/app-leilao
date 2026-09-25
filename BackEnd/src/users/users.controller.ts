@@ -244,7 +244,7 @@ export class UsersController {
   @ApiOperation({
     summary: 'Desativa um usuario (gestao pelo ADMIN)',
     description:
-      'Bloqueia (409) quem esta disputando peca em leilao em andamento. Em emergencia (ex.: fraude), o ADMIN pode usar ' +
+      'Bloqueia (409) quem esta disputando peca ou e dono de leilao em andamento (aberto/agendado). Em emergencia (ex.: fraude), o ADMIN pode usar ' +
       '?forcar=true: a acao fica na auditoria e, no fechamento, os lances dessa conta sao pulados (vence o proximo maior lance de uma conta ativa).',
   })
   @ApiQuery({ name: 'forcar', required: false, description: 'true = desativa mesmo com disputa em andamento (auditado)' })

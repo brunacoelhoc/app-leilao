@@ -93,6 +93,32 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
       await api('patch', `/users/${aposFechar.id}/desativar`, tokenAdmin).expect(200);
     });
 
+    it('vendedor com leilao ABERTO ou AGENDADO nao pode ser desativado -> 409; sem leiloes em andamento, pode', async () => {
+      const dono = await criarUsuario('donoleilao', 'SELLER');
+      const leilao = await prisma.auction.create({
+        data: { titulo: 'Leilao do dono', status: 'OPEN', dataInicio: new Date(Date.now() - 3_600_000), dataFim: new Date(Date.now() + 3_600_000), vendedorId: dono.id },
+      });
+      const res = await api('patch', `/users/${dono.id}/desativar`, tokenAdmin).expect(409);
+      expect(res.body.mensagem).toMatch(/dono de 1 leilao/);
+
+      // agendado tambem conta
+      await prisma.auction.update({ where: { id: leilao.id }, data: { status: 'SCHEDULED' } });
+      await api('patch', `/users/${dono.id}/desativar`, tokenAdmin).expect(409);
+
+      // encerrado/cancelado: libera
+      await prisma.auction.update({ where: { id: leilao.id }, data: { status: 'CANCELED' } });
+      await api('patch', `/users/${dono.id}/desativar`, tokenAdmin).expect(200);
+    });
+
+    it('forcar=true tambem libera o vendedor com leilao em andamento (o leilao segue e fecha pelo horario)', async () => {
+      const dono = await criarUsuario('donoforcado', 'SELLER');
+      const leilao = await prisma.auction.create({
+        data: { titulo: 'Leilao forcado', status: 'OPEN', dataInicio: new Date(Date.now() - 3_600_000), dataFim: new Date(Date.now() + 3_600_000), vendedorId: dono.id },
+      });
+      await api('patch', `/users/${dono.id}/desativar?forcar=true`, tokenAdmin).expect(200);
+      expect((await prisma.auction.findUniqueOrThrow({ where: { id: leilao.id } })).status).toBe('OPEN');
+    });
+
     it('forcar=true (emergencia, ex.: fraude) desativa mesmo em disputa e fica na auditoria', async () => {
       const fraudador = await criarUsuario('fraudador', 'BIDDER');
       await leilaoComLances([{ valor: 60, quem: fraudador.id }]);

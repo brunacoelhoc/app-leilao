@@ -127,7 +127,7 @@ export class UsersService {
     return paginar(usuarios, total, paginacao);
   }
 
-  // 🔎 Trava: quem esta DISPUTANDO peca em leilao em andamento nao pode ser desativado (a menos que o
+  // 🔎 Trava: quem esta DISPUTANDO peca, ou e DONO de leilao em andamento (aberto ou agendado), nao pode ser desativado (a menos que o
   // ADMIN force, de forma explicita e auditada, ex.: fraude em andamento). Se for forcado, o
   // fechamento do leilao pula os lances dessa conta e passa a peca ao proximo maior lance
   async desativar(
@@ -154,6 +154,16 @@ export class UsersService {
       if (disputas > 0) {
         throw new ConflictException(
           `Este usuario esta disputando ${disputas} peca(s) em leiloes em andamento. Desative depois do encerramento ou, em caso de fraude, use forcar=true (os lances dele serao pulados no fechamento).`,
+        );
+      }
+
+      // Vendedor com leilao em andamento: sem ele, ninguem conduz o leilao (que continuaria aberto e recebendo lances)
+      const leiloesEmAndamento = await this.prisma.auction.count({
+        where: { vendedorId: id, status: { in: ['OPEN', 'SCHEDULED'] } },
+      });
+      if (leiloesEmAndamento > 0) {
+        throw new ConflictException(
+          `Este usuario e dono de ${leiloesEmAndamento} leilao(oes) em andamento (aberto ou agendado). Encerre ou cancele antes de desativar ou, em caso de fraude, use forcar=true (os leiloes seguem e fecham pelo horario).`,
         );
       }
     }

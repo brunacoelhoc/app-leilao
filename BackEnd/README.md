@@ -216,7 +216,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 20 suítes / 255 testes)
+npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 20 suítes / 257 testes)
 npm run test:e2e      # end-to-end, contra um banco de TESTE separado (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -340,7 +340,7 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | POST | `/users` | ADMIN | `{ nome, email, senha, papel }` | `201` cria usuário já com o papel escolhido · `400` · `401` · `403` · `409` |
 | GET | `/users/:id` | ADMIN | — | `200` dados **completos** (a consulta é auditada) · `400` · `401` · `403` · `404` |
 | GET | `/users` | ADMIN | — | `200` lista de usuários (sem senha; e-mail, telefone, CPF e endereço **mascarados** pelo backend) · `401` · `403` |
-| PATCH | `/users/:id/desativar` | ADMIN | query opcional `?forcar=true` | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação, **ou usuário disputando peça em leilão em andamento**; com `forcar=true` desativa mesmo assim, para emergências como fraude, e a ação é auditada como `USUARIO_DESATIVADO_FORCADO`) |
+| PATCH | `/users/:id/desativar` | ADMIN | query opcional `?forcar=true` | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação, **ou usuário disputando peça / dono de leilão aberto ou agendado**; com `forcar=true` desativa mesmo assim, para emergências como fraude, e a ação é auditada como `USUARIO_DESATIVADO_FORCADO`) |
 | PATCH | `/users/:id/reativar` | ADMIN | — | `200` · `400` · `401` · `403` · `404` |
 
 ### Categories (`/categories`)
