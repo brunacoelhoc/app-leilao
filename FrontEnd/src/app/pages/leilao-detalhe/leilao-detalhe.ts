@@ -12,6 +12,7 @@ import { LeiloesService } from '../../services/leiloes.service';
 import { ChatLeilao } from '../../shared/chat-leilao/chat-leilao';
 
 const DURACAO_CONTAGEM_MS = 900;
+const INTERVALO_STATUS_MS = 10000;
 
 import { Voltar } from '../../shared/botao-voltar/botao-voltar';
 
@@ -76,8 +77,24 @@ export class LeilaoDetalhe {
     });
     this.carregarItens();
 
+    // O status so muda no servidor (o robo fecha/abre a cada 5s). Enquanto o leilao
+    // esta aberto ou agendado, reconfere de tempos em tempos para o chat e os
+    // selos deixarem de mostrar "Ao vivo" depois que ele encerra
+    const acompanhar = setInterval(() => {
+      const status = this.leilao()?.status;
+      if (status !== 'OPEN' && status !== 'SCHEDULED') return;
+      this.leiloesService.buscarPorId(id).subscribe({
+        next: (atual) => {
+          if (atual.status === status) return;
+          this.leilao.set(atual);
+          this.carregarItens();
+        },
+      });
+    }, INTERVALO_STATUS_MS);
+
     inject(DestroyRef).onDestroy(() => {
       clearTimeout(this.temporizadorBusca);
+      clearInterval(acompanhar);
     });
   }
 
