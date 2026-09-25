@@ -6,7 +6,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { DataDepoisDe } from './periodo-valido.validator';
+import { DataDepoisDe, DuracaoMaximaDe } from './periodo-valido.validator';
 
 export class CriarAuctionDto {
   @MaxLength(120, { message: 'titulo deve ter no maximo 120 caracteres' })
@@ -27,7 +27,9 @@ export class CriarAuctionDto {
   @IsNotEmpty({ message: 'dataInicio e obrigatoria' })
   dataInicio: string;
 
-  // O validador customizado confere que dataFim vem depois de dataInicio
+  // Os validadores customizados conferem que dataFim vem depois de dataInicio e
+  // que o periodo nao passa de 48 horas
+  @DuracaoMaximaDe('dataInicio')
   @DataDepoisDe('dataInicio', {
     message: 'dataFim deve ser uma data depois de dataInicio',
   })

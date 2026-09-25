@@ -84,7 +84,7 @@ describe('Documents (e2e)', () => {
       .send({
         titulo: 'Documents E2E Leilao',
         dataInicio: '2027-01-01T00:00:00.000Z',
-        dataFim: '2027-01-10T00:00:00.000Z',
+        dataFim: '2027-01-02T00:00:00.000Z',
       });
     leilaoId = (leilao.body as { id: string }).id;
 

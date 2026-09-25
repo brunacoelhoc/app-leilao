@@ -165,6 +165,24 @@ export interface ErroApi {
   dataHora: string;
 }
 
+// Pos-leilao do vencedor: pagamento (simulado) e depois retirada/entrega
+export type FormaPagamento = 'PIX' | 'CARTAO' | 'BOLETO';
+export type TipoEntrega = 'RETIRADA' | 'ENTREGA';
+export type PedidoStatus = 'AGUARDANDO_PAGAMENTO' | 'PAGO' | 'FINALIZADO';
+
+export interface Pedido {
+  id: string;
+  itemId: string;
+  valor: string;
+  status: PedidoStatus;
+  formaPagamento: FormaPagamento | null;
+  pagoEm: string | null;
+  tipoEntrega: TipoEntrega | null;
+  enderecoEntrega: string | null;
+  codigoRetirada: string | null;
+  localRetirada: string;
+}
+
 // Mensagem do chat ao vivo de um leilao
 export interface MensagemChat {
   id: string;
@@ -285,7 +303,7 @@ export interface MinhasPecas {
 // O que o usuario logado pode fazer numa peca (GET /auction-items/:id/bids/minha-situacao)
 export interface MinhaSituacao {
   permitido: boolean;
-  motivo: 'ADMIN' | 'MODO_VENDEDOR' | 'DONO' | 'PERFIL_INCOMPLETO' | 'LEILAO_FECHADO' | 'ITEM_INDISPONIVEL' | null;
+  motivo: 'ADMIN' | 'MODO_VENDEDOR' | 'DONO' | 'PERFIL_INCOMPLETO' | 'LEILAO_FECHADO' | 'ITEM_INDISPONIVEL' | 'JA_LIDERA' | null;
   mensagem: string | null;
   euSouDono: boolean;
   euSouVencedor: boolean;

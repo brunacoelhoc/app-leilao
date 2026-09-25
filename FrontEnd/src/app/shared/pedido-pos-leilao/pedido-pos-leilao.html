@@ -1,0 +1,100 @@
+<section class="pedido" aria-labelledby="titulo-pedido">
+  <h2 id="titulo-pedido">Pagamento e retirada</h2>
+
+  @if (carregando()) {
+    <p class="aviso">Carregando seu pedido…</p>
+  } @else if (pedido(); as p) {
+    <ol class="passos" aria-label="Etapas">
+      <li [class.feito]="p.status !== 'AGUARDANDO_PAGAMENTO'" [class.atual]="p.status === 'AGUARDANDO_PAGAMENTO'">
+        <span class="bolinha">{{ p.status === 'AGUARDANDO_PAGAMENTO' ? '1' : '✓' }}</span> Pagamento
+      </li>
+      <li [class.feito]="p.status === 'FINALIZADO'" [class.atual]="p.status === 'PAGO'">
+        <span class="bolinha">{{ p.status === 'FINALIZADO' ? '✓' : '2' }}</span> Retirada ou entrega
+      </li>
+      <li [class.feito]="p.status === 'FINALIZADO'">
+        <span class="bolinha">{{ p.status === 'FINALIZADO' ? '✓' : '3' }}</span> Concluído
+      </li>
+    </ol>
+
+    <p class="total">Valor arrematado: <strong>{{ p.valor | currency: 'BRL' }}</strong></p>
+
+    @if (p.status === 'AGUARDANDO_PAGAMENTO') {
+      <form (ngSubmit)="pagar()" class="etapa">
+        <fieldset>
+          <legend>Como você quer pagar?</legend>
+          @for (f of FORMAS; track f.valor) {
+            <label class="opcao" [class.marcada]="forma === f.valor">
+              <input type="radio" name="forma" [value]="f.valor" [(ngModel)]="forma" />
+              <span><strong>{{ f.rotulo }}</strong><small>{{ f.dica }}</small></span>
+            </label>
+          }
+        </fieldset>
+        <p class="simulado">Ambiente de demonstração: nenhuma cobrança real é feita.</p>
+        <button type="submit" class="primario" [disabled]="enviando()">{{ enviando() ? 'Processando…' : 'Simular pagamento' }}</button>
+      </form>
+    } @else if (p.status === 'PAGO') {
+      <p class="ok" role="status">✓ Pagamento confirmado{{ p.formaPagamento ? ' via ' + ROTULO_FORMA[p.formaPagamento] : '' }}. Agora escolha como receber a peça.</p>
+      <form (ngSubmit)="confirmarEntrega()" class="etapa">
+        <fieldset>
+          <legend>Como você quer receber?</legend>
+          <label class="opcao" [class.marcada]="tipo === 'RETIRADA'">
+            <input type="radio" name="tipo" value="RETIRADA" [(ngModel)]="tipo" />
+            <span><strong>Retirar no local</strong><small>{{ p.localRetirada }}</small></span>
+          </label>
+          <label class="opcao" [class.marcada]="tipo === 'ENTREGA'">
+            <input type="radio" name="tipo" value="ENTREGA" [(ngModel)]="tipo" />
+            <span><strong>Receber em casa</strong><small>Enviamos ao endereço que você informar</small></span>
+          </label>
+        </fieldset>
+        @if (tipo === 'ENTREGA') {
+          <div class="campo">
+            <label for="cep-entrega">CEP</label>
+            <div class="campo-cep">
+              <input id="cep-entrega" name="cep" type="text" inputmode="numeric" placeholder="00000-000" autocomplete="postal-code" [(ngModel)]="cep" (input)="mascararCep()" />
+              <button type="button" class="secundario" (click)="buscarCep()" [disabled]="buscandoCep()">{{ buscandoCep() ? 'Buscando…' : 'Buscar' }}</button>
+            </div>
+            @if (erroCep()) {
+              <small class="erro-campo" role="alert">{{ erroCep() }}</small>
+            }
+          </div>
+          <div class="campo">
+            <label for="rua-entrega">Rua</label>
+            <input id="rua-entrega" name="logradouro" type="text" maxlength="120" placeholder="Preenchida pelo CEP" [(ngModel)]="logradouro" />
+          </div>
+          <div class="linha">
+            <div class="campo">
+              <label for="numero-entrega">Número</label>
+              <input id="numero-entrega" name="numero" type="text" maxlength="10" [(ngModel)]="numero" />
+            </div>
+            <div class="campo">
+              <label for="complemento-entrega">Complemento</label>
+              <input id="complemento-entrega" name="complemento" type="text" maxlength="40" placeholder="Apto, bloco, casa…" [(ngModel)]="complemento" />
+            </div>
+          </div>
+          <div class="campo">
+            <label for="cidade-entrega">Cidade / UF</label>
+            <input id="cidade-entrega" name="cidade" type="text" readonly placeholder="Preenchido pelo CEP" [value]="cidade ? cidade + '/' + uf : ''" />
+          </div>
+        }
+        <button type="submit" class="primario" [disabled]="enviando()">{{ enviando() ? 'Confirmando…' : 'Confirmar' }}</button>
+      </form>
+    } @else {
+      <div class="concluido" role="status">
+        @if (p.tipoEntrega === 'RETIRADA') {
+          <h3>Retirada agendada</h3>
+          <p>Retire a peça em <strong>{{ p.localRetirada }}</strong> apresentando o código:</p>
+          <p class="codigo">{{ p.codigoRetirada }}</p>
+        } @else {
+          <h3>Entrega solicitada</h3>
+          <p>Vamos enviar a peça para:</p>
+          <p class="endereco">{{ p.enderecoEntrega }}</p>
+        }
+        <p class="simulado">Pagamento via {{ p.formaPagamento ? ROTULO_FORMA[p.formaPagamento] : '' }} confirmado (simulado).</p>
+      </div>
+    }
+  }
+
+  @if (erro()) {
+    <p class="erro" role="alert">{{ erro() }}</p>
+  }
+</section>

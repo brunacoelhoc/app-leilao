@@ -121,7 +121,7 @@ describe('Auctions (e2e)', () => {
   const dadosValidos = (titulo: string) => ({
     titulo,
     dataInicio: '2027-01-01T00:00:00.000Z',
-    dataFim: '2027-01-10T00:00:00.000Z',
+    dataFim: '2027-01-02T00:00:00.000Z',
   });
 
   describe('autorizacao: so SELLER cria', () => {
@@ -391,7 +391,7 @@ describe('Auctions (e2e)', () => {
       );
 
       const resposta = await rota('patch', `/${criado.body.id}`, tokenSeller)
-        .send({ dataInicio: '2027-02-01T00:00:00.000Z' }); // dataFim gravada: 2027-01-10
+        .send({ dataInicio: '2027-02-01T00:00:00.000Z' }); // dataFim gravada: 2027-01-02
 
       expect(resposta.status).toBe(409);
       expect(resposta.body.mensagem).toContain('dataFim deve ser depois de dataInicio');
@@ -410,6 +410,23 @@ describe('Auctions (e2e)', () => {
       expect(resposta.body.mensagem).toEqual([
         'dataFim deve ser uma data depois de dataInicio',
       ]);
+    });
+
+    it('leilao com mais de 48 horas -> 400; exatamente 48 horas passa', async () => {
+      const longo = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Prazo Longo',
+        dataInicio: '2027-03-01T00:00:00.000Z',
+        dataFim: '2027-03-03T00:00:01.000Z', // 48h + 1s
+      });
+      expect(longo.status).toBe(400);
+      expect(longo.body.mensagem).toEqual(['O leilao pode durar no maximo 48 horas (2 dias)']);
+
+      const limite = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Prazo Limite',
+        dataInicio: '2027-03-01T00:00:00.000Z',
+        dataFim: '2027-03-03T00:00:00.000Z', // exatamente 48h
+      });
+      expect(limite.status).toBe(201);
     });
   });
 

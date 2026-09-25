@@ -33,6 +33,7 @@ import type { AtualizarAuctionDto } from './dto/atualizar-auction.dto';
 import type { CriarAuctionDto } from './dto/criar-auction.dto';
 import type { IndicadoresAuctionResposta } from './dto/indicadores-auction-resposta.dto';
 import type { MudarStatusDto } from './dto/mudar-status.dto';
+import { DURACAO_MAXIMA_HORAS, excedeDuracaoMaxima } from './dto/periodo-valido.validator';
 import { transicaoEhValida } from './transicoes-status';
 
 // Percentual com uma casa decimal (0 quando nao ha itens)
@@ -280,6 +281,9 @@ export class AuctionsService {
       const novoFim = dto.dataFim ? new Date(dto.dataFim) : leilao.dataFim;
       if (novoFim <= novoInicio) {
         throw new ConflictException('dataFim deve ser depois de dataInicio');
+      }
+      if (excedeDuracaoMaxima(novoInicio, novoFim)) {
+        throw new ConflictException(`O leilao pode durar no maximo ${DURACAO_MAXIMA_HORAS} horas (2 dias)`);
       }
 
       const atualizado = await this.prisma.auction.update({

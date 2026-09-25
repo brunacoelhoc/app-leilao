@@ -364,6 +364,36 @@
   border-right: 1px solid var(--cor-borda);
 }
 
+/* Botoes "− 50" / "+ 50" nas pontas do campo de lance */
+.campo-valor .passo {
+  padding: 0 0.85rem;
+  border: none;
+  background: var(--cor-superficie-alt);
+  color: var(--cor-dourado);
+  font-weight: 800;
+  font-size: 0.9rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.campo-valor .passo:first-child {
+  border-right: 1px solid var(--cor-borda);
+}
+
+.campo-valor .passo:last-child {
+  border-left: 1px solid var(--cor-borda);
+}
+
+.campo-valor .passo:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cor-dourado-suave) 25%, var(--cor-superficie));
+}
+
+.campo-valor .passo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .campo-valor input {
   flex: 1;
   min-width: 0;

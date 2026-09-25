@@ -131,6 +131,20 @@ export class BidsService {
           );
         }
 
+        // 🔎 Ninguem cobre o proprio lance: quem ja esta liderando espera alguem cobrir.
+        // Conferido DENTRO da transacao (com o item travado), entao dois cliques
+        // rapidos do mesmo usuario nunca passam os dois
+        const lider = await tx.bid.findFirst({
+          where: { itemId },
+          orderBy: [{ valor: 'desc' }, { criadoEm: 'desc' }],
+          select: { licitanteId: true },
+        });
+        if (lider?.licitanteId === usuario.id) {
+          throw new ConflictException(
+            'Seu lance ja e o maior deste item. Aguarde alguem cobri-lo para dar outro',
+          );
+        }
+
         // Regra obrigatoria: supera o lance atual + incremento (ou o preco
         // inicial, se ainda nao houver lance)
         const minimoAceito = calcularLanceMinimo(item);
@@ -417,6 +431,16 @@ export class BidsService {
     } else if (item.status !== ItemStatus.AVAILABLE) {
       motivo = 'ITEM_INDISPONIVEL';
       mensagem = 'Esta peça não está mais disponível.';
+    } else {
+      const lider = await this.prisma.bid.findFirst({
+        where: { itemId },
+        orderBy: [{ valor: 'desc' }, { criadoEm: 'desc' }],
+        select: { licitanteId: true },
+      });
+      if (lider?.licitanteId === usuario.id) {
+        motivo = 'JA_LIDERA';
+        mensagem = 'Seu lance é o maior. Aguarde alguém cobri-lo para dar outro.';
+      }
     }
     return { permitido: motivo === null, motivo, mensagem, euSouDono, euSouVencedor };
   }

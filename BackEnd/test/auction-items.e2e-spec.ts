@@ -73,7 +73,7 @@ describe('AuctionItems (e2e)', () => {
       .send({
         titulo: 'Items E2E Leilao Draft',
         dataInicio: '2027-01-01T00:00:00.000Z',
-        dataFim: '2027-01-10T00:00:00.000Z',
+        dataFim: '2027-01-02T00:00:00.000Z',
       });
     leilaoDraftId = (auctionResponse.body as { id: string }).id;
   }, 30_000); // varios registros/logins reais (bcrypt) -- 5s padrao do Jest e curto demais
@@ -279,7 +279,7 @@ describe('AuctionItems (e2e)', () => {
         .send({
           titulo: 'Items E2E Leilao Vai Abrir',
           dataInicio: '2027-02-01T00:00:00.000Z',
-          dataFim: '2027-02-10T00:00:00.000Z',
+          dataFim: '2027-02-02T00:00:00.000Z',
         });
       const outroLeilaoId = (outroLeilao.body as { id: string }).id;
 

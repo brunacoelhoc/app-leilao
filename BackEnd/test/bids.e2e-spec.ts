@@ -17,6 +17,7 @@ describe('Bids (e2e)', () => {
   let tokenSeller: string;
   let tokenBidder1: string;
   let tokenBidder2: string;
+  let tokenBidder3: string;
   let emailSeller: string;
   let categoriaId: string;
   let leilaoAbertoId: string;
@@ -26,6 +27,7 @@ describe('Bids (e2e)', () => {
 
   const EMAIL_BIDDER_1 = `bids.bidder1.${Date.now()}@teste.com`;
   const EMAIL_BIDDER_2 = `bids.bidder2.${Date.now()}@teste.com`;
+  const EMAIL_BIDDER_3 = `bids.bidder3.${Date.now()}@teste.com`;
   const SENHA_TESTE = 'Abc12345!';
 
   async function criarUsuario(nome: string, email: string, papel?: string) {
@@ -60,6 +62,7 @@ describe('Bids (e2e)', () => {
     tokenSeller = await criarUsuario('Seller Bids', emailSeller, 'SELLER');
     tokenBidder1 = await criarUsuario('Bidder Um', EMAIL_BIDDER_1);
     tokenBidder2 = await criarUsuario('Bidder Dois', EMAIL_BIDDER_2);
+    tokenBidder3 = await criarUsuario('Bidder Tres', EMAIL_BIDDER_3);
 
     const categoria = await prisma.category.create({
       data: { nome: `Bids E2E Categoria ${Date.now()}` },
@@ -149,7 +152,7 @@ describe('Bids (e2e)', () => {
     await prisma.category.deleteMany({ where: { id: categoriaId } }).catch(() => undefined);
     await prisma.user
       .deleteMany({
-        where: { email: { in: [emailSeller, EMAIL_BIDDER_1, EMAIL_BIDDER_2] } },
+        where: { email: { in: [emailSeller, EMAIL_BIDDER_1, EMAIL_BIDDER_2, EMAIL_BIDDER_3] } },
       })
       .catch(() => undefined);
     await app.close();
@@ -253,26 +256,52 @@ describe('Bids (e2e)', () => {
       expect(Number(itemAtualizado.body.lanceAtual)).toBe(100);
     });
 
-    it('lance abaixo do minimo (lanceAtual + incremento = 110) -> 409', async () => {
+    it('quem ja lidera nao cobre o proprio lance -> 409 (mesmo com valor valido)', async () => {
+      // bidder1 deu o lance de 100 e lidera: 150 seria valido, mas ele espera alguem cobrir
       const resposta = await request(app.getHttpServer())
         .post(`/api/auction-items/${itemId}/bids`)
         .set('X-API-KEY', chave)
         .set('Authorization', `Bearer ${tokenBidder1}`)
+        .send({ valor: 150 });
+      expect(resposta.status).toBe(409);
+      expect(resposta.body.mensagem).toContain('ja e o maior');
+
+      const situacao = await request(app.getHttpServer())
+        .get(`/api/auction-items/${itemId}/bids/minha-situacao`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenBidder1}`)
+        .expect(200);
+      expect(situacao.body).toMatchObject({ permitido: false, motivo: 'JA_LIDERA' });
+    });
+
+    it('lance abaixo do minimo (lanceAtual + incremento = 110) -> 409', async () => {
+      const resposta = await request(app.getHttpServer())
+        .post(`/api/auction-items/${itemId}/bids`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenBidder2}`)
         .send({ valor: 105 });
       expect(resposta.status).toBe(409);
       expect(resposta.body.mensagem).toContain('110');
     });
 
-    it('lance valido, supera o minimo -> 201', async () => {
+    it('outro usuario cobre com valor valido -> 201, e o lider antigo volta a poder dar lance', async () => {
       const resposta = await request(app.getHttpServer())
         .post(`/api/auction-items/${itemId}/bids`)
         .set('X-API-KEY', chave)
-        .set('Authorization', `Bearer ${tokenBidder1}`)
+        .set('Authorization', `Bearer ${tokenBidder2}`)
         .send({ valor: 150 })
         .expect(201);
 
       expect(Number(resposta.body.valor)).toBe(150);
       expect(Number(resposta.body.lanceAnterior)).toBe(100);
+
+      // bidder1 foi coberto: agora pode dar lance de novo
+      const situacao = await request(app.getHttpServer())
+        .get(`/api/auction-items/${itemId}/bids/minha-situacao`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenBidder1}`)
+        .expect(200);
+      expect(situacao.body).toMatchObject({ permitido: true, motivo: null });
     });
   });
 
@@ -355,7 +384,7 @@ describe('Bids (e2e)', () => {
         request(app.getHttpServer())
           .post(`/api/auction-items/${itemId}/bids`)
           .set('X-API-KEY', chave)
-          .set('Authorization', `Bearer ${tokenBidder2}`)
+          .set('Authorization', `Bearer ${tokenBidder3}`)
           .send({ valor: 171 }),
       ]);
 
