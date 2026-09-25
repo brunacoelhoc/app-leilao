@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Leiloes (Docker)",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "leiloes",
+      "Username": "leiloes",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpass"
+    }
+  }
+}

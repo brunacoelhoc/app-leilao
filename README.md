@@ -99,11 +99,19 @@ cp BackEnd/.env.example BackEnd/.env    # preencha JWT_SECRET e API_KEY
 docker compose up --build
 ```
 
-API em `http://localhost:3000/api` · Swagger em `http://localhost:3000/docs`.
+API em `http://localhost:3000/api` · Swagger em `http://localhost:3000/docs` · pgAdmin em `http://localhost:5050` (já ligado ao banco, sem login).
 
-### Opção B — Local
+**Um único banco de verdade.** Os dados ficam no volume `avaliacao-bimestral_leiloes_postgres_data` do Docker (Postgres na porta **5433**, presa em `127.0.0.1`). Sobrevivem a `docker compose down`, restart e rebuild — **só `docker compose down -v` apaga**. O Postgres instalado no Windows (porta 5432) não faz parte do app; o único uso dele é o banco de testes (`DATABASE_URL_TESTE`).
 
-Requisitos: Node.js 20+, PostgreSQL 18, npm.
+```powershell
+.\scripts\backup-banco.ps1      # gera backups\leiloes-AAAA-MM-DD_HHmm.sql
+# restaurar:
+Get-Content backups\ARQUIVO.sql | docker compose exec -T postgres psql -U leiloes -d leiloes
+```
+
+### Opção B — Local (API/front fora do Docker)
+
+Requisitos: Node.js 20+, npm e o **banco do Docker de pé** (`docker compose up -d postgres`). O `DATABASE_URL` do `BackEnd/.env` aponta para `localhost:5433` (usuário `leiloes`, senha = `POSTGRES_PASSWORD` do `.env` da raiz) — o mesmo banco da Opção A. **Não suba a API do Docker e a local juntas** (as duas usam a porta 3000): para rodar local, `docker compose stop api`.
 
 ```bash
 # Back-end
@@ -158,7 +166,9 @@ A coleção do Thunder Client está em [`BackEnd/thunder-tests/`](BackEnd/thunde
 ├── BackEnd/                 API NestJS (src/, prisma/, test/, scripts/, thunder-tests/)
 ├── FrontEnd/                Aplicação Angular (src/app/, public/acervo/)
 ├── .github/workflows/       Pipeline de CI
-├── docker-compose.yml       API + PostgreSQL
+├── docker-compose.yml       API + PostgreSQL + pgAdmin
+├── docker/pgadmin/          servidor pré-cadastrado do pgAdmin
+├── scripts/backup-banco.ps1 backup (pg_dump) do banco do Docker
 ├── .env.example             Variáveis do Docker Compose
 └── REVISAO-SEGURANCA.md     Revisão de segurança
 ```
