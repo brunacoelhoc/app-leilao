@@ -139,12 +139,10 @@ export interface Documento {
   id: string;
   tipo: TipoDocumento;
   nomeOriginal: string;
-  nomeArquivo: string;
   mimeType: string;
   tamanho: number;
   hash: string;
   itemId: string;
-  enviadoPorId: string;
   criadoEm: string;
 }
 
@@ -172,7 +170,7 @@ export type TipoEntrega = 'RETIRADA' | 'ENTREGA';
 export type PedidoStatus = 'AGUARDANDO_PAGAMENTO' | 'PAGO' | 'FINALIZADO';
 
 export interface Pedido {
-  id: string;
+  id: string | null; // vazio até o pedido ser criado (no pagamento)
   itemId: string;
   valor: string;
   status: PedidoStatus;

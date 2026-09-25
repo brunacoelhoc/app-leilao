@@ -162,7 +162,7 @@ export class DocumentsService {
   async listarPorItem(
     itemId: string,
     params: ParametrosPaginacao,
-  ): Promise<RespostaPaginada<Document>> {
+  ): Promise<RespostaPaginada<Omit<Document, 'enviadoPorId' | 'nomeArquivo'>>> {
     const item = await this.prisma.auctionItem.findUnique({
       where: { id: itemId },
     });
@@ -180,7 +180,8 @@ export class DocumentsService {
       }),
       this.prisma.document.count({ where: { itemId } }),
     ]);
-    return paginar(documentos, total, paginacao);
+    // Público: sem quem enviou (id de usuário) nem o nome do arquivo em disco; o resto (inclusive o hash) é intencional
+    return paginar(documentos.map(({ enviadoPorId: _enviadoPorId, nomeArquivo: _nomeArquivo, ...publico }) => publico), total, paginacao);
   }
 
   // Devolve o registro e o caminho do arquivo em disco, para o controller baixar

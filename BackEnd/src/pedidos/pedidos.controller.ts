@@ -32,7 +32,7 @@ export class PedidosController {
   constructor(private readonly pedidosService: PedidosService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Pedido do vencedor (cria na primeira consulta). Passo 0: ver o que falta' })
+  @ApiOperation({ summary: 'Pedido do vencedor (so consulta, nao grava). Passo 0: ver o que falta' })
   @ApiParam(PARAM_ITEM_ID)
   @ApiOkResponse({ type: PedidoResposta })
   @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })

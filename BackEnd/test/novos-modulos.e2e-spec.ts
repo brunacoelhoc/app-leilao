@@ -593,10 +593,11 @@ describe('Novos modulos (e2e)', () => {
         expect(res.headers['cache-control']).toContain('max-age');
       });
 
-      it('certificados e laudos (DOCUMENT) NAO saem por essa rota (404) e o download continua exigindo a chave', async () => {
+      it('certificados e laudos (DOCUMENT) NAO saem por essa rota (404); o download exige a chave E o login', async () => {
         await request(app.getHttpServer()).get(`/api/documents/${documentoId}/foto`).expect(404);
-        await request(app.getHttpServer()).get(`/api/documents/${documentoId}/download`).expect(401);
-        await api('get', `/documents/${documentoId}/download`).expect(200);
+        await request(app.getHttpServer()).get(`/api/documents/${documentoId}/download`).expect(401); // sem a chave
+        await api('get', `/documents/${documentoId}/download`).expect(401); // so a chave nao basta (ela fica no navegador)
+        await api('get', `/documents/${documentoId}/download`, tokenBidder).expect(200); // logado: baixa
       });
 
       it('as demais rotas continuam exigindo a chave', async () => {

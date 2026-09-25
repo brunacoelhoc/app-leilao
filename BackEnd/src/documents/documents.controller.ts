@@ -11,6 +11,7 @@ import {
   UseGuards,
   UseInterceptors,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -32,6 +33,7 @@ import type { Response } from 'express';
 import { SemChaveApi } from '../common/decorators/sem-chave-api.decorator';
 import { DocumentType } from '../generated/prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtOpcionalGuard } from '../auth/jwt-opcional.guard';
 import { ApiPaginacaoQuery, ApiRespostaPaginada } from '../common/dto/api-resposta-paginada.decorator';
 import { ContextoDaRequisicao } from '../common/decorators/contexto-requisicao.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -120,7 +122,7 @@ export class DocumentsController {
   listarPorItem(
     @Param('itemId', ParseUuidPipePt) itemId: string,
     @Query() query: PaginacaoQueryDto,
-  ): Promise<RespostaPaginada<Document>> {
+  ): Promise<RespostaPaginada<Omit<Document, 'enviadoPorId' | 'nomeArquivo'>>> {
     return this.documentsService.listarPorItem(itemId, query);
   }
 
@@ -152,7 +154,13 @@ export class DocumentsController {
   }
 
   @Get('documents/:id/download')
-  @ApiOperation({ summary: 'Baixa o arquivo (livre, sem login)' })
+  @UseGuards(JwtOpcionalGuard)
+  @ApiBearerAuth('jwt')
+  @ApiOperation({
+    summary: 'Baixa o arquivo (fotos: livre; certificados e laudos: exigem login)',
+    description: 'A X-API-KEY fica no navegador e por isso nao protege nada sozinha: documentos do tipo DOCUMENT so saem para quem esta logado.',
+  })
+  @ApiUnauthorizedResponse({ description: 'Documento (nao foto) pedido sem login', type: ErroResposta })
   @ApiParam({ name: 'id', description: 'Id (uuid) do documento' })
   @ApiOkResponse({
     description: 'Arquivo (stream), com o nome original no Content-Disposition',
@@ -168,9 +176,15 @@ export class DocumentsController {
   async baixar(
     @Param('id', ParseUuidPipePt) id: string,
     @Res() resposta: Response,
+    @CurrentUser() usuario?: UsuarioAutenticado,
   ): Promise<void> {
     const { documento, caminhoArquivo } =
       await this.documentsService.buscarParaDownload(id);
+
+    // Certificados e laudos: so com login (a chave de API sozinha nao basta, ela fica no navegador)
+    if (documento.tipo === DocumentType.DOCUMENT && !usuario) {
+      throw new UnauthorizedException('Faça login para baixar este documento');
+    }
 
     resposta.download(caminhoArquivo, documento.nomeOriginal, (erro) => {
       // Chegou aqui depois que a resposta ja comecou a ser enviada (ou

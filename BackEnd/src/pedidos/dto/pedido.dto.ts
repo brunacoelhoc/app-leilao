@@ -22,7 +22,7 @@ export class DefinirEntregaDto {
 }
 
 export class PedidoResposta {
-  @ApiProperty() id: string;
+  @ApiPropertyOptional({ nullable: true, description: 'Vazio ate o pedido ser criado (no pagamento)' }) id: string | null;
   @ApiProperty() itemId: string;
   @ApiProperty({ example: '1050.00', description: 'Valor do lance vencedor (string)' }) valor: string;
   @ApiProperty({ enum: PedidoStatus }) status: PedidoStatus;

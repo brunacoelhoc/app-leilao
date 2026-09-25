@@ -295,6 +295,18 @@ describe('Documents (e2e)', () => {
       );
     });
 
+
+    it('a listagem PUBLICA nao mostra quem enviou (id de usuario) nem o nome do arquivo em disco', async () => {
+      const resposta = await request(app.getHttpServer())
+        .get(`/api/auction-items/${itemId}/documents`)
+        .set('X-API-KEY', chave)
+        .expect(200);
+
+      const documento = (resposta.body.dados as Record<string, unknown>[])[0];
+      expect(documento).not.toHaveProperty('enviadoPorId');
+      expect(documento).not.toHaveProperty('nomeArquivo');
+      expect(documento.hash).toMatch(/^[a-f0-9]{64}$/); // o hash e intencional: prova de integridade do arquivo
+    });
     it('GET /documents/:id/download baixa o arquivo com o nome original', async () => {
       const lista = await request(app.getHttpServer())
         .get(`/api/auction-items/${itemId}/documents`)

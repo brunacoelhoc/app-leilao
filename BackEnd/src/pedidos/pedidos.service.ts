@@ -11,15 +11,26 @@ import { DefinirEntregaDto, PagarPedidoDto, PedidoResposta } from './dto/pedido.
 export class PedidosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Devolve o pedido do vencedor; cria na primeira consulta (AGUARDANDO_PAGAMENTO)
+  // Devolve o pedido do vencedor. Consultar NAO grava nada: enquanto o pedido nao existe (o vencedor ainda nao
+  // pagou), mostra o que vai ser cobrado, sem id. O registro so nasce em pagar() -- um GET nao pode ter efeito colateral
   async obter(itemId: string, usuario: UsuarioAutenticado): Promise<PedidoResposta> {
     const item = await this.itemDoVencedor(itemId, usuario);
-    const pedido = await this.prisma.pedido.upsert({
-      where: { itemId },
-      update: {},
-      create: { itemId, compradorId: usuario.id, valor: item.lanceAtual! },
-    });
-    return this.montarResposta(pedido, item);
+    const pedido = await this.prisma.pedido.findUnique({ where: { itemId } });
+    if (pedido) return this.montarResposta(pedido, item);
+    return this.montarResposta(
+      {
+        id: null,
+        itemId,
+        valor: item.lanceAtual!,
+        status: PedidoStatus.AGUARDANDO_PAGAMENTO,
+        formaPagamento: null,
+        pagoEm: null,
+        tipoEntrega: null,
+        enderecoEntrega: null,
+        codigoRetirada: null,
+      },
+      item,
+    );
   }
 
   async pagar(itemId: string, dto: PagarPedidoDto, usuario: UsuarioAutenticado): Promise<PedidoResposta> {
@@ -76,7 +87,7 @@ export class PedidosService {
   }
 
   private montarResposta(
-    pedido: Pedido,
+    pedido: Omit<Pedido, 'id' | 'compradorId' | 'criadoEm' | 'atualizadoEm'> & { id: string | null },
     item: { cidade: string | null; uf: string | null; cep: string },
   ): PedidoResposta {
     const cidade = item.cidade && item.uf ? `${item.cidade}/${item.uf}` : 'endereco do vendedor';
