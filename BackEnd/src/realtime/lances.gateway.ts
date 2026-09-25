@@ -91,6 +91,11 @@ export class LancesGateway {
     this.servidor.to(this.sala(itemId)).emit('lance-novo', evento);
   }
 
+  // Leilão reativado: quem está vendo o item busca tudo de novo (status, itens e o prazo novo)
+  emitirLeilaoReativado(itemId: string, dataFim: string): void {
+    this.servidor.to(this.sala(itemId)).emit('leilao-reativado', { itemId, dataFim });
+  }
+
   emitirItemFinalizado(evento: ItemFinalizadoEvento): void {
     this.logger.log(`Item ${evento.itemId} finalizado: ${evento.status}`);
     this.servidor.to(this.sala(evento.itemId)).emit('item-finalizado', evento);

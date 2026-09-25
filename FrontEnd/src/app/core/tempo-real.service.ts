@@ -35,6 +35,7 @@ export class TempoRealService {
   observarItem(itemId: string): Observable<
     | { tipo: 'lance-novo'; dados: LanceNovoEvento }
     | { tipo: 'item-finalizado'; dados: ItemFinalizadoEvento }
+    | { tipo: 'leilao-reativado' } // o admin reativou o leilão: a tela busca tudo de novo
     | { tipo: 'reconectado' } // a conexao caiu e voltou: eventos podem ter sido perdidos, a tela precisa se ressincronizar
   > {
     return new Observable((assinante) => {
@@ -52,6 +53,9 @@ export class TempoRealService {
       });
       socket.on('item-finalizado', (dados: ItemFinalizadoEvento) => {
         if (dados.itemId === itemId) assinante.next({ tipo: 'item-finalizado', dados });
+      });
+      socket.on('leilao-reativado', (dados: { itemId: string }) => {
+        if (dados.itemId === itemId) assinante.next({ tipo: 'leilao-reativado' });
       });
       return () => {
         socket.emit('sair-item', itemId);

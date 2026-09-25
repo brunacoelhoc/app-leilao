@@ -120,8 +120,39 @@ describe('Auctions (e2e)', () => {
 
   const dadosValidos = (titulo: string) => ({
     titulo,
-    dataInicio: '2027-01-01T00:00:00.000Z',
-    dataFim: '2027-01-02T00:00:00.000Z',
+    dataInicio: '2099-01-01T00:00:00.000Z',
+    dataFim: '2099-01-02T00:00:00.000Z',
+  });
+
+  describe('data retroativa', () => {
+    it('criar com dataInicio no passado -> 400', async () => {
+      const agora = Date.now();
+      const resposta = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Retroativo',
+        dataInicio: new Date(agora - 86400000).toISOString(),
+        dataFim: new Date(agora + 86400000).toISOString(),
+      });
+      expect(resposta.status).toBe(400);
+      expect(resposta.body.mensagem).toContain('A data de início não pode estar no passado');
+    });
+
+    it('editar dataInicio para o passado -> 400', async () => {
+      const criado = await rota('post', '', tokenSeller).send(dadosValidos('Auctions E2E Editar Retroativo'));
+      const resposta = await rota('patch', `/${criado.body.id}`, tokenSeller).send({
+        dataInicio: new Date(Date.now() - 86400000).toISOString(),
+      });
+      expect(resposta.status).toBe(400);
+    });
+
+    it('dataInicio daqui a poucos minutos (dentro da tolerancia) -> 201', async () => {
+      const agora = Date.now();
+      const resposta = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Agora',
+        dataInicio: new Date(agora).toISOString(),
+        dataFim: new Date(agora + 3600000).toISOString(),
+      });
+      expect(resposta.status).toBe(201);
+    });
   });
 
   describe('autorizacao: so SELLER cria', () => {
@@ -327,10 +358,15 @@ describe('Auctions (e2e)', () => {
       const agora = Date.now();
       const criado = await rota('post', '', tokenSeller).send({
         titulo: 'Auctions E2E Agendar Vencido',
-        dataInicio: new Date(agora - 2 * 86400000).toISOString(),
-        dataFim: new Date(agora - 86400000).toISOString(),
+        dataInicio: new Date(agora + 3600000).toISOString(),
+        dataFim: new Date(agora + 7200000).toISOString(),
       });
       await adicionarItem(criado.body.id as string);
+      // A API não aceita início no passado: o leilão "vencido" é montado direto no banco
+      await prisma.auction.update({
+        where: { id: criado.body.id as string },
+        data: { dataInicio: new Date(agora - 2 * 86400000), dataFim: new Date(agora - 86400000) },
+      });
 
       const resposta = await rota('patch', `/${criado.body.id}/status`, tokenSeller)
         .send({ status: 'SCHEDULED' });
@@ -391,7 +427,7 @@ describe('Auctions (e2e)', () => {
       );
 
       const resposta = await rota('patch', `/${criado.body.id}`, tokenSeller)
-        .send({ dataInicio: '2027-02-01T00:00:00.000Z' }); // dataFim gravada: 2027-01-02
+        .send({ dataInicio: '2099-02-01T00:00:00.000Z' }); // dataFim gravada: 2027-01-02
 
       expect(resposta.status).toBe(409);
       expect(resposta.body.mensagem).toContain('dataFim deve ser depois de dataInicio');
@@ -402,8 +438,8 @@ describe('Auctions (e2e)', () => {
     it('dataFim antes de dataInicio -> 400', async () => {
       const resposta = await rota('post', '', tokenSeller).send({
         titulo: 'Auctions E2E Datas Invertidas',
-        dataInicio: '2027-01-10T00:00:00.000Z',
-        dataFim: '2027-01-01T00:00:00.000Z',
+        dataInicio: '2099-01-10T00:00:00.000Z',
+        dataFim: '2099-01-01T00:00:00.000Z',
       });
 
       expect(resposta.status).toBe(400);
@@ -415,16 +451,16 @@ describe('Auctions (e2e)', () => {
     it('leilao com mais de 48 horas -> 400; exatamente 48 horas passa', async () => {
       const longo = await rota('post', '', tokenSeller).send({
         titulo: 'Auctions E2E Prazo Longo',
-        dataInicio: '2027-03-01T00:00:00.000Z',
-        dataFim: '2027-03-03T00:00:01.000Z', // 48h + 1s
+        dataInicio: '2099-03-01T00:00:00.000Z',
+        dataFim: '2099-03-03T00:00:01.000Z', // 48h + 1s
       });
       expect(longo.status).toBe(400);
       expect(longo.body.mensagem).toEqual(['O leilao pode durar no maximo 48 horas (2 dias)']);
 
       const limite = await rota('post', '', tokenSeller).send({
         titulo: 'Auctions E2E Prazo Limite',
-        dataInicio: '2027-03-01T00:00:00.000Z',
-        dataFim: '2027-03-03T00:00:00.000Z', // exatamente 48h
+        dataInicio: '2099-03-01T00:00:00.000Z',
+        dataFim: '2099-03-03T00:00:00.000Z', // exatamente 48h
       });
       expect(limite.status).toBe(201);
     });
@@ -447,10 +483,12 @@ describe('Auctions (e2e)', () => {
     const agora = Date.now();
     const leilao = await rota('post', '', tokenSeller).send({
       titulo,
-      dataInicio: new Date(agora - 86400000).toISOString(),
+      dataInicio: new Date(agora + 3600000).toISOString(),
       dataFim: new Date(agora + 86400000).toISOString(),
     });
     const leilaoId = leilao.body.id as string;
+    // A API não aceita início no passado: o leilão "já em andamento" tem o início recuado direto no banco
+    await prisma.auction.update({ where: { id: leilaoId }, data: { dataInicio: new Date(agora - 86400000) } });
 
     const item = await request(app.getHttpServer())
       .post('/api/auction-items')

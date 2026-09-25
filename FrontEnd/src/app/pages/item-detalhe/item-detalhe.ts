@@ -200,7 +200,7 @@ export class ItemDetalhe {
               : r,
           );
           this.atualizarMinhaSituacao(); // se alguem cobriu o meu lance, o botao libera na hora
-        } else if (evento.tipo === 'reconectado') {
+        } else if (evento.tipo === 'reconectado' || evento.tipo === 'leilao-reativado') {
           // A conexao caiu e voltou: pode ter perdido lances, prorrogacao ou o fim do lote. Busca tudo de novo
           // (o cronometro volta a contar a partir do que o servidor informa)
           this.carregarItemELeilao(false);

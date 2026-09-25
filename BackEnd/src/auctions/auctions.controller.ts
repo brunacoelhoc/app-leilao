@@ -28,6 +28,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtOpcionalGuard } from '../auth/jwt-opcional.guard';
 import { ApiPaginacaoQuery, ApiRespostaPaginada } from '../common/dto/api-resposta-paginada.decorator';
 import { ContextoDaRequisicao } from '../common/decorators/contexto-requisicao.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -47,6 +48,7 @@ import { CriarAuctionDto } from './dto/criar-auction.dto';
 import { IndicadoresAuctionResposta } from './dto/indicadores-auction-resposta.dto';
 import { ListarAuctionsQueryDto } from './dto/listar-auctions-query.dto';
 import { MudarStatusDto } from './dto/mudar-status.dto';
+import { ReativarAuctionDto } from './dto/reativar-auction.dto';
 import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { proximosStatus } from './transicoes-status';
 
@@ -119,11 +121,13 @@ export class AuctionsController {
   @ApiPaginacaoQuery()
   @ApiQuery({ name: 'vendedorId', required: false, description: 'Filtra pelos leiloes de um vendedor' })
   @ApiRespostaPaginada(AuctionResposta)
+  @UseGuards(JwtOpcionalGuard)
   listarTodos(
     @Query() query: ListarAuctionsQueryDto,
+    @CurrentUser() usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<AuctionResposta>> {
     return this.auctionsService
-      .listarTodos(query)
+      .listarTodos(query, usuario)
       .then((r) => ({ ...r, dados: r.dados.map(comTransicoes) }));
   }
 
@@ -134,8 +138,12 @@ export class AuctionsController {
     description: '"vendedorId" e opcional: sem ele, conta todos os leiloes.',
   })
   @ApiQuery({ name: 'vendedorId', required: false, description: 'So os leiloes deste vendedor' })
-  resumo(@Query('vendedorId') vendedorId?: string): Promise<Record<string, number>> {
-    return this.auctionsService.resumoPorStatus(vendedorId || undefined);
+  @UseGuards(JwtOpcionalGuard)
+  resumo(
+    @Query('vendedorId') vendedorId?: string,
+    @CurrentUser() usuario?: UsuarioAutenticado,
+  ): Promise<Record<string, number>> {
+    return this.auctionsService.resumoPorStatus(vendedorId || undefined, usuario);
   }
 
   @Get(':id')
@@ -212,6 +220,32 @@ export class AuctionsController {
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
   ): Promise<AuctionResposta> {
     return this.auctionsService.mudarStatus(id, dto, usuario, contexto).then(comTransicoes);
+  }
+
+  @Patch(':id/reativar')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth('jwt')
+  @ApiOperation({
+    summary: 'Reativa um leilão cancelado (só o ADMIN, com motivo)',
+    description:
+      'Volta ao estado em que o leilão estava antes de ser cancelado. Se estava aberto ou agendado e o prazo ' +
+      'já venceu, a data de fim passa a ser daqui a 48 horas. Os itens voltam a ficar disponíveis e os lances continuam guardados.',
+  })
+  @ApiParam(PARAM_ID)
+  @ApiOkResponse({ description: 'Leilão reativado (e histórico gravado)', type: AuctionResposta, headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Id inválido ou motivo ausente', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Leilão inexistente', type: ErroResposta })
+  @ApiConflictResponse({ description: 'O leilão não está cancelado', type: ErroResposta })
+  reativar(
+    @Param('id', ParseUuidPipePt) id: string,
+    @Body() dto: ReativarAuctionDto,
+    @CurrentUser() usuario: UsuarioAutenticado,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<AuctionResposta> {
+    return this.auctionsService.reativar(id, dto, usuario, contexto).then(comTransicoes);
   }
 
   @Delete(':id')

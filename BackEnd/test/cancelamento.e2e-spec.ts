@@ -21,6 +21,7 @@ describe('Cancelamento de leilao com lances (e2e)', () => {
   let outroVendedor: { id: string; token: string };
   let admin: { id: string; token: string };
   let licitanteId: string;
+  let licitanteToken: string;
 
   const SUFIXO = Date.now();
 
@@ -40,9 +41,9 @@ describe('Cancelamento de leilao com lances (e2e)', () => {
   }
 
   // Leilao ABERTO do vendedor, com ou sem um lance ja dado
-  async function leilaoAberto(comLance: boolean) {
+  async function leilaoAberto(comLance: boolean, dataFim = new Date(Date.now() + 3_600_000), status: 'OPEN' | 'DRAFT' = 'OPEN') {
     const leilao = await prisma.auction.create({
-      data: { titulo: 'Leilao cancelamento', status: 'OPEN', dataInicio: new Date(Date.now() - 3_600_000), dataFim: new Date(Date.now() + 3_600_000), vendedorId: vendedor.id },
+      data: { titulo: 'Leilao cancelamento', status, dataInicio: new Date(Date.now() - 3_600_000), dataFim, vendedorId: vendedor.id },
     });
     const item = await prisma.auctionItem.create({
       data: { titulo: 'Peca cancelamento', precoInicial: 50, incrementoMinimo: 10, cep: '01310100', leilaoId: leilao.id, categoriaId, lanceAtual: comLance ? 60 : null },
@@ -67,7 +68,9 @@ describe('Cancelamento de leilao com lances (e2e)', () => {
     vendedor = await criarUsuario('vendedor', 'SELLER');
     outroVendedor = await criarUsuario('outro', 'SELLER');
     admin = await criarUsuario('admin', 'ADMIN');
-    licitanteId = (await criarUsuario('licitante', 'BIDDER')).id;
+    const licitante = await criarUsuario('licitante', 'BIDDER');
+    licitanteId = licitante.id;
+    licitanteToken = licitante.token;
   }, 30_000);
 
   afterAll(async () => {
@@ -111,5 +114,144 @@ describe('Cancelamento de leilao com lances (e2e)', () => {
       .expect(400);
     await cancelar(id, outroVendedor.token).expect(403);
     expect(await statusDoBanco(id)).toBe('OPEN');
+  });
+
+  it('ao cancelar, os itens ficam indisponiveis (UNSOLD), nunca "disponiveis"', async () => {
+    const id = await leilaoAberto(false);
+    await cancelar(id, admin.token).expect(200);
+    const itens = await prisma.auctionItem.findMany({ where: { leilaoId: id } });
+    expect(itens.length).toBe(1);
+    expect(itens.every((i) => i.status === 'UNSOLD')).toBe(true);
+  });
+
+  describe('quem enxerga o leilao cancelado', () => {
+    let idCancelado: string;
+    const listar = (token?: string, query = '') => {
+      const req = request(app.getHttpServer()).get(`/api/auctions?limite=100${query}`).set('X-API-KEY', chave);
+      return token ? req.set('Authorization', `Bearer ${token}`) : req;
+    };
+    const idsDaLista = async (token?: string, query = '') =>
+      ((await listar(token, query).expect(200)).body.dados as { id: string }[]).map((l) => l.id);
+
+    beforeAll(async () => {
+      idCancelado = await leilaoAberto(false);
+      await cancelar(idCancelado, vendedor.token).expect(200);
+    });
+
+    it('visitante (sem login) NAO ve, nem filtrando por status=CANCELED', async () => {
+      expect(await idsDaLista()).not.toContain(idCancelado);
+      expect(await idsDaLista(undefined, '&status=CANCELED')).not.toContain(idCancelado);
+    });
+
+    it('comprador NAO ve na lista de leiloes nem na de itens', async () => {
+      expect(await idsDaLista(licitanteToken)).not.toContain(idCancelado);
+      const itens = await request(app.getHttpServer())
+        .get(`/api/auction-items?leilaoId=${idCancelado}`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${licitanteToken}`)
+        .expect(200);
+      expect(itens.body.dados).toHaveLength(0);
+    });
+
+    it('outro vendedor NAO ve o cancelado do colega', async () => {
+      expect(await idsDaLista(outroVendedor.token)).not.toContain(idCancelado);
+    });
+
+    it('o vendedor dono VE, com status CANCELED', async () => {
+      const dados = (await listar(vendedor.token).expect(200)).body.dados as { id: string; status: string }[];
+      expect(dados.find((l) => l.id === idCancelado)?.status).toBe('CANCELED');
+      const itens = await request(app.getHttpServer())
+        .get(`/api/auction-items?leilaoId=${idCancelado}`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${vendedor.token}`)
+        .expect(200);
+      expect(itens.body.dados).toHaveLength(1);
+    });
+
+    it('o ADMIN VE', async () => {
+      expect(await idsDaLista(admin.token)).toContain(idCancelado);
+    });
+
+    it('token invalido/expirado nao quebra a lista: vira visitante', async () => {
+      expect(await idsDaLista('token-invalido')).not.toContain(idCancelado);
+    });
+
+    it('o resumo por status nao conta cancelados para o comprador, mas conta para o ADMIN', async () => {
+      const resumo = (token: string) =>
+        request(app.getHttpServer()).get('/api/auctions/resumo').set('X-API-KEY', chave).set('Authorization', `Bearer ${token}`);
+      expect((await resumo(licitanteToken).expect(200)).body.CANCELED).toBe(0);
+      expect((await resumo(admin.token).expect(200)).body.CANCELED).toBeGreaterThan(0);
+    });
+  });
+
+  describe('reativar leilao cancelado (so o ADMIN)', () => {
+    const reativar = (leilaoId: string, token: string, motivo?: string) =>
+      request(app.getHttpServer())
+        .patch(`/api/auctions/${leilaoId}/reativar`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${token}`)
+        .send(motivo === undefined ? {} : { motivo });
+
+    it('leilao aberto cancelado por engano volta para OPEN, com itens disponiveis, mesmo prazo e lances guardados', async () => {
+      const id = await leilaoAberto(true);
+      const antes = await prisma.auction.findUniqueOrThrow({ where: { id } });
+      await cancelar(id, admin.token).expect(200);
+
+      const res = await reativar(id, admin.token, 'Foi engano').expect(200);
+      expect(res.body.status).toBe('OPEN');
+      const depois = await prisma.auction.findUniqueOrThrow({ where: { id } });
+      expect(depois.dataFim.getTime()).toBe(antes.dataFim.getTime()); // prazo ainda valido: nao muda
+      const itens = await prisma.auctionItem.findMany({ where: { leilaoId: id } });
+      expect(itens.every((i) => i.status === 'AVAILABLE')).toBe(true);
+      expect(await prisma.bid.count({ where: { item: { leilaoId: id } } })).toBe(1);
+
+      const historico = await prisma.auctionStatusHistory.findFirst({ where: { leilaoId: id, statusAnterior: 'CANCELED' } });
+      expect(historico?.statusNovo).toBe('OPEN');
+      expect(historico?.motivo).toContain('Foi engano');
+      expect(historico?.alteradoPorId).toBe(admin.id);
+      expect(await prisma.auditLog.findFirst({ where: { acao: 'LEILAO_REATIVADO', entidadeId: id } })).not.toBeNull();
+    });
+
+    it('prazo ja vencido: ao reativar ganha mais 48 horas', async () => {
+      const id = await leilaoAberto(false, new Date(Date.now() - 60_000));
+      await cancelar(id, admin.token).expect(200);
+
+      await reativar(id, admin.token, 'Prazo perdido no engano').expect(200);
+      const depois = await prisma.auction.findUniqueOrThrow({ where: { id } });
+      expect(depois.status).toBe('OPEN');
+      const restanteHoras = (depois.dataFim.getTime() - Date.now()) / 3_600_000;
+      expect(restanteHoras).toBeGreaterThan(47.9);
+      expect(restanteHoras).toBeLessThanOrEqual(48);
+    });
+
+    it('cancelado enquanto rascunho volta como rascunho (nao abre sozinho)', async () => {
+      const id = await leilaoAberto(false, undefined, 'DRAFT');
+      await cancelar(id, admin.token).expect(200);
+      await reativar(id, admin.token, 'Engano').expect(200);
+      expect(await statusDoBanco(id)).toBe('DRAFT');
+    });
+
+    it('o vendedor dono NAO reativa (403); sem motivo -> 400; leilao nao cancelado -> 409', async () => {
+      const id = await leilaoAberto(false);
+      await cancelar(id, vendedor.token).expect(200);
+      await reativar(id, vendedor.token, 'Quero de volta').expect(403);
+      await reativar(id, admin.token).expect(400);
+      expect(await statusDoBanco(id)).toBe('CANCELED');
+
+      const aberto = await leilaoAberto(false);
+      await reativar(aberto, admin.token, 'Nao esta cancelado').expect(409);
+    });
+
+    it('depois de reativado o leilao volta a aparecer para o comprador', async () => {
+      const id = await leilaoAberto(false);
+      await cancelar(id, admin.token).expect(200);
+      await reativar(id, admin.token, 'Engano').expect(200);
+      const lista = await request(app.getHttpServer())
+        .get('/api/auctions?limite=100')
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${licitanteToken}`)
+        .expect(200);
+      expect((lista.body.dados as { id: string }[]).map((l) => l.id)).toContain(id);
+    });
   });
 });

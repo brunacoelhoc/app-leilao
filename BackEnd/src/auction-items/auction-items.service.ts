@@ -9,6 +9,7 @@ import { AuditLogService } from '../audit/audit-log.service';
 import { CepService } from '../cep/cep.service';
 import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
 import { decimalParaString } from '../common/utils/decimal.util';
+import { filtroDeLeiloesVisiveis } from '../common/utils/visibilidade-cancelados.util';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import {
   calcularPaginacao,
@@ -177,11 +178,14 @@ export class AuctionItemsService {
   // Consultas por relacionamento: itens de um leilao e/ou itens de uma categoria
   async listarTodos(
     filtros: FiltrosListagem,
+    usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<AuctionItemResposta>> {
     const paginacao = calcularPaginacao(filtros);
     const where: Prisma.AuctionItemWhereInput = {
       leilaoId: filtros.leilaoId,
       categoriaId: filtros.categoriaId,
+      // Itens de leilão cancelado só aparecem para o dono e o ADMIN
+      leilao: filtroDeLeiloesVisiveis(usuario),
       ...(filtros.busca
         ? {
             OR: [

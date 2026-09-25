@@ -6,7 +6,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { DataDepoisDe, DuracaoMaximaDe } from './periodo-valido.validator';
+import { DataDepoisDe, DuracaoMaximaDe, NaoNoPassado } from './periodo-valido.validator';
 
 export class CriarAuctionDto {
   @MaxLength(120, { message: 'titulo deve ter no maximo 120 caracteres' })
@@ -20,6 +20,7 @@ export class CriarAuctionDto {
   @IsOptional()
   descricao?: string;
 
+  @NaoNoPassado()
   @IsDateString(
     {},
     { message: 'dataInicio deve ser uma data valida (ISO 8601)' },

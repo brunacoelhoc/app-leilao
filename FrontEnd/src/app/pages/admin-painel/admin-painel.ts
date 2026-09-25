@@ -330,6 +330,18 @@ export class AdminPainel {
     });
   }
 
+  async reativarLeilao(l: Leilao): Promise<void> {
+    const motivo = await this.alerta.pedirTexto('Reativar leilão', 'Informe o motivo da reativação');
+    if (!motivo) return;
+    this.leiloesService.reativar(l.id, motivo).subscribe({
+      next: () => {
+        this.carregarLeiloes();
+        void this.alerta.sucesso('Leilão reativado');
+      },
+      error: (e) => void this.alerta.erro('Não foi possível reativar', mensagemDeErro(e)),
+    });
+  }
+
   async removerLeilao(l: Leilao): Promise<void> {
     const ok = await this.alerta.confirmar(`Remover “${l.titulo}”?`, 'Só leilões em rascunho podem ser removidos.', 'Remover');
     if (!ok) return;

@@ -75,3 +75,29 @@ export function DataDepoisDe(
     });
   };
 }
+
+// Tolerância para o relógio do celular/navegador estar um pouco atrasado em relação ao servidor
+const TOLERANCIA_RETROATIVA_MS = 5 * 60 * 1000;
+
+// 🔎 Data retroativa: o início do leilão não pode estar no passado (400 amigável na hora)
+export function NaoNoPassado(opcoes?: ValidationOptions) {
+  return function (objeto: object, nomeDaPropriedade: string) {
+    registerDecorator({
+      name: 'naoNoPassado',
+      target: objeto.constructor,
+      propertyName: nomeDaPropriedade,
+      options: opcoes,
+      validator: {
+        validate(valor: unknown) {
+          if (!valor) return true; // IsNotEmpty/IsDateString cobrem
+          const data = new Date(valor as string);
+          if (Number.isNaN(data.getTime())) return true;
+          return data.getTime() >= Date.now() - TOLERANCIA_RETROATIVA_MS;
+        },
+        defaultMessage() {
+          return 'A data de início não pode estar no passado';
+        },
+      },
+    });
+  };
+}

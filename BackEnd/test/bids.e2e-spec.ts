@@ -78,10 +78,12 @@ describe('Bids (e2e)', () => {
       .set('Authorization', `Bearer ${tokenSeller}`)
       .send({
         titulo: 'Bids E2E Leilao Aberto',
-        dataInicio: new Date(agora - 86400000).toISOString(),
+        dataInicio: new Date(agora + 3600000).toISOString(),
         dataFim: new Date(agora + 86400000).toISOString(),
       });
     leilaoAbertoId = (leilaoAberto.body as { id: string }).id;
+    // A API não aceita início no passado: o leilão "já em andamento" tem o início recuado direto no banco
+    await prisma.auction.update({ where: { id: leilaoAbertoId }, data: { dataInicio: new Date(agora - 86400000) } });
 
     // O item so pode ser criado enquanto o leilao ainda esta DRAFT
     const item = await request(app.getHttpServer())
@@ -118,7 +120,7 @@ describe('Bids (e2e)', () => {
       .set('Authorization', `Bearer ${tokenSeller}`)
       .send({
         titulo: 'Bids E2E Leilao Draft',
-        dataInicio: new Date(agora - 86400000).toISOString(),
+        dataInicio: new Date(agora + 3600000).toISOString(),
         dataFim: new Date(agora + 86400000).toISOString(),
       });
     leilaoDraftId = (leilaoDraft.body as { id: string }).id;

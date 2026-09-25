@@ -29,6 +29,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtOpcionalGuard } from '../auth/jwt-opcional.guard';
 import { ApiPaginacaoQuery, ApiRespostaPaginada } from '../common/dto/api-resposta-paginada.decorator';
 import { ContextoDaRequisicao } from '../common/decorators/contexto-requisicao.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -119,10 +120,12 @@ export class AuctionItemsController {
   @ApiQuery({ name: 'leilaoId', required: false, description: 'Filtra pelos itens de um leilao' })
   @ApiQuery({ name: 'categoriaId', required: false, description: 'Filtra pelos itens de uma categoria' })
   @ApiRespostaPaginada(AuctionItemResposta)
+  @UseGuards(JwtOpcionalGuard)
   listarTodos(
     @Query() query: ListarAuctionItemsQueryDto,
+    @CurrentUser() usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<AuctionItemResposta>> {
-    return this.auctionItemsService.listarTodos(query);
+    return this.auctionItemsService.listarTodos(query, usuario);
   }
 
   @Get(':id')

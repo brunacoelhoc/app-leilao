@@ -210,6 +210,9 @@
                     {{ ROTULO_STATUS_LEILAO[proximo] }}
                   </button>
                 }
+                @if (leilao.status === 'CANCELED') {
+                  <button type="button" class="pequeno" (click)="reativarLeilao(leilao)">Reativar</button>
+                }
                 @if (leilao.editavel) {
                   <a [routerLink]="['/vendedor/leiloes', leilao.id]" class="secundario pequeno botao-como-link">Editar</a>
                   <button type="button" class="perigo pequeno" (click)="removerLeilao(leilao)">Remover</button>

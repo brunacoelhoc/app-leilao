@@ -83,8 +83,8 @@ describe('Documents (e2e)', () => {
       .set('Authorization', `Bearer ${tokenSeller}`)
       .send({
         titulo: 'Documents E2E Leilao',
-        dataInicio: '2027-01-01T00:00:00.000Z',
-        dataFim: '2027-01-02T00:00:00.000Z',
+        dataInicio: '2099-01-01T00:00:00.000Z',
+        dataFim: '2099-01-02T00:00:00.000Z',
       });
     leilaoId = (leilao.body as { id: string }).id;
 

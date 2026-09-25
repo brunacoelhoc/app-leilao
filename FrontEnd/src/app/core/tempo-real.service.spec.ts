@@ -51,6 +51,17 @@ describe('TempoRealService.observarItem', () => {
     expect(eventos).toEqual([{ tipo: 'reconectado' }]);
   });
 
+  it('avisa a tela quando o admin reativa o leilao (so do PROPRIO item)', () => {
+    const eventos: unknown[] = [];
+    TestBed.inject(TempoRealService)
+      .observarItem('item-1')
+      .subscribe((e) => eventos.push(e));
+
+    criados[0].ouvintes['leilao-reativado']({ itemId: 'item-2' }); // de outro item: ignorado
+    criados[0].ouvintes['leilao-reativado']({ itemId: 'item-1' });
+    expect(eventos).toEqual([{ tipo: 'leilao-reativado' }]);
+  });
+
   it('repassa so os eventos do PROPRIO item e desconecta ao cancelar a assinatura', () => {
     const eventos: unknown[] = [];
     const assinatura = TestBed.inject(TempoRealService)
