@@ -216,7 +216,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 19 suítes / 249 testes)
+npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 20 suítes / 255 testes)
 npm run test:e2e      # end-to-end, contra um banco de TESTE separado (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -362,7 +362,7 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | GET | `/auctions/:id` | Livre | — | `200` · `400` · `404` |
 | GET | `/auctions/:id/indicadores` | Livre | — | `200` `{ totalItens, totalLances, maiorLance, itensVendidos, itensNaoVendidos, itensDisponiveis, arrecadadoTotal }` · `400` · `404` |
 | PATCH | `/auctions/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` (não é o dono) · `404` · `409` (fora de `DRAFT`) |
-| PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` · `404` · `409` (transição inválida; agendar sem itens ou com `dataFim` já passada; ou o leilão mudou de estado ao mesmo tempo) |
+| PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` (não é o dono, **ou o vendedor tentou cancelar um leilão ABERTO que já recebeu lances: só o ADMIN cancela, com motivo**) · `404` · `409` (transição inválida; agendar sem itens ou com `dataFim` já passada; ou o leilão mudou de estado ao mesmo tempo) |
 | DELETE | `/auctions/:id` | SELLER dono / ADMIN | — | `204` · `401` · `403` · `404` · `409` (fora de `DRAFT`) |
 
 Máquina de estados: `DRAFT → SCHEDULED → OPEN → CLOSED`; `CANCELED` alcançável

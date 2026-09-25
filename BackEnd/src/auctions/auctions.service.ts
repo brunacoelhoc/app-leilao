@@ -336,6 +336,7 @@ export class AuctionsService {
       }
 
       await this.conferirCoerenciaDaPublicacao(leilao, dto.status);
+      await this.conferirCancelamentoComLances(leilao, dto.status, usuario);
 
       const atualizado = await this.aplicarMudancaStatus(
         leilao,
@@ -368,6 +369,25 @@ export class AuctionsService {
         this.motivoDoErro(erro),
       );
       throw erro;
+    }
+  }
+
+  // 🔎 Cancelar um leilao ABERTO que ja recebeu lances: so o ADMIN (com motivo, auditado). Se o vendedor
+  // pudesse, cancelaria quando o preco nao agrada, prejudicando quem ja deu lance. Os lances ficam
+  // guardados (imutaveis); o leilao so muda de estado
+  private async conferirCancelamentoComLances(
+    leilao: Auction,
+    novoStatus: AuctionStatus,
+    usuario: UsuarioAutenticado,
+  ): Promise<void> {
+    if (novoStatus !== AuctionStatus.CANCELED || leilao.status !== AuctionStatus.OPEN) return;
+    if (usuario.papel === 'ADMIN') return;
+
+    const lances = await this.prisma.bid.count({ where: { item: { leilaoId: leilao.id } } });
+    if (lances > 0) {
+      throw new ForbiddenException(
+        `Este leilao ja recebeu ${lances} lance(s) e nao pode ser cancelado pelo vendedor. Peca ao administrador (com o motivo).`,
+      );
     }
   }
 
