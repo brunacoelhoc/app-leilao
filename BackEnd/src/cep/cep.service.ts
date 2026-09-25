@@ -58,14 +58,15 @@ export class CepService {
       );
     }
 
-    // CEP com formato valido mas que nao existe de verdade
-    if (resposta.erro || !resposta.logradouro) {
+    // CEP com formato valido mas que nao existe de verdade. Atencao: CEP "geral" de cidade pequena e VALIDO e
+    // vem sem rua (logradouro vazio, ex.: 68590000 Jacundá/PA), entao o que prova que o CEP existe e ter cidade
+    if (resposta.erro || !resposta.localidade) {
       throw new BadRequestException('CEP nao encontrado');
     }
 
     return {
-      logradouro: resposta.logradouro,
-      cidade: resposta.localidade ?? '',
+      logradouro: resposta.logradouro ?? '',
+      cidade: resposta.localidade,
       uf: resposta.uf ?? '',
     };
   }

@@ -145,7 +145,7 @@ export class AuctionItemsService {
           conservacao: dto.conservacao,
           procedencia: dto.procedencia,
           cep: dto.cep,
-          logradouro: endereco.logradouro,
+          logradouro: endereco.logradouro || null, // CEP geral de cidade pequena vem sem rua
           cidade: endereco.cidade,
           uf: endereco.uf,
           leilaoId: dto.leilaoId,
@@ -323,7 +323,7 @@ export class AuctionItemsService {
           conservacao: dto.conservacao,
           procedencia: dto.procedencia,
           cep: dto.cep,
-          logradouro: endereco?.logradouro,
+          logradouro: endereco ? endereco.logradouro || null : undefined,
           cidade: endereco?.cidade,
           uf: endereco?.uf,
           categoriaId: dto.categoriaId,

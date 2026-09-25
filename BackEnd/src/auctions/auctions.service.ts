@@ -405,6 +405,10 @@ export class AuctionsService {
       const novoFim = prazoVencido ? new Date(agora.getTime() + DURACAO_MAXIMA_HORAS * 3_600_000) : leilao.dataFim;
 
       const atualizado = await this.prisma.$transaction(async (tx) => {
+        // Mesma ordem de travas do lance e do cancelamento (itens -> leilão), para nunca haver deadlock
+        await tx.$queryRaw`
+          SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${id} ORDER BY id FOR UPDATE
+        `;
         // Troca "compare-and-swap": só reativa se ainda está cancelado (duas reativações juntas: só uma vale)
         const { count } = await tx.auction.updateMany({
           where: { id, status: AuctionStatus.CANCELED },
@@ -509,10 +513,13 @@ export class AuctionsService {
     const atualizado = await this.prisma.$transaction(async (tx) => {
       // Ao fechar, trava os itens ANTES de mudar o status: um lance em
       // andamento termina primeiro (ou espera e ja ve o leilao fechado),
-      // entao o vencedor calculado nunca fica desatualizado
-      if (novoStatus === AuctionStatus.CLOSED) {
+      // entao o vencedor calculado nunca fica desatualizado.
+      // 🔎 Ao CANCELAR tambem: o lance trava o item e depois grava no leilao (anti-sniping); se o cancelamento
+      // travasse o leilao primeiro e os itens depois, as duas transacoes se esperariam (deadlock, erro 500).
+      // Todo mundo trava na mesma ordem (itens -> leilao), e "ORDER BY id" mantem a ordem entre os proprios itens
+      if (novoStatus === AuctionStatus.CLOSED || novoStatus === AuctionStatus.CANCELED) {
         await tx.$queryRaw`
-          SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${leilao.id} FOR UPDATE
+          SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${leilao.id} ORDER BY id FOR UPDATE
         `;
       }
 
