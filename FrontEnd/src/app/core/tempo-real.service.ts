@@ -35,11 +35,18 @@ export class TempoRealService {
   observarItem(itemId: string): Observable<
     | { tipo: 'lance-novo'; dados: LanceNovoEvento }
     | { tipo: 'item-finalizado'; dados: ItemFinalizadoEvento }
+    | { tipo: 'reconectado' } // a conexao caiu e voltou: eventos podem ter sido perdidos, a tela precisa se ressincronizar
   > {
     return new Observable((assinante) => {
       const socket = io(this.url, { transports: ['websocket'] });
-      // "connect" dispara tambem nas reconexoes, entao a sala e reassinada sozinha
-      socket.on('connect', () => socket.emit('entrar-item', itemId));
+      let jaConectou = false;
+      // "connect" dispara tambem nas reconexoes, entao a sala e reassinada sozinha. Na RECONEXAO, avisa a tela:
+      // enquanto estava fora do ar ela nao recebeu lances nem o fim do lote, entao precisa buscar o estado de novo
+      socket.on('connect', () => {
+        socket.emit('entrar-item', itemId);
+        if (jaConectou) assinante.next({ tipo: 'reconectado' });
+        jaConectou = true;
+      });
       socket.on('lance-novo', (dados: LanceNovoEvento) => {
         if (dados.lance.itemId === itemId) assinante.next({ tipo: 'lance-novo', dados });
       });

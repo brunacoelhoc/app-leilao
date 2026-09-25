@@ -200,6 +200,12 @@ export class ItemDetalhe {
               : r,
           );
           this.atualizarMinhaSituacao(); // se alguem cobriu o meu lance, o botao libera na hora
+        } else if (evento.tipo === 'reconectado') {
+          // A conexao caiu e voltou: pode ter perdido lances, prorrogacao ou o fim do lote. Busca tudo de novo
+          // (o cronometro volta a contar a partir do que o servidor informa)
+          this.carregarItemELeilao(false);
+          this.carregarLances();
+          this.atualizarMinhaSituacao();
         } else {
           this.finalizar(evento.dados);
         }
