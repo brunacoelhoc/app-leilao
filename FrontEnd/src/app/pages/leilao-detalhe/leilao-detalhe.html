@@ -102,7 +102,9 @@
             <div class="detalhes">
               <div class="linha-titulo">
                 <h3>{{ item.titulo }}</h3>
-                <span [class]="classeSeloItem(item.status)">{{ ROTULO_STATUS_ITEM[item.status] }}</span>
+                @if (item.status !== 'AVAILABLE') {
+                  <span [class]="classeSeloItem(item.status)">{{ ROTULO_STATUS_ITEM[item.status] }}</span>
+                }
               </div>
 
               @if (item.descricao) {

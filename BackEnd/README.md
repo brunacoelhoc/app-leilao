@@ -86,7 +86,7 @@ alguma estiver ausente ou em formato inválido — ver `src/config/variaveis-amb
 | --------------------- | ------------------------------------------------------------------------ | ------------------------------------------------- |
 | `DATABASE_URL`        | String de conexão do PostgreSQL                                          | `postgresql://postgres:senha@localhost:5432/leiloes` |
 | `JWT_SECRET`          | Segredo para assinar o JWT (mínimo 32 caracteres, não pode ser o exemplo) | um valor longo e aleatório                        |
-| `JWT_EXPIRES_IN`      | Validade do **access token** (curto; a renovação é pelo refresh token)  | `15m`                                             |
+| `JWT_EXPIRES_IN`      | Validade do **access token** (curto; a renovação é pelo refresh token)  | `35m`                                             |
 | `PORT`                | Porta HTTP da API                                                       | `3092`                                            |
 | `CEP_API_URL`         | URL base do ViaCEP (integração externa, seção 7 do enunciado)           | `https://viacep.com.br/ws`                        |
 | `CEP_API_TIMEOUT_MS`  | Timeout da chamada ao ViaCEP                                            | `5000`                                            |
@@ -249,7 +249,7 @@ npm run lint          # oxlint --type-aware
   valor errado, a resposta é sempre `401`.
 - **JWT** (`Authorization: Bearer <token>`): exigido nas rotas que precisam
   de um usuário logado. Obtido em `POST /auth/login`. É um **access token curto**
-  (`JWT_EXPIRES_IN`, 15 min) e carrega `{ sub: id, papel, sid }` (`sid` = id da sessão).
+  (`JWT_EXPIRES_IN`, 35 min) e carrega `{ sub: id, papel, sid }` (`sid` = id da sessão).
   A cada requisição autenticada a API **reconsulta o usuário e a sessão no banco** —
   se a conta foi desativada ou apagada, ou a sessão foi encerrada, o acesso é
   cortado imediatamente, sem esperar o token expirar.

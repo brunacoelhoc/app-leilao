@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AlertaService } from '../../core/alerta.service';
@@ -38,6 +39,7 @@ export class Perfil {
   private readonly alerta = inject(AlertaService);
   private readonly cepService = inject(CepService);
   private readonly router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
   protected readonly encerrando = signal(false);
 
   protected readonly avatares = AVATARES_PRONTOS;
@@ -72,7 +74,9 @@ export class Perfil {
   readonly buscandoCep = signal(false);
   readonly erroCep = signal<string | null>(null);
   formCpf = '';
-  formAvatar: string | null = null;
+  // signal: a leitura do arquivo termina fora da deteccao de mudancas, com campo simples a tela so atualizava na troca seguinte
+  readonly formAvatar = signal<string | null>(null);
+  readonly mapaUrl = signal<SafeResourceUrl | null>(null);
   readonly salvando = signal(false);
   readonly erroEdicao = signal<string | null>(null);
 
@@ -130,24 +134,29 @@ export class Perfil {
     this.formSenhaEmail = '';
     this.formTelefone = formatarTelefone(u.telefone);
     this.formEndereco = u.endereco ?? '';
-    this.formCep = this.formLogradouro = this.formNumero = this.formComplemento = '';
+    // o CEP fica gravado dentro do texto do endereco; ao reabrir, volta para o campo
+    this.formCep = formatarCep(/CEP\s*(\d{5}-?\d{3})/.exec(this.formEndereco)?.[1] ?? '');
+    this.formLogradouro = this.formNumero = this.formComplemento = '';
     this.formCidade = this.formUf = '';
     this.erroCep.set(null);
     this.formCpf = formatarCpf(u.cpf);
-    this.formAvatar = u.avatarUrl;
+    this.formAvatar.set(u.avatarUrl);
     this.erroEdicao.set(null);
     this.editando.set(true);
   }
 
   escolherAvatar(chave: string): void {
-    this.formAvatar = chave;
+    this.formAvatar.set(chave);
   }
 
   async aoEscolherArquivo(evento: Event): Promise<void> {
-    const arquivo = (evento.target as HTMLInputElement).files?.[0];
+    const campo = evento.target as HTMLInputElement;
+    const arquivo = campo.files?.[0];
+    campo.value = ''; // permite escolher o mesmo arquivo de novo
     if (!arquivo) return;
     try {
-      this.formAvatar = await redimensionarParaDataUrl(arquivo);
+      this.formAvatar.set(await redimensionarParaDataUrl(arquivo));
+      this.erroEdicao.set(null);
     } catch (erro) {
       this.erroEdicao.set((erro as Error).message);
     }
@@ -196,6 +205,18 @@ export class Perfil {
     return `${rua}${complemento}${cidade}${cep}`.trim();
   }
 
+  get temEnderecoParaMapa(): boolean {
+    return !!(this.montarEndereco() ?? this.formEndereco.trim());
+  }
+
+  // Abre o mapa do Google (versao embed, sem chave de API) no endereco digitado ou no ja salvo
+  abrirMapa(): void {
+    const consulta = this.montarEndereco() ?? this.formEndereco.trim();
+    if (!consulta) return;
+    const url = `https://www.google.com/maps?q=${encodeURIComponent(consulta)}&z=17&output=embed`;
+    this.mapaUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+  }
+
   mascararTelefone(): void {
     this.formTelefone = formatarTelefone(this.formTelefone);
   }
@@ -219,7 +240,8 @@ export class Perfil {
     const novoEndereco = this.montarEndereco() ?? this.formEndereco.trim();
     if (novoEndereco) dto['endereco'] = novoEndereco;
     if (cpf) dto['cpf'] = cpf;
-    if (this.formAvatar) dto['avatarUrl'] = this.formAvatar;
+    const avatar = this.formAvatar();
+    if (avatar) dto['avatarUrl'] = avatar;
 
     this.salvando.set(true);
     this.usuariosService.atualizarMeuPerfil(dto).subscribe({

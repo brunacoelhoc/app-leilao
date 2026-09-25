@@ -83,9 +83,10 @@
     <form (ngSubmit)="salvar()">
       <h3>Foto de perfil</h3>
       <div class="avatar-atual">
-        <app-avatar [avatarUrl]="formAvatar" [nome]="formNome || '?'" [tamanho]="84" />
-        <label class="botao-arquivo secundario">
-          Enviar do computador
+        <app-avatar [avatarUrl]="formAvatar()"[nome]="formNome || '?'" [tamanho]="84" />
+        <label class="botao-arquivo">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19 15v4H5v-4H3v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-2ZM11 4.8 7.4 8.4 6 7l6-6 6 6-1.4 1.4L13 4.8V16h-2V4.8Z"/></svg>
+          <span>Enviar do computador</span>
           <input type="file" accept="image/*" (change)="aoEscolherArquivo($event)" hidden />
         </label>
       </div>
@@ -96,11 +97,11 @@
           <button
             type="button"
             class="opcao-avatar"
-            [class.escolhido]="formAvatar === a.chave"
+            [class.escolhido]="formAvatar() === a.chave"
             [style.background]="a.cor"
             (click)="escolherAvatar(a.chave)"
             [attr.aria-label]="a.nome"
-            [attr.aria-selected]="formAvatar === a.chave"
+            [attr.aria-selected]="formAvatar() === a.chave"
           >@if (a.imagem) {<img [src]="a.imagem" [alt]="a.nome" />} @else {{{ a.emoji }}}</button>
         }
       </div>
@@ -169,11 +170,19 @@
         <p class="erro">{{ erroEdicao() }}</p>
       }
 
+      <button type="button" class="secundario" [disabled]="!temEnderecoParaMapa" (click)="abrirMapa()">Ver no mapa</button>
+
       <div class="botoes">
         <button type="submit" class="primario" [disabled]="salvando()">{{ salvando() ? 'Salvando...' : 'Salvar alterações' }}</button>
         <button type="button" class="secundario" (click)="editando.set(false)">Cancelar</button>
       </div>
     </form>
+  </app-modal>
+}
+
+@if (mapaUrl(); as url) {
+  <app-modal titulo="Localização do endereço" [largura]="760" (fechar)="mapaUrl.set(null)">
+    <iframe class="mapa" [src]="url" title="Mapa do endereço" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
   </app-modal>
 }
 

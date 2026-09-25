@@ -19,9 +19,11 @@
           </p>
         }
       </div>
-      <span [class]="classeSeloItem(it.status)">
-        {{ it.situacao === 'ABERTO' ? 'Ao vivo' : it.situacao === 'VENDIDO' ? 'INDISPONÍVEL / VENDIDO' : it.status === 'AVAILABLE' ? ROTULO_STATUS_ITEM[it.status] : 'INDISPONÍVEL' }}
-      </span>
+      @if (it.situacao === 'ABERTO' || it.situacao === 'VENDIDO' || it.status !== 'AVAILABLE') {
+        <span [class]="classeSeloItem(it.status)">
+          {{ it.situacao === 'ABERTO' ? 'Ao vivo' : it.situacao === 'VENDIDO' ? 'INDISPONÍVEL / VENDIDO' : 'INDISPONÍVEL' }}
+        </span>
+      }
     </header>
 
     <div class="grade-sala">
