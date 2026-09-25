@@ -1,4 +1,5 @@
 import { Transform } from 'class-transformer';
+import { normalizarEmail } from '../../common/utils/normalizar-email.util';
 import {
   Equals,
   IsBoolean,
@@ -19,7 +20,7 @@ export class RegistrarUsuarioDto {
   nome: string;
 
   // Tira espacos e deixa minusculo, para "Ana@X.com" e "ana@x.com" serem o mesmo usuario
-  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
+  @Transform(normalizarEmail)
   @IsEmail({}, { message: 'email deve ser um e-mail valido' })
   @MaxLength(180, { message: 'email deve ter no maximo 180 caracteres' })
   email: string;

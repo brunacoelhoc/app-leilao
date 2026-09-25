@@ -1,8 +1,9 @@
 import { Transform } from 'class-transformer';
+import { normalizarEmail } from '../../common/utils/normalizar-email.util';
 import { IsEmail, IsNotEmpty, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class RedefinirSenhaDto {
-  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
+  @Transform(normalizarEmail)
   @IsEmail({}, { message: 'email deve ser um e-mail valido' })
   @MaxLength(180, { message: 'email deve ter no maximo 180 caracteres' })
   email: string;

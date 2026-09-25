@@ -16,6 +16,7 @@ const NOMES_DOS_ERROS: Record<number, string> = {
   403: 'Acesso negado',
   404: 'Nao encontrado',
   409: 'Conflito',
+  413: 'Corpo grande demais',
   429: 'Muitas requisicoes',
   500: 'Erro interno do servidor',
   503: 'Servico indisponivel',
@@ -72,11 +73,24 @@ export class FiltroExcecoes implements ExceptionFilter {
     if (excecao instanceof Prisma.PrismaClientKnownRequestError) {
       return this.traduzirErroDoPrisma(excecao);
     }
+    // Erros de leitura do corpo (ex.: JSON quebrado, corpo grande demais) chegam com o codigo 4xx pronto:
+    // sao culpa de quem enviou, nao do servidor
+    const erroDoCliente = this.traduzirErroDeLeituraDoCorpo(excecao);
+    if (erroDoCliente) return erroDoCliente;
     // Qualquer outro erro e um problema nosso: mensagem generica, sem detalhes
     return {
       statusCode: 500,
       mensagem: 'Ocorreu um erro interno. Tente novamente mais tarde.',
     };
+  }
+
+  private traduzirErroDeLeituraDoCorpo(excecao: unknown): ErroTraduzido | null {
+    const codigo = (excecao as { status?: unknown; statusCode?: unknown } | null) ?? {};
+    const status = typeof codigo.status === 'number' ? codigo.status : codigo.statusCode;
+    if (typeof status !== 'number' || status < 400 || status > 499) return null;
+    if (status === 413) return { statusCode: 413, mensagem: 'O corpo da requisicao e grande demais' };
+    if (status === 400) return { statusCode: 400, mensagem: 'Corpo da requisicao invalido (JSON malformado)' };
+    return null; // outros 4xx inesperados continuam como erro interno, para nao esconder um problema nosso
   }
 
   // Erros que o Nest e a nossa API lancam (400, 401, 403, 404, 409...)
