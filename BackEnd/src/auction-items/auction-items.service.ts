@@ -69,6 +69,7 @@ function paraResposta(itemComRelacoes: ItemComContagem): AuctionItemResposta {
           ? 'Ver peça'
           : 'Ver resultado',
     capaPadrao: capaPadrao(item.id),
+    avisoResultado: null, // so o detalhe da peca preenche (buscarPorId)
     situacao,
     segundosParaMudanca,
     prorrogacoes: leilao?.prorrogacoes ?? 0,
@@ -229,7 +230,23 @@ export class AuctionItemsService {
     if (!item) {
       throw new NotFoundException('Item nao encontrado');
     }
-    return paraResposta(item);
+    const resposta = paraResposta(item);
+    resposta.avisoResultado = await this.avisoDoResultado(item);
+    return resposta;
+  }
+
+  // 🔎 Transparencia do resultado: se o maior lance foi de uma conta DESATIVADA, ele foi pulado no fechamento e o valor
+  // final e menor que o lance mais alto do historico. O servidor explica (a tela so exibe o texto)
+  private async avisoDoResultado(item: AuctionItem): Promise<string | null> {
+    if (item.status !== 'SOLD' || item.lanceAtual === null) return null;
+    const maior = await this.prisma.bid.findFirst({
+      where: { itemId: item.id },
+      orderBy: { valor: 'desc' },
+      select: { valor: true },
+    });
+    if (!maior || !maior.valor.greaterThan(item.lanceAtual)) return null;
+    const moeda = (v: Prisma.Decimal) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return `O lance mais alto (${moeda(maior.valor)}) foi desconsiderado porque a conta que o fez foi desativada. O valor final e o do maior lance valido (${moeda(item.lanceAtual)}).`;
   }
 
   // Busca o item JUNTO com o leilao, para conferir o dono e o status do leilao

@@ -48,6 +48,9 @@ export class AuctionItemResposta {
   })
   segundosParaMudanca: number | null;
 
+  @ApiPropertyOptional({ nullable: true, description: 'So no detalhe da peca vendida: explica quando o maior lance foi desconsiderado (conta desativada) e o valor final e menor. null nos demais casos' })
+  avisoResultado: string | null;
+
   @ApiProperty({ example: 0, description: 'Quantas vezes o prazo do leilao foi estendido pelo anti-sniping (lance nos ultimos 2 minutos)' })
   prorrogacoes: number;
 

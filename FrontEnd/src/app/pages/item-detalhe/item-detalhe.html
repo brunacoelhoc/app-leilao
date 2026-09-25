@@ -53,6 +53,9 @@
             <div class="festa-icone" aria-hidden="true">🎉</div>
             <h2>{{ euGanhei() ? 'Parabéns, você arrematou!' : 'Parabéns, ' + it.vencedorNome + '!' }}</h2>
             <p>Lote arrematado por <strong>{{ it.vencedorNome }}</strong> por <strong>{{ moeda(it.lanceAtual) }}</strong>.</p>
+            @if (it.avisoResultado) {
+              <p class="aviso-resultado">{{ it.avisoResultado }}</p>
+            }
           </div>
           @if (euGanhei()) {
             <app-pedido-pos-leilao [itemId]="it.id" />

@@ -562,3 +562,11 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Explicacao do servidor quando o maior lance foi desconsiderado (conta desativada) */
+.aviso-resultado {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  opacity: 0.85;
+}

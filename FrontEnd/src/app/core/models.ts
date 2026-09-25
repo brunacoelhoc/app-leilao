@@ -98,6 +98,7 @@ export interface ItemLeilao {
   lanceMinimo: string;
   segundosParaMudanca: number | null;
   prorrogacoes: number; // quantas vezes o anti-sniping estendeu o prazo do leilao
+  avisoResultado: string | null; // explicacao do servidor quando o maior lance foi desconsiderado
   totalLances: number;
   cep: string;
   logradouro: string | null;

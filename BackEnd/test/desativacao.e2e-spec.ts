@@ -148,6 +148,11 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
       expect(item.lanceAtual?.toString()).toBe('100');
       const registro = await prisma.auditLog.findFirst({ where: { acao: 'ITEM_VENCEDOR_SUBSTITUIDO', entidadeId: itemId } });
       expect(registro?.motivo).toMatch(/desativado/);
+
+      // transparencia: o detalhe da peca explica por que o valor final e menor que o lance mais alto do historico
+      const detalhe = await request(app.getHttpServer()).get(`/api/auction-items/${itemId}`).set('X-API-KEY', chave).expect(200);
+      expect(detalhe.body.avisoResultado).toMatch(/desconsiderado.*conta.*desativada/);
+      expect(detalhe.body.avisoResultado).toContain('120,00');
     });
 
     it('pula QUANTOS desativados forem necessarios (o terceiro maior vence)', async () => {
@@ -197,6 +202,8 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
       expect(item.vencedorId).toBe(b.id);
       expect(item.lanceAtual?.toString()).toBe('120');
       expect(await prisma.auditLog.count({ where: { acao: 'ITEM_VENCEDOR_SUBSTITUIDO', entidadeId: itemId } })).toBe(0);
+      const detalhe = await request(app.getHttpServer()).get(`/api/auction-items/${itemId}`).set('X-API-KEY', chave).expect(200);
+      expect(detalhe.body.avisoResultado).toBeNull(); // sem lance desconsiderado, sem aviso
     });
   });
 });

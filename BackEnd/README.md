@@ -370,7 +370,8 @@ de qualquer estado não-final. Ao fechar (`CLOSED`), cada item do leilão vira
 `SOLD` (com o vencedor = **maior lance de uma conta ativa**) ou `UNSOLD` (sem nenhum lance ativo).
 Se quem liderava foi desativado (só possível com `forcar=true`), o lance dele é **pulado**: a peça vai
 para o próximo maior lance de uma conta ativa, **pelo valor desse lance**, e a troca fica na auditoria
-(`ITEM_VENCEDOR_SUBSTITUIDO`). O encerramento automático só fecha se o prazo continua o mesmo que ele leu
+(`ITEM_VENCEDOR_SUBSTITUIDO`). O detalhe da peça (`GET /auction-items/:id`) traz `avisoResultado`, um texto
+explicando que o maior lance foi desconsiderado (conta desativada) e qual é o valor final. O encerramento automático só fecha se o prazo continua o mesmo que ele leu
 (um lance de anti-sniping no meio tempo impede o fechamento).
 
 Cada leilão volta com `transicoesPermitidas` (para onde ele pode ir agora) e
