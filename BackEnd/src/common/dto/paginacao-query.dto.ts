@@ -9,6 +9,7 @@ export class PaginacaoQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'pagina deve ser um numero inteiro' })
+  @Max(100000, { message: 'pagina deve ser no máximo 100000' })
   @Min(1, { message: 'pagina deve ser no minimo 1' })
   pagina?: number;
 

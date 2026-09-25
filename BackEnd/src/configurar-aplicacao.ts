@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import compression from 'compression';
 import helmet from 'helmet';
 import { formatarErrosDeValidacao } from './common/formatar-erros-validacao';
+import { RejeitarCaractereNuloPipe } from './common/pipes/rejeitar-caractere-nulo.pipe';
 
 // Configuracao comum da API. Usada pelo main.ts e pelos testes e2e,
 // para os testes rodarem a API do mesmo jeito que ela roda de verdade
@@ -28,6 +29,7 @@ export function configurarAplicacao(app: INestApplication): void {
 
   // Valida todos os DTOs automaticamente
   app.useGlobalPipes(
+    new RejeitarCaractereNuloPipe(), // antes da validação: texto com caractere nulo é 400, não 500 no banco
     new ValidationPipe({
       whitelist: true, // remove campos que nao existem no DTO
       forbidNonWhitelisted: true, // e rejeita a requisicao (400) se vierem

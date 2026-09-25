@@ -1,8 +1,11 @@
+import { Transform } from 'class-transformer';
+import { aparar } from '../../common/utils/aparar-texto.util';
 import { IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 // Autoedicao do proprio perfil (PATCH /users/me). Nunca inclui "papel" nem
 // "ativo" -- ninguem se promove ou reativa sozinho por aqui
 export class AtualizarPerfilDto {
+  @Transform(aparar)
   @IsOptional()
   @IsString({ message: 'nome deve ser um texto' })
   @MinLength(3, { message: 'nome deve ter no minimo 3 caracteres' })

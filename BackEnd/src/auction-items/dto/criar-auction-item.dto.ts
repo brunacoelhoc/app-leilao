@@ -1,8 +1,12 @@
+import { Transform } from 'class-transformer';
+import { aparar } from '../../common/utils/aparar-texto.util';
+import { VALOR_MAXIMO } from '../../common/utils/valor-maximo';
 import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
+  Max,
   IsString,
   IsUUID,
   Matches,
@@ -11,6 +15,7 @@ import {
 } from 'class-validator';
 
 export class CriarAuctionItemDto {
+  @Transform(aparar)
   @MaxLength(120, { message: 'titulo deve ter no maximo 120 caracteres' })
   @MinLength(3, { message: 'titulo deve ter no minimo 3 caracteres' })
   @IsString({ message: 'titulo deve ser um texto' })
@@ -54,6 +59,7 @@ export class CriarAuctionItemDto {
   procedencia?: string;
 
   // O valor de partida do item. Positivo (o banco tambem confere isso com um CHECK)
+  @Max(VALOR_MAXIMO, { message: 'precoInicial deve ser no máximo 9.999.999.999,99' })
   @IsPositive({ message: 'precoInicial deve ser maior que zero' })
   @IsNumber(
     { maxDecimalPlaces: 2 },
@@ -61,6 +67,7 @@ export class CriarAuctionItemDto {
   )
   precoInicial: number;
 
+  @Max(VALOR_MAXIMO, { message: 'incrementoMinimo deve ser no máximo 9.999.999.999,99' })
   @IsPositive({ message: 'incrementoMinimo deve ser maior que zero' })
   @IsNumber(
     { maxDecimalPlaces: 2 },

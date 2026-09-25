@@ -1,3 +1,5 @@
+import { Transform } from 'class-transformer';
+import { aparar } from '../../common/utils/aparar-texto.util';
 import {
   IsDateString,
   IsNotEmpty,
@@ -9,6 +11,7 @@ import {
 import { DataDepoisDe, DuracaoMaximaDe, NaoNoPassado } from './periodo-valido.validator';
 
 export class CriarAuctionDto {
+  @Transform(aparar)
   @MaxLength(120, { message: 'titulo deve ter no maximo 120 caracteres' })
   @MinLength(3, { message: 'titulo deve ter no minimo 3 caracteres' })
   @IsString({ message: 'titulo deve ser um texto' })

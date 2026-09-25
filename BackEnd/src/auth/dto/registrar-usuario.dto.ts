@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import { normalizarEmail } from '../../common/utils/normalizar-email.util';
+import { aparar } from '../../common/utils/aparar-texto.util';
 import {
   Equals,
   IsBoolean,
@@ -14,6 +15,7 @@ import {
 // Dados exigidos para criar uma conta. Note que NAO tem campo "papel":
 // toda conta criada por aqui nasce como BIDDER (regra fica no AuthService)
 export class RegistrarUsuarioDto {
+  @Transform(aparar)
   @IsString({ message: 'nome deve ser um texto' })
   @MinLength(3, { message: 'nome deve ter no minimo 3 caracteres' })
   @MaxLength(120, { message: 'nome deve ter no maximo 120 caracteres' })
