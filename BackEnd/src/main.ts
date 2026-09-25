@@ -22,7 +22,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const configService = app.get(ConfigService);
-  await app.listen(configService.get<number>('PORT') ?? 3000);
+  await app.listen(configService.get<number>('PORT') ?? 3092);
 }
 
 // Se algo falhar ao iniciar (ex.: banco fora do ar), mostra o motivo e encerra com codigo 1

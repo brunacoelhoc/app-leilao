@@ -41,7 +41,7 @@ COPY --from=builder /app/prisma/migrations ./prisma/migrations
 # os arquivos enviados sobreviverem a um rebuild/restart do container
 RUN mkdir -p uploads
 
-EXPOSE 3000
+EXPOSE 3092
 
 # Aplica as migrations pendentes (idempotente: nao faz nada se ja estiver em
 # dia) e so entao sobe a API -- assim o container sempre inicia com o banco

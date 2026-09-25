@@ -26,11 +26,11 @@ class VariaveisAmbiente {
   @IsNotEmpty({ message: 'JWT_EXPIRES_IN e obrigatoria (ex.: 15m)' })
   JWT_EXPIRES_IN: string;
 
-  // Se a PORT nao vier no .env, usa 3000
+  // Se a PORT nao vier no .env, usa 3092
   @Max(65535, { message: 'PORT deve ser no maximo 65535' })
   @Min(1, { message: 'PORT deve ser no minimo 1' })
   @IsInt({ message: 'PORT deve ser um numero inteiro' })
-  PORT: number = 3000;
+  PORT: number = 3092;
 
   @IsUrl(
     { require_tld: false, require_protocol: true },

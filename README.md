@@ -78,7 +78,7 @@ A matriz completa de permissões por endpoint está em [`BackEnd/README.md`](Bac
 ## Arquitetura
 
 ```
- Angular (4200) ──HTTP + JWT + X-API-KEY──▶ NestJS (3000) ──Prisma──▶ PostgreSQL
+ Angular (4200) ──HTTP + JWT + X-API-KEY──▶ NestJS (3092) ──Prisma──▶ PostgreSQL
         ▲                                        │
         └──────────── WebSocket (lances, chat) ◀─┘
 ```
@@ -100,7 +100,7 @@ cp BackEnd/.env.example BackEnd/.env    # preencha JWT_SECRET e API_KEY
 docker compose up --build
 ```
 
-API em `http://localhost:3000/api` · Swagger em `http://localhost:3000/docs` · pgAdmin em `http://localhost:5050` (já ligado ao banco, sem login).
+API em `http://localhost:3092/api` · Swagger em `http://localhost:3092/docs` · pgAdmin em `http://localhost:5050` (já ligado ao banco, sem login).
 
 **Um único banco de verdade.** Os dados ficam no volume `avaliacao-bimestral_leiloes_postgres_data` do Docker (Postgres na porta **5433**, presa em `127.0.0.1`). Sobrevivem a `docker compose down`, restart e rebuild — **só `docker compose down -v` apaga**. O Postgres instalado no Windows (porta 5432) não faz parte do app; o único uso dele é o banco de testes (`DATABASE_URL_TESTE`).
 
@@ -112,7 +112,7 @@ Get-Content backups\ARQUIVO.sql | docker compose exec -T postgres psql -U leiloe
 
 ### Opção B — Local (API/front fora do Docker)
 
-Requisitos: Node.js 20+, npm e o **banco do Docker de pé** (`docker compose up -d postgres`). O `DATABASE_URL` do `BackEnd/.env` aponta para `localhost:5433` (usuário `leiloes`, senha = `POSTGRES_PASSWORD` do `.env` da raiz) — o mesmo banco da Opção A. **Não suba a API do Docker e a local juntas** (as duas usam a porta 3000): para rodar local, `docker compose stop api`.
+Requisitos: Node.js 20+, npm e o **banco do Docker de pé** (`docker compose up -d postgres`). O `DATABASE_URL` do `BackEnd/.env` aponta para `localhost:5433` (usuário `leiloes`, senha = `POSTGRES_PASSWORD` do `.env` da raiz) — o mesmo banco da Opção A. **Não suba a API do Docker e a local juntas** (as duas usam a porta 3092): para rodar local, `docker compose stop api`.
 
 ```bash
 # Back-end
@@ -123,7 +123,7 @@ npx prisma migrate deploy
 npx prisma generate
 npm run seed                    # dados de exemplo (idempotente)
 npm run fotos:demo              # anexa obras do acervo aos itens
-npm run start:dev               # http://localhost:3000
+npm run start:dev               # http://localhost:3092
 
 # Front-end (outro terminal)
 cd FrontEnd

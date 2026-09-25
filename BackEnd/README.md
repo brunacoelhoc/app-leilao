@@ -87,7 +87,7 @@ alguma estiver ausente ou em formato inválido — ver `src/config/variaveis-amb
 | `DATABASE_URL`        | String de conexão do PostgreSQL                                          | `postgresql://postgres:senha@localhost:5432/leiloes` |
 | `JWT_SECRET`          | Segredo para assinar o JWT (mínimo 32 caracteres, não pode ser o exemplo) | um valor longo e aleatório                        |
 | `JWT_EXPIRES_IN`      | Validade do **access token** (curto; a renovação é pelo refresh token)  | `15m`                                             |
-| `PORT`                | Porta HTTP da API                                                       | `3000`                                            |
+| `PORT`                | Porta HTTP da API                                                       | `3092`                                            |
 | `CEP_API_URL`         | URL base do ViaCEP (integração externa, seção 7 do enunciado)           | `https://viacep.com.br/ws`                        |
 | `CEP_API_TIMEOUT_MS`  | Timeout da chamada ao ViaCEP                                            | `5000`                                            |
 | `DATABASE_URL_TESTE`  | Banco separado só para os testes e2e (apagado e recriado a cada execução; o nome precisa conter `test`) | `postgresql://postgres:senha@localhost:5432/leiloes_teste` |
@@ -165,7 +165,7 @@ npm run start:prod    # roda o build (node dist/main)
 ```
 
 A API sobe em `http://localhost:<PORT>`, com todas as rotas sob o prefixo
-`/api` (ex.: `http://localhost:3000/api/saude`).
+`/api` (ex.: `http://localhost:3092/api/saude`).
 
 ## Rodando com Docker
 
@@ -185,7 +185,7 @@ serviços:
 | Serviço    | Container                       | Porta no host | Observação                                                  |
 | ---------- | -------------------------------- | -------------- | ------------------------------------------------------------ |
 | `postgres` | `avaliacao-bimestral-postgres-1` | `5433` (não `5432`, para não brigar com um Postgres local já instalado) | Dados persistidos em um volume nomeado |
-| `api`      | `avaliacao-bimestral-api-1`      | `3000`          | Roda `prisma migrate deploy` automaticamente antes de subir |
+| `api`      | `avaliacao-bimestral-api-1`      | `3092`          | Roda `prisma migrate deploy` automaticamente antes de subir |
 
 A API dentro do container reaproveita o `BackEnd/.env` que você já tem
 configurado (mesmo `JWT_SECRET`, `API_KEY` etc.) — só o `DATABASE_URL` é
@@ -492,11 +492,11 @@ Substitua `SUA_API_KEY` pelo valor de `API_KEY` do seu `.env`.
 **Registrar e logar:**
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/registrar \
+curl -X POST http://localhost:3092/api/auth/registrar \
   -H "X-API-KEY: SUA_API_KEY" -H "Content-Type: application/json" \
   -d '{"nome":"Ana Compradora","email":"ana@teste.com","senha":"Abc12345!"}'
 
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:3092/api/auth/login \
   -H "X-API-KEY: SUA_API_KEY" -H "Content-Type: application/json" \
   -d '{"email":"ana@teste.com","senha":"Abc12345!"}'
 # -> { "accessToken": "...", "usuario": { ... } }
@@ -507,11 +507,11 @@ curl -X POST http://localhost:3000/api/auth/login \
 ```bash
 TOKEN="o accessToken do login de um usuário SELLER"
 
-curl -X POST http://localhost:3000/api/auctions \
+curl -X POST http://localhost:3092/api/auctions \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"titulo":"Leilão de Arte","dataInicio":"2027-01-01T00:00:00.000Z","dataFim":"2027-01-10T00:00:00.000Z"}'
 
-curl -X POST http://localhost:3000/api/auction-items \
+curl -X POST http://localhost:3092/api/auction-items \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"titulo":"Quadro raro","precoInicial":100,"incrementoMinimo":10,"cep":"01310100","leilaoId":"<id-do-leilao>","categoriaId":"<id-da-categoria>"}'
 ```
@@ -519,14 +519,14 @@ curl -X POST http://localhost:3000/api/auction-items \
 **Abrir o leilão e dar um lance (BIDDER):**
 
 ```bash
-curl -X PATCH http://localhost:3000/api/auctions/<id>/status \
+curl -X PATCH http://localhost:3092/api/auctions/<id>/status \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" -H "Content-Type: application/json" \
   -d '{"status":"SCHEDULED"}'
-curl -X PATCH http://localhost:3000/api/auctions/<id>/status \
+curl -X PATCH http://localhost:3092/api/auctions/<id>/status \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" -H "Content-Type: application/json" \
   -d '{"status":"OPEN"}'
 
-curl -X POST http://localhost:3000/api/auction-items/<itemId>/bids \
+curl -X POST http://localhost:3092/api/auction-items/<itemId>/bids \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_BIDDER" -H "Content-Type: application/json" \
   -d '{"valor":100}'
 ```
@@ -534,7 +534,7 @@ curl -X POST http://localhost:3000/api/auction-items/<itemId>/bids \
 **Enviar uma foto do item:**
 
 ```bash
-curl -X POST http://localhost:3000/api/auction-items/<itemId>/documents \
+curl -X POST http://localhost:3092/api/auction-items/<itemId>/documents \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" \
   -F "tipo=PHOTO" -F "arquivo=@/caminho/para/foto.jpg"
 ```
