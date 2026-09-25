@@ -8,7 +8,7 @@ import {
   ApiOperation,
   ApiQuery,
   ApiSecurity,
-  ApiTags,
+  ApiExcludeController, ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -22,6 +22,7 @@ import { CriarMensagemDto } from './dto/criar-mensagem.dto';
 import { MensagemResposta } from './dto/mensagem-resposta.dto';
 
 // Ler a conversa e livre (so a X-API-KEY); escrever exige login (qualquer papel)
+@ApiExcludeController()
 @ApiTags('Chat')
 @ApiSecurity('api-key')
 @Controller('auctions/:leilaoId/chat')

@@ -1,10 +1,11 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiSecurity, ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { ErroResposta } from '../common/dto/erro-resposta.dto';
 import { ParseUuidPipePt } from '../common/pipes/parse-uuid.pipe';
 import { HistoriaPecaResposta } from './dto/historia-resposta.dto';
 import { ObrasService } from './obras.service';
 
+@ApiExcludeController()
 @ApiTags('Obras')
 @ApiSecurity('api-key')
 @Controller('auction-items')

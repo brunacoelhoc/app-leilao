@@ -1,8 +1,9 @@
 import { BadRequestException, Controller, Get, Param } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiOkResponse, ApiOperation, ApiParam, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiOkResponse, ApiOperation, ApiParam, ApiServiceUnavailableResponse, ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { ErroResposta } from '../common/dto/erro-resposta.dto';
 import { CepService, type EnderecoPorCep } from './cep.service';
 
+@ApiExcludeController()
 @ApiTags('CEP')
 @Controller('cep')
 export class CepController {

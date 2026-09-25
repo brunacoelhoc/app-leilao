@@ -25,7 +25,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiSecurity,
-  ApiTags,
+  ApiExcludeController, ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -58,6 +58,7 @@ const PARAM_ITEM_ID = {
 
 // So o SELLER dono do leilao do item (ou ADMIN) envia arquivo. Listar e
 // baixar sao livres (as fotos ajudam a atrair lances, nao faz sentido esconder)
+@ApiExcludeController()
 @ApiTags('Documents')
 @ApiSecurity('api-key')
 @Controller()

@@ -23,10 +23,12 @@ export function configurarSwagger(app: INestApplication): void {
     .addTag('Auctions', 'Leiloes: criacao, edicao e maquina de estados (DRAFT -> SCHEDULED -> OPEN -> CLOSED/CANCELED).')
     .addTag('Auction Items', 'Itens do leilao, com endereco de retirada preenchido via integracao real com o ViaCEP.')
     .addTag('Bids', 'Lances, com concorrencia protegida por lock pessimista (SELECT ... FOR UPDATE).')
-    .addTag('Documents', 'Upload de fotos/documentos dos itens, com hash SHA-256 e nome de arquivo seguro.')
-    .addTag('Saúde', 'Health check da API e do banco de dados.')
+    .addTag('Pedidos', 'Pos-leilao, so para o vencedor: pagamento (simulado) e depois retirada ou entrega.')
     .build();
 
+  // Rotas de apoio (documents, saude, cep, destaques, chat, ranking, admin, obras,
+  // institucional) ficam ESCONDIDAS do Swagger com @ApiExcludeController: continuam
+  // funcionando, so nao poluem a demonstracao com o que nao e o fluxo principal
   const document = SwaggerModule.createDocument(app, config);
 
   // "docs" fica FORA do prefixo /api (a documentacao nao e uma rota de

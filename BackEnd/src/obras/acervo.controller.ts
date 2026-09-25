@@ -1,8 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiSecurity, ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { ObraAcervoResposta } from './dto/obra-acervo-resposta.dto';
 import { ObrasService } from './obras.service';
 
+@ApiExcludeController()
 @ApiTags('Obras')
 @ApiSecurity('api-key')
 @Controller('obras')

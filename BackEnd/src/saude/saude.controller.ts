@@ -4,13 +4,14 @@ import {
   ApiOperation,
   ApiSecurity,
   ApiServiceUnavailableResponse,
-  ApiTags,
+  ApiExcludeController, ApiTags,
 } from '@nestjs/swagger';
 import { HEADER_REQUEST_ID } from '../common/swagger-headers';
 import { ErroResposta } from '../common/dto/erro-resposta.dto';
 import { SaudeService } from './saude.service';
 
 // Rota GET /saude (tambem exige o X-API-KEY, como todas as outras)
+@ApiExcludeController()
 @ApiTags('Saúde')
 @ApiSecurity('api-key')
 @Controller('saude')

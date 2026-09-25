@@ -1,8 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiQuery, ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { DestaqueResposta } from './destaque-resposta.dto';
 import { DestaquesService } from './destaques.service';
 
+@ApiExcludeController()
 @ApiTags('Destaques')
 @Controller('destaques')
 export class DestaquesController {

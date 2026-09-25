@@ -1,8 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiQuery, ApiSecurity, ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { RankingVendedorResposta } from './ranking-vendedor-resposta.dto';
 import { RankingService } from './ranking.service';
 
+@ApiExcludeController()
 @ApiTags('Ranking')
 @ApiSecurity('api-key')
 @Controller('ranking')
