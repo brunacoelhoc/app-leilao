@@ -216,7 +216,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 20 suítes / 257 testes)
+npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 21 suítes / 262 testes)
 npm run test:e2e      # end-to-end, contra um banco de TESTE separado (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -335,6 +335,7 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | --- | --- | --- | --- | --- |
 | GET | `/users/me` | Autenticado | — | `200` o próprio perfil · `401` |
 | PATCH | `/users/me` | Autenticado | `{ nome?, email?, telefone?, endereco?, cpf?, avatarUrl?, senhaAtual? }` | `200` · `400` (formato inválido; **trocar o e-mail exige `senhaAtual` correta**) · `401` · `409` (e-mail já cadastrado) |
+| POST | `/users/me/encerrar-conta` | Autenticado | `{ senhaAtual }` | `204` **LGPD**: anonimiza os dados pessoais (nome, e-mail, telefone, CPF, endereço, avatar), inativa a conta, revoga as sessões e inutiliza a senha; o histórico imutável (lances, leilões, pedidos, auditoria) permanece como "Usuário removido" · `400` senha incorreta · `401` · `403` ADMIN não encerra por aqui · `409` pendências (peça em disputa, leilão aberto/agendado ou pedido não finalizado) · `429` |
 | PATCH | `/users/me/senha` | Autenticado | `{ senhaAtual, novaSenha }` | `204` · `400` (senha atual errada ou nova fraca) · `401` |
 | PATCH | `/users/me/modo` | Autenticado | `{ modo: "BIDDER" ou "SELLER" }` | `200` troca o modo da conta na hora, **sem completar perfil** (vendedor cria leilões e não dá lance; comprador dá lance e não cria leilão) · `400` modo inválido · `401` · `403` ADMIN não troca de modo · `409` já está nesse modo |
 | POST | `/users` | ADMIN | `{ nome, email, senha, papel }` | `201` cria usuário já com o papel escolhido · `400` · `401` · `403` · `409` |

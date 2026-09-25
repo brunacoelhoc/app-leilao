@@ -32,6 +32,11 @@ export class UsuariosService {
     return this.http.patch<Usuario>(`${this.base}/me`, dto);
   }
 
+  // LGPD: encerra a propria conta (o servidor anonimiza os dados pessoais e confere pendencias e senha)
+  encerrarMinhaConta(senhaAtual: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/me/encerrar-conta`, { senhaAtual });
+  }
+
   alterarMinhaSenha(senhaAtual: string, novaSenha: string): Observable<void> {
     return this.http.patch<void>(`${this.base}/me/senha`, { senhaAtual, novaSenha });
   }

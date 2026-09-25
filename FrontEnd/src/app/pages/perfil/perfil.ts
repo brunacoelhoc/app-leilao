@@ -1,6 +1,8 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AlertaService } from '../../core/alerta.service';
 import { AuthService } from '../../core/auth.service';
 import { ModoService } from '../../core/modo.service';
@@ -35,6 +37,8 @@ export class Perfil {
   private readonly usuariosService = inject(UsuariosService);
   private readonly alerta = inject(AlertaService);
   private readonly cepService = inject(CepService);
+  private readonly router = inject(Router);
+  protected readonly encerrando = signal(false);
 
   protected readonly avatares = AVATARES_PRONTOS;
   protected readonly ocultarTelefone = ocultarTelefone;
@@ -79,6 +83,31 @@ export class Perfil {
   confirmarSenha = '';
   readonly mostrarSenhas = signal(false);
   readonly erroSenha = signal<string | null>(null);
+
+  // LGPD: encerra a conta. O servidor confere a senha e as pendencias (disputa, leilao em andamento, pedido) e
+  // anonimiza os dados pessoais; a tela so confirma com a pessoa, envia e mostra a resposta
+  async encerrarConta(): Promise<void> {
+    const certeza = await this.alerta.confirmar(
+      'Encerrar a sua conta?',
+      'Seus dados pessoais (nome, e-mail, telefone, CPF, endereço e foto) serão apagados e você não poderá mais entrar. O histórico de lances e pedidos permanece, sem identificar você. Esta ação não pode ser desfeita.',
+      'Continuar',
+    );
+    if (!certeza) return;
+    const senha = await this.alerta.pedirSenha('Confirme a sua senha', 'Digite a senha atual para encerrar a conta');
+    if (!senha) return;
+
+    this.encerrando.set(true);
+    try {
+      await firstValueFrom(this.usuariosService.encerrarMinhaConta(senha));
+      this.auth.limparSessao();
+      await this.router.navigateByUrl('/');
+      void this.alerta.sucesso('Conta encerrada', 'Seus dados pessoais foram apagados. Obrigado por ter participado.');
+    } catch (erro) {
+      void this.alerta.erro('Não foi possível encerrar a conta', mensagemDeErro(erro, 'Tente novamente'));
+    } finally {
+      this.encerrando.set(false);
+    }
+  }
 
   constructor() {
     // O usuario salvo no navegador e o do momento do login: busca o cadastro atual

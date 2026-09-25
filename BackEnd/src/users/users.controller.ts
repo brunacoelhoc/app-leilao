@@ -15,6 +15,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuditLogService } from '../audit/audit-log.service';
 import { SessaoService } from '../auth/sessao.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -35,6 +36,7 @@ import { AuditResult, Role, type User } from '../generated/prisma/client';
 import { AlterarSenhaDto } from './dto/alterar-senha.dto';
 import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 import { CriarUsuarioAdminDto } from './dto/criar-usuario-admin.dto';
+import { EncerrarContaDto } from './dto/encerrar-conta.dto';
 import { TrocarModoDto } from './dto/trocar-modo.dto';
 import { ListarUsuariosQueryDto } from './dto/listar-usuarios-query.dto';
 import { UsersService } from './users.service';
@@ -127,6 +129,40 @@ export class UsersController {
       ...contexto,
     });
     return new UsuarioEntity(atualizado);
+  }
+
+  // LGPD: a propria pessoa encerra a conta. Os dados pessoais sao anonimizados; o historico (imutavel) fica
+  @Post('me/encerrar-conta')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Encerra a propria conta e anonimiza os dados pessoais (LGPD)',
+    description:
+      'Exige a senha atual. Nome, e-mail, telefone, CPF, endereco e avatar sao anonimizados; a conta fica inativa e sem sessoes. ' +
+      'O historico (lances, leiloes, pedidos, auditoria) e imutavel e permanece, com o nome "Usuario removido". ' +
+      'Nao e possivel com pendencias: peca em disputa, leilao aberto/agendado ou pedido nao finalizado (409). ADMIN nao encerra por aqui (403).',
+  })
+  @ApiNoContentResponse({ description: 'Conta encerrada e dados anonimizados', headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Senha atual ausente ou incorreta', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'ADMIN nao encerra a propria conta por aqui', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Ha pendencias: disputa, leilao em andamento ou pedido nao finalizado', type: ErroResposta })
+  async encerrarConta(
+    @CurrentUser() usuario: UsuarioAutenticado,
+    @Body() dto: EncerrarContaDto,
+    @ContextoDaRequisicao() contexto: ContextoRequisicao,
+  ): Promise<void> {
+    await this.usersService.encerrarConta(usuario.id, dto.senhaAtual);
+    await this.auditLogService.registrar({
+      usuarioId: usuario.id,
+      papel: usuario.papel as Role,
+      acao: 'CONTA_ENCERRADA',
+      entidade: 'User',
+      entidadeId: usuario.id,
+      resultado: AuditResult.SUCCESS,
+      statusHttp: 204,
+      ...contexto,
+    });
   }
 
   @Patch('me/senha')

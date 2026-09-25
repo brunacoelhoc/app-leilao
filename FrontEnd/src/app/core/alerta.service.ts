@@ -41,6 +41,24 @@ export class AlertaService {
     return resultado.isConfirmed;
   }
 
+  // Pede a senha (campo mascarado); null se cancelar
+  async pedirSenha(titulo: string, rotulo: string): Promise<string | null> {
+    const resultado = await Swal.fire({
+      title: titulo,
+      input: 'password',
+      inputLabel: rotulo,
+      inputAttributes: { autocomplete: 'current-password' },
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: CORES.cancelar,
+      background: CORES.fundo,
+      color: CORES.texto,
+      inputValidator: (valor) => (valor ? null : 'Informe a senha'),
+    });
+    return resultado.isConfirmed ? String(resultado.value) : null;
+  }
+
   // Pergunta um texto obrigatorio (ex.: motivo do cancelamento); null se cancelar
   async pedirTexto(titulo: string, rotulo: string): Promise<string | null> {
     const resultado = await Swal.fire({

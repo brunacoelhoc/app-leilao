@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import {
@@ -144,13 +145,7 @@ export class UsersService {
     }
 
     if (!forcar) {
-      const disputas = await this.prisma.auctionItem.count({
-        where: {
-          status: 'AVAILABLE',
-          leilao: { status: { in: ['OPEN', 'SCHEDULED'] } },
-          lances: { some: { licitanteId: id } },
-        },
-      });
+      const disputas = await this.contarDisputas(id);
       if (disputas > 0) {
         throw new ConflictException(
           `Este usuario esta disputando ${disputas} peca(s) em leiloes em andamento. Desative depois do encerramento ou, em caso de fraude, use forcar=true (os lances dele serao pulados no fechamento).`,
@@ -158,9 +153,7 @@ export class UsersService {
       }
 
       // Vendedor com leilao em andamento: sem ele, ninguem conduz o leilao (que continuaria aberto e recebendo lances)
-      const leiloesEmAndamento = await this.prisma.auction.count({
-        where: { vendedorId: id, status: { in: ['OPEN', 'SCHEDULED'] } },
-      });
+      const leiloesEmAndamento = await this.contarLeiloesEmAndamento(id);
       if (leiloesEmAndamento > 0) {
         throw new ConflictException(
           `Este usuario e dono de ${leiloesEmAndamento} leilao(oes) em andamento (aberto ou agendado). Encerre ou cancele antes de desativar ou, em caso de fraude, use forcar=true (os leiloes seguem e fecham pelo horario).`,
@@ -169,6 +162,65 @@ export class UsersService {
     }
 
     return this.prisma.user.update({ where: { id }, data: { ativo: false } });
+  }
+
+  // 🔎 ENCERRAR A PROPRIA CONTA (LGPD: direito ao apagamento). O historico (lances, leiloes, pedidos, auditoria) nao pode sumir
+  // -- e imutavel e outras pessoas dependem dele --, entao os DADOS PESSOAIS sao anonimizados: nome, e-mail, telefone, CPF,
+  // endereco e avatar. A conta fica inativa, sem senha utilizavel e sem sessoes, e o nome que aparece nos historicos vira
+  // "Usuario removido". Exige a senha atual e nao pode haver pendencias (disputa, leilao em andamento ou pedido nao finalizado)
+  async encerrarConta(id: string, senhaAtual: string): Promise<void> {
+    const usuario = await this.buscarPorIdOuFalhar(id);
+    if (usuario.papel === 'ADMIN') {
+      throw new ForbiddenException('Administradores nao encerram a propria conta por aqui (a equipe precisa de ao menos um ADMIN)');
+    }
+    if (!(await bcrypt.compare(senhaAtual, usuario.senha))) {
+      throw new BadRequestException('Senha atual incorreta');
+    }
+
+    const disputas = await this.contarDisputas(id);
+    const leiloes = await this.contarLeiloesEmAndamento(id);
+    const pedidos = await this.prisma.pedido.count({
+      where: {
+        status: { not: 'FINALIZADO' },
+        OR: [{ compradorId: id }, { item: { leilao: { vendedorId: id } } }],
+      },
+    });
+    const pendencias: string[] = [];
+    if (disputas > 0) pendencias.push(`${disputas} peca(s) em disputa`);
+    if (leiloes > 0) pendencias.push(`${leiloes} leilao(oes) em andamento`);
+    if (pedidos > 0) pendencias.push(`${pedidos} pedido(s) nao finalizado(s)`);
+    if (pendencias.length > 0) {
+      throw new ConflictException(`Nao e possivel encerrar a conta agora: ${pendencias.join(', ')}. Conclua ou aguarde o encerramento e tente de novo.`);
+    }
+
+    const senhaInutilizavel = await bcrypt.hash(randomBytes(32).toString('hex'), CUSTO_DO_HASH); // ninguem sabe: o login fica impossivel
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id },
+        data: {
+          nome: 'Usuario removido',
+          email: `removido.${id}@removido.invalid`,
+          senha: senhaInutilizavel,
+          telefone: null,
+          cpf: null,
+          endereco: null,
+          avatarUrl: null,
+          ativo: false,
+        },
+      }),
+      this.prisma.session.updateMany({ where: { usuarioId: id, revogadaEm: null }, data: { revogadaEm: new Date() } }),
+      this.prisma.passwordReset.deleteMany({ where: { usuarioId: id } }),
+    ]);
+  }
+
+  private contarDisputas(id: string): Promise<number> {
+    return this.prisma.auctionItem.count({
+      where: { status: 'AVAILABLE', leilao: { status: { in: ['OPEN', 'SCHEDULED'] } }, lances: { some: { licitanteId: id } } },
+    });
+  }
+
+  private contarLeiloesEmAndamento(id: string): Promise<number> {
+    return this.prisma.auction.count({ where: { vendedorId: id, status: { in: ['OPEN', 'SCHEDULED'] } } });
   }
 
   async reativar(id: string): Promise<User> {

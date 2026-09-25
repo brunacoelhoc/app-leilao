@@ -67,6 +67,7 @@ A matriz completa de permissões por endpoint está em [`BackEnd/README.md`](Bac
 - **Modo comprador / vendedor**: a mesma conta alterna com um clique (vendedor cria leilões, comprador dá lances; ninguém dá lance no próprio leilão). Lance e criação de leilão exigem **perfil completo** (telefone, CPF válido e endereço).
 - **Recuperação de senha** com código de 6 dígitos de uso único (só o hash fica no banco), validade de 15 minutos, limite de 5 tentativas e de 3 pedidos por hora. O envio do e-mail é **simulado** (o código aparece no log do servidor).
 - **Sessões seguras**: login abre uma sessão renovável (refresh token) e o logout a encerra de verdade no servidor.
+- **Encerrar a própria conta (LGPD)**: anonimiza os dados pessoais e mantém o histórico imutável, com trava para pendências.
 - **Aceite dos termos de uso** gravado no banco no cadastro e **privacidade** dos nomes (histórico de lances, tempo real e chat mostram "Maria S.").
 - **Integração externa real**: consulta de CEP via ViaCEP.
 - **Auditoria** de ações sensíveis em tabelas append-only (triggers impedem `UPDATE`/`DELETE`).

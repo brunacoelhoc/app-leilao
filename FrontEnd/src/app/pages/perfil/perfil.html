@@ -63,6 +63,19 @@
       </div>
     </dl>
   </section>
+
+  @if (usuario().papel !== 'ADMIN') {
+    <section class="cartao zona-perigo" aria-labelledby="titulo-encerrar">
+      <h2 id="titulo-encerrar">Encerrar minha conta</h2>
+      <p class="lista-vazia">
+        Apaga seus dados pessoais (nome, e-mail, telefone, CPF, endereço e foto). O histórico de lances e pedidos permanece, sem identificar você.
+        Não é possível enquanto houver peça em disputa, leilão em andamento ou pedido não finalizado.
+      </p>
+      <button type="button" class="perigo" [disabled]="encerrando()" (click)="encerrarConta()">
+        {{ encerrando() ? 'Encerrando...' : 'Encerrar minha conta' }}
+      </button>
+    </section>
+  }
 </div>
 
 @if (editando()) {
