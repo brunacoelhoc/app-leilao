@@ -88,6 +88,16 @@ export class CarrosselDestaques {
     this.centro.set(this.indiceReal(indice));
   }
 
+  // Card do meio: abre os detalhes. Card das pontas: vem para o centro (facilita navegar
+  // sem depender so das setas); um segundo clique nele abre os detalhes
+  aoClicarCard(item: CardPosicionado): void {
+    if (item.deslocamento === 0) {
+      this.aberto.set(item.destaque);
+    } else {
+      this.irPara(this.centro() + item.deslocamento);
+    }
+  }
+
   aoTeclar(evento: KeyboardEvent): void {
     if (evento.key === 'ArrowLeft') {
       evento.preventDefault();

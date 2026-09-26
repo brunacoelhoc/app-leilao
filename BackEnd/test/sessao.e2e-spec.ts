@@ -116,7 +116,7 @@ describe('Sessoes, refresh token e logout (e2e)', () => {
     await api('post', '/auth/logout', s.accessToken).expect(204);
 
     const depois = await api('get', '/users/me', s.accessToken).expect(401);
-    expect(depois.body.mensagem).toMatch(/Sessao encerrada/);
+    expect(depois.body.mensagem).toMatch(/Sessão encerrada/);
     await api('post', '/auth/refresh').send({ refreshToken: s.refreshToken }).expect(401);
     // logout de novo (ja sem sessao) e sem token -> 401
     await api('post', '/auth/logout', s.accessToken).expect(401);

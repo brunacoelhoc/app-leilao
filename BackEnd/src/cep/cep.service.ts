@@ -54,18 +54,19 @@ export class CepService {
             : 'erro desconhecido';
       this.logger.error(`Falha ao consultar CEP ${cep}: ${motivo}`);
       throw new ServiceUnavailableException(
-        'Servico de consulta de CEP indisponivel no momento. Tente novamente mais tarde',
+        'Serviço de consulta de CEP indisponível no momento. Tente novamente mais tarde',
       );
     }
 
-    // CEP com formato valido mas que nao existe de verdade
-    if (resposta.erro || !resposta.logradouro) {
-      throw new BadRequestException('CEP nao encontrado');
+    // CEP com formato valido mas que nao existe de verdade. Atencao: CEP "geral" de cidade pequena e VALIDO e
+    // vem sem rua (logradouro vazio, ex.: 68590000 Jacundá/PA), entao o que prova que o CEP existe e ter cidade
+    if (resposta.erro || !resposta.localidade) {
+      throw new BadRequestException('CEP não encontrado');
     }
 
     return {
-      logradouro: resposta.logradouro,
-      cidade: resposta.localidade ?? '',
+      logradouro: resposta.logradouro ?? '',
+      cidade: resposta.localidade,
       uf: resposta.uf ?? '',
     };
   }

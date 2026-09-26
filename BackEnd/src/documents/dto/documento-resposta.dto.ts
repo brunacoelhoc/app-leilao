@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DocumentType } from '../../generated/prisma/client';
 
 // Formato real da resposta de um documento/foto -- so para o Swagger
@@ -13,7 +13,7 @@ export class DocumentoResposta {
   @ApiProperty({ example: 'foto-original.jpg', description: 'Nome que o arquivo tinha no computador de quem enviou' })
   nomeOriginal: string;
 
-  @ApiProperty({ description: 'Nome seguro (UUID) usado para salvar em disco -- nunca o nome original' })
+  @ApiPropertyOptional({ description: 'Nome seguro (UUID) usado para salvar em disco. Só vem na resposta do envio (para quem enviou), nunca na listagem pública' })
   nomeArquivo: string;
 
   @ApiProperty({ example: 'image/jpeg' })
@@ -22,13 +22,13 @@ export class DocumentoResposta {
   @ApiProperty({ example: 245678, description: 'Tamanho em bytes' })
   tamanho: number;
 
-  @ApiProperty({ description: 'Impressao digital SHA-256, prova que o arquivo nao foi alterado' })
+  @ApiProperty({ description: 'Impressao digital SHA-256, prova que o arquivo não foi alterado' })
   hash: string;
 
   @ApiProperty({ description: 'Id do item a que este documento pertence' })
   itemId: string;
 
-  @ApiProperty({ description: 'Id de quem enviou' })
+  @ApiPropertyOptional({ description: 'Id de quem enviou. Só vem na resposta do envio, nunca na listagem pública' })
   enviadoPorId: string;
 
   @ApiProperty()

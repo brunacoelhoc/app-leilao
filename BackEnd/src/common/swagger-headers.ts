@@ -3,7 +3,7 @@
 // Reaproveitado nas respostas de sucesso de cada rota, para o Swagger documentar
 export const HEADER_REQUEST_ID = {
   'X-Request-Id': {
-    description: 'Id unico desta requisicao, para cruzar com os logs do servidor',
+    description: 'Id único desta requisição, para cruzar com os logs do servidor',
     schema: { type: 'string', format: 'uuid' },
   },
 };

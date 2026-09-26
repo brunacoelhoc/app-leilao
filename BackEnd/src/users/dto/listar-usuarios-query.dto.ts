@@ -17,7 +17,7 @@ export class ListarUsuariosQueryDto extends PaginacaoQueryDto {
 
   // Trecho do nome ou do e-mail (sem diferenciar maiusculas)
   @IsOptional()
-  @MaxLength(100, { message: 'busca deve ter no maximo 100 caracteres' })
+  @MaxLength(100, { message: 'busca deve ter no máximo 100 caracteres' })
   @IsString({ message: 'busca deve ser um texto' })
   busca?: string;
 }

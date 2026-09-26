@@ -111,7 +111,7 @@ describe('Recuperacao de senha (e2e)', () => {
 
     for (let i = 0; i < 5; i++) {
       await expect(recuperacao.redefinir({ email: conta.email, codigo: errado, novaSenha: SENHA_NOVA })).rejects.toThrow(
-        /invalido ou expirado/,
+        /inválido ou expirado/,
       );
     }
     const pedido = await prisma.passwordReset.findFirstOrThrow({ where: { usuarioId: conta.id } });
@@ -120,7 +120,7 @@ describe('Recuperacao de senha (e2e)', () => {
 
     // agora nem o codigo certo funciona: precisa pedir outro
     await expect(recuperacao.redefinir({ email: conta.email, codigo, novaSenha: SENHA_NOVA })).rejects.toThrow(
-      /invalido ou expirado/,
+      /inválido ou expirado/,
     );
     const semTrocar = await prisma.user.findUniqueOrThrow({ where: { id: conta.id } });
     expect(await bcrypt.compare(SENHA_ANTIGA, semTrocar.senha)).toBe(true);
@@ -132,7 +132,7 @@ describe('Recuperacao de senha (e2e)', () => {
     const codigo = ultimoCodigo(conta.email);
     await prisma.passwordReset.updateMany({ where: { usuarioId: conta.id }, data: { expiraEm: new Date(Date.now() - 1000) } });
     await expect(recuperacao.redefinir({ email: conta.email, codigo, novaSenha: SENHA_NOVA })).rejects.toThrow(
-      /invalido ou expirado/,
+      /inválido ou expirado/,
     );
   });
 

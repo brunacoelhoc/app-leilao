@@ -6,18 +6,18 @@ export class ObraHistoriaResposta {
   @ApiProperty({ example: 'c. 1503' }) ano: string;
   @ApiProperty({ example: 'Alto Renascimento' }) movimento: string;
   @ApiProperty({ example: 'Museu do Louvre, Paris' }) localAtual: string;
-  @ApiProperty({ description: 'A historia da obra' }) historia: string;
+  @ApiProperty({ description: 'A história da obra' }) historia: string;
   @ApiProperty() contextoHistorico: string;
   @ApiProperty() contextoFilosofico: string;
   @ApiProperty() contextoSocial: string;
   @ApiProperty() curiosidade: string;
-  @ApiProperty({ example: 'REPRODUCAO', description: 'REPRODUCAO = a peca e uma copia de demonstracao de uma obra de dominio publico' })
+  @ApiProperty({ example: 'REPRODUCAO', description: 'REPRODUCAO = a peça é uma cópia de demonstração de uma obra de domínio público' })
   autenticidade: 'REPRODUCAO';
-  @ApiProperty({ description: 'Texto pronto sobre a autenticidade da peca' }) autenticidadeTexto: string;
+  @ApiProperty({ description: 'Texto pronto sobre a autenticidade da peça' }) autenticidadeTexto: string;
 }
 
 export class HistoriaPecaResposta {
-  @ApiProperty({ enum: ['OBRA_DO_ACERVO', 'FICHA_DA_PECA'], description: 'OBRA_DO_ACERVO = a foto e uma obra conhecida; FICHA_DA_PECA = so os dados que o vendedor informou' })
+  @ApiProperty({ enum: ['OBRA_DO_ACERVO', 'FICHA_DA_PECA'], description: 'OBRA_DO_ACERVO = a foto é uma obra conhecida; FICHA_DA_PECA = só os dados que o vendedor informou' })
   origem: 'OBRA_DO_ACERVO' | 'FICHA_DA_PECA';
 
   @ApiPropertyOptional({ type: ObraHistoriaResposta, nullable: true }) obra: ObraHistoriaResposta | null;

@@ -58,12 +58,12 @@ export class SessaoService {
 
   async renovar(refreshToken: string): Promise<ResultadoRenovacao> {
     const partes = refreshToken.split('.');
-    if (partes.length !== 2 || !partes[0] || !partes[1]) return { ok: false, motivo: 'Formato invalido' };
+    if (partes.length !== 2 || !partes[0] || !partes[1]) return { ok: false, motivo: 'Formato inválido' };
     const [sessaoId, segredo] = partes;
 
     const sessao = await this.prisma.session.findUnique({ where: { id: sessaoId } });
     if (!sessao || sessao.revogadaEm !== null || sessao.expiraEm <= new Date()) {
-      return { ok: false, motivo: 'Sessao inexistente, revogada ou expirada', usuarioId: sessao?.usuarioId };
+      return { ok: false, motivo: 'Sessão inexistente, revogada ou expirada', usuarioId: sessao?.usuarioId };
     }
 
     const enviado = hash(segredo);
@@ -71,7 +71,7 @@ export class SessaoService {
     // Um refresh token que ja foi trocado apareceu de novo: pode ter sido roubado -> derruba a sessao
     if (sessao.refreshHashAnterior && iguais(enviado, sessao.refreshHashAnterior)) {
       await this.revogar(sessao.id);
-      return { ok: false, motivo: 'Refresh token ja usado (possivel roubo): sessao revogada', usuarioId: sessao.usuarioId, reuso: true };
+      return { ok: false, motivo: 'Refresh token já usado (possível roubo): sessão revogada', usuarioId: sessao.usuarioId, reuso: true };
     }
     if (!iguais(enviado, sessao.refreshHash)) return { ok: false, motivo: 'Segredo incorreto', usuarioId: sessao.usuarioId };
 
@@ -86,7 +86,7 @@ export class SessaoService {
         ultimoUsoEm: new Date(),
       },
     });
-    if (trocado.count === 0) return { ok: false, motivo: 'Renovacao concorrente', usuarioId: sessao.usuarioId };
+    if (trocado.count === 0) return { ok: false, motivo: 'Renovação concorrente', usuarioId: sessao.usuarioId };
 
     return { ok: true, sessaoId: sessao.id, usuarioId: sessao.usuarioId, refreshToken: `${sessao.id}.${novoSegredo}` };
   }

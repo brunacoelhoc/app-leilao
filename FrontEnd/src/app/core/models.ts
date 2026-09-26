@@ -98,6 +98,7 @@ export interface ItemLeilao {
   lanceMinimo: string;
   segundosParaMudanca: number | null;
   prorrogacoes: number; // quantas vezes o anti-sniping estendeu o prazo do leilao
+  avisoResultado: string | null; // explicacao do servidor quando o maior lance foi desconsiderado
   totalLances: number;
   cep: string;
   logradouro: string | null;
@@ -138,12 +139,10 @@ export interface Documento {
   id: string;
   tipo: TipoDocumento;
   nomeOriginal: string;
-  nomeArquivo: string;
   mimeType: string;
   tamanho: number;
   hash: string;
   itemId: string;
-  enviadoPorId: string;
   criadoEm: string;
 }
 
@@ -163,6 +162,24 @@ export interface ErroApi {
   mensagem: string | string[];
   caminho: string;
   dataHora: string;
+}
+
+// Pos-leilao do vencedor: pagamento (simulado) e depois retirada/entrega
+export type FormaPagamento = 'PIX' | 'CARTAO' | 'BOLETO';
+export type TipoEntrega = 'RETIRADA' | 'ENTREGA';
+export type PedidoStatus = 'AGUARDANDO_PAGAMENTO' | 'PAGO' | 'FINALIZADO';
+
+export interface Pedido {
+  id: string | null; // vazio até o pedido ser criado (no pagamento)
+  itemId: string;
+  valor: string;
+  status: PedidoStatus;
+  formaPagamento: FormaPagamento | null;
+  pagoEm: string | null;
+  tipoEntrega: TipoEntrega | null;
+  enderecoEntrega: string | null;
+  codigoRetirada: string | null;
+  localRetirada: string;
 }
 
 // Mensagem do chat ao vivo de um leilao
@@ -285,7 +302,7 @@ export interface MinhasPecas {
 // O que o usuario logado pode fazer numa peca (GET /auction-items/:id/bids/minha-situacao)
 export interface MinhaSituacao {
   permitido: boolean;
-  motivo: 'ADMIN' | 'MODO_VENDEDOR' | 'DONO' | 'PERFIL_INCOMPLETO' | 'LEILAO_FECHADO' | 'ITEM_INDISPONIVEL' | null;
+  motivo: 'ADMIN' | 'MODO_VENDEDOR' | 'DONO' | 'PERFIL_INCOMPLETO' | 'LEILAO_FECHADO' | 'ITEM_INDISPONIVEL' | 'JA_LIDERA' | null;
   mensagem: string | null;
   euSouDono: boolean;
   euSouVencedor: boolean;

@@ -18,6 +18,7 @@ import { IdRequisicaoMiddleware } from './common/middlewares/id-requisicao.middl
 import { validarVariaveisAmbiente } from './config/variaveis-ambiente';
 import { InstitucionalModule } from './institucional/institucional.module';
 import { ObrasModule } from './obras/obras.module';
+import { PedidosModule } from './pedidos/pedidos.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RankingModule } from './ranking/ranking.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -41,7 +42,7 @@ import { SaudeModule } from './saude/saude.module';
             limit: config.getOrThrow<number>('RATE_LIMIT_MAX'),
           },
         ],
-        errorMessage: 'Muitas requisicoes. Aguarde um pouco e tente novamente.',
+        errorMessage: 'Muitas requisições. Aguarde um pouco e tente novamente.',
       }),
     }),
     // Conexao com o banco, disponivel em toda a aplicacao
@@ -62,6 +63,8 @@ import { SaudeModule } from './saude/saude.module';
     DestaquesModule,
 
     BidsModule,
+    // Pos-leilao: pagamento simulado e retirada/entrega, so para o vencedor
+    PedidosModule,
     // Chat ao vivo dos leiloes (ler livre, escrever logado, so com o leilao aberto)
     ChatModule,
     // Ranking publico dos melhores vendedores

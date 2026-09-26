@@ -1,11 +1,11 @@
 #!/bin/bash
-# Simulacao dos cenarios da apresentacao contra a API no ar (padrao: Docker em localhost:3000).
+# Simulacao dos cenarios da apresentacao contra a API no ar (padrao: Docker em localhost:3092).
 # Cria usuarios/leiloes/lances de teste (sufixo aleatorio) e confere o codigo HTTP de cada regra.
-# Uso (Git Bash / Linux):  bash BackEnd/scripts/simular-cenarios.sh   (ou API=http://host:3000/api ...)
+# Uso (Git Bash / Linux):  bash BackEnd/scripts/simular-cenarios.sh   (ou API=http://host:3092/api ...)
 # Precisa do admin do seed (admin@belleepoque.com) e de curl. Termina com "FALHAS: 0" quando tudo confere.
 cd "$(dirname "$0")/../.."
 K=$(grep -o 'apiKey: "[^"]*"' FrontEnd/src/app/core/environment.ts | cut -d'"' -f2)
-B=${API:-http://localhost:3000/api}
+B=${API:-http://localhost:3092/api}
 RAIZ_DOCS=${B%/api}
 SUF=$RANDOM
 OUT="$TMP/sim_body.txt"

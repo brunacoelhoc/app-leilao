@@ -19,9 +19,11 @@
           </p>
         }
       </div>
-      <span [class]="classeSeloItem(it.status)">
-        {{ it.situacao === 'ABERTO' ? 'Ao vivo' : it.situacao === 'VENDIDO' ? 'INDISPONÍVEL / VENDIDO' : it.status === 'AVAILABLE' ? ROTULO_STATUS_ITEM[it.status] : 'INDISPONÍVEL' }}
-      </span>
+      @if (it.situacao === 'ABERTO' || it.situacao === 'VENDIDO' || it.status !== 'AVAILABLE') {
+        <span [class]="classeSeloItem(it.status)">
+          {{ it.situacao === 'ABERTO' ? 'Ao vivo' : it.situacao === 'VENDIDO' ? 'INDISPONÍVEL / VENDIDO' : 'INDISPONÍVEL' }}
+        </span>
+      }
     </header>
 
     <div class="grade-sala">
@@ -53,7 +55,13 @@
             <div class="festa-icone" aria-hidden="true">🎉</div>
             <h2>{{ euGanhei() ? 'Parabéns, você arrematou!' : 'Parabéns, ' + it.vencedorNome + '!' }}</h2>
             <p>Lote arrematado por <strong>{{ it.vencedorNome }}</strong> por <strong>{{ moeda(it.lanceAtual) }}</strong>.</p>
+            @if (it.avisoResultado) {
+              <p class="aviso-resultado">{{ it.avisoResultado }}</p>
+            }
           </div>
+          @if (euGanhei()) {
+            <app-pedido-pos-leilao [itemId]="it.id" />
+          }
         } @else if (situacao() === 'NAO_VENDIDO') {
           <div class="encerrado" role="status"><strong>Lote encerrado sem vencedor.</strong> Não foi vendido.</div>
         } @else if (situacao() === 'CANCELADO') {
@@ -92,18 +100,20 @@
         <form (ngSubmit)="darLance()" class="form-lance">
           <label for="valor">Seu lance</label>
           <div class="campo-valor">
+            <button type="button" class="passo" (click)="ajustarLance(-1)" [disabled]="!podeDarLance()" [attr.aria-label]="'Diminuir R$ ' + PASSO_LANCE">− {{ PASSO_LANCE }}</button>
             <span class="prefixo" aria-hidden="true">R$</span>
             <input
               id="valor"
               name="valor"
               type="number"
-              step="0.01"
+              [step]="PASSO_LANCE"
               placeholder="0,00"
               [min]="lanceMinimo()"
               [(ngModel)]="valorLance"
               [disabled]="!podeDarLance()"
               required
             />
+            <button type="button" class="passo" (click)="ajustarLance(1)" [disabled]="!podeDarLance()" [attr.aria-label]="'Aumentar R$ ' + PASSO_LANCE">+ {{ PASSO_LANCE }}</button>
           </div>
           <div class="atalhos" role="group" aria-label="Valores rápidos">
             @for (v of it.lancesSugeridos; track $index) {
@@ -135,7 +145,11 @@
   }
 
   <section class="secao-historico" aria-labelledby="titulo-historico">
-    <h2 id="titulo-historico">Histórico de lances <small class="ao-vivo" aria-hidden="true">● ao vivo</small></h2>
+    <h2 id="titulo-historico">Histórico de lances
+      @if (situacao() === 'ABERTO') {
+        <small class="ao-vivo" aria-hidden="true">● ao vivo</small>
+      }
+    </h2>
     @if (lances(); as l) {
       @if (l.dados.length === 0) {
         <p class="lista-vazia">Nenhum lance ainda. O primeiro pode ser o seu.</p>

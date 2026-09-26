@@ -30,7 +30,7 @@ export class RolesGuard implements CanActivate {
 
     if (!usuario || !papeisPermitidos.includes(usuario.papel as Role)) {
       throw new ForbiddenException(
-        'Voce nao tem permissao para acessar este recurso',
+        'Você não tem permissão para acessar este recurso',
       );
     }
 

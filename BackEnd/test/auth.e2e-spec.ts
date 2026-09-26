@@ -89,9 +89,9 @@ describe('Auth (e2e)', () => {
         .expect(400);
 
       expect(resposta.body.mensagem).toEqual([
-        'nome deve ter no minimo 3 caracteres',
-        'email deve ser um e-mail valido',
-        'senha deve ter no minimo 8 caracteres',
+        'nome deve ter no mínimo 3 caracteres',
+        'email deve ser um e-mail válido',
+        'senha deve ter no mínimo 8 caracteres',
       ]);
     });
 
@@ -122,7 +122,7 @@ describe('Auth (e2e)', () => {
         .send({ email: EMAIL_TESTE, senha: 'SenhaErrada9!' })
         .expect(401);
 
-      expect(resposta.body.mensagem).toBe('Credenciais invalidas');
+      expect(resposta.body.mensagem).toBe('Credenciais inválidas');
     });
 
     it('login com e-mail inexistente -> 401, MESMA mensagem generica', async () => {
@@ -132,7 +132,7 @@ describe('Auth (e2e)', () => {
         .send({ email: 'nao-existe-de-verdade@teste.com', senha: 'qualquer coisa' })
         .expect(401);
 
-      expect(resposta.body.mensagem).toBe('Credenciais invalidas');
+      expect(resposta.body.mensagem).toBe('Credenciais inválidas');
     });
   });
 

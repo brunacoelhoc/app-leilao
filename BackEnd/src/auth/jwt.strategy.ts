@@ -35,13 +35,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // Reconsulta o banco a cada requisicao: se o usuario foi apagado ou
     // desativado DEPOIS de emitir o token, o acesso e cortado na hora
     if (!usuario || !usuario.ativo) {
-      throw new UnauthorizedException('Sessao invalida ou usuario desativado');
+      throw new UnauthorizedException('Sessão inválida ou usuário desativado');
     }
 
     // 🔎 O token so vale enquanto a SESSAO dele estiver ativa: logout, troca de senha e reuso suspeito
     // do refresh token a revogam, e o token para de funcionar na hora (nao espera expirar)
     if (!payload.sid || !(await this.sessaoService.estaAtiva(payload.sid, usuario.id))) {
-      throw new UnauthorizedException('Sessao encerrada ou expirada. Entre novamente.');
+      throw new UnauthorizedException('Sessão encerrada (logout, troca de senha ou novo login). Faça login novamente.');
     }
 
     return { id: usuario.id, papel: usuario.papel, sessaoId: payload.sid };

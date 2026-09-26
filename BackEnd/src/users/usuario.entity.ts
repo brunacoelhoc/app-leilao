@@ -28,13 +28,13 @@ export class UsuarioEntity implements User {
   @ApiProperty()
   ativo: boolean;
 
-  @ApiPropertyOptional({ nullable: true, example: '11987654321', description: 'So numeros, com DDD' })
+  @ApiPropertyOptional({ nullable: true, example: '11987654321', description: 'Só números, com DDD' })
   telefone: string | null;
 
-  @ApiPropertyOptional({ nullable: true, example: 'Rua das Antiguidades, 120 - Sao Paulo/SP' })
+  @ApiPropertyOptional({ nullable: true, example: 'Rua das Antiguidades, 120 - São Paulo/SP' })
   endereco: string | null;
 
-  @ApiPropertyOptional({ nullable: true, example: '12345678900', description: 'So numeros (11 digitos)' })
+  @ApiPropertyOptional({ nullable: true, example: '12345678900', description: 'Só números (11 dígitos)' })
   cpf: string | null;
 
   @ApiPropertyOptional({ nullable: true, description: 'Identificador de um avatar pronto, ou uma imagem pequena em base64' })
@@ -52,7 +52,7 @@ export class UsuarioEntity implements User {
   @ApiProperty({
     type: [String],
     example: ['telefone', 'CPF', 'endereço'],
-    description: 'O que falta no perfil para dar lances e criar leiloes (vazio = perfil completo). Calculado pelo servidor',
+    description: 'O que falta no perfil para dar lances e criar leilões (vazio = perfil completo). Calculado pelo servidor',
   })
   camposFaltando: string[];
 

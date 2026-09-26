@@ -22,7 +22,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const configService = app.get(ConfigService);
-  await app.listen(configService.get<number>('PORT') ?? 3000);
+  await app.listen(configService.get<number>('PORT') ?? 3092);
 }
 
 // Se algo falhar ao iniciar (ex.: banco fora do ar), mostra o motivo e encerra com codigo 1
@@ -31,7 +31,7 @@ bootstrap().catch((erro: { code?: string; message?: string }) => {
   const codigo = erro.code ? ` [${erro.code}]` : '';
   const mensagem = (erro.message ?? '').split('\n').find((l) => l.trim()) ?? '';
   new Logger('Bootstrap').error(
-    `Falha ao iniciar a aplicacao${codigo}: ${mensagem}`,
+    `Falha ao iniciar a aplicação${codigo}: ${mensagem}`,
   );
   process.exit(1);
 });

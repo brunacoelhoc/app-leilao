@@ -12,7 +12,7 @@ export class SaudeService {
       await this.prisma.$queryRaw`SELECT 1`;
     } catch {
       // Banco fora do ar: responde 503 (servico indisponivel)
-      throw new ServiceUnavailableException('Banco de dados indisponivel');
+      throw new ServiceUnavailableException('Banco de dados indisponível');
     }
 
     return {

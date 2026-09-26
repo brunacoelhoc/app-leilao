@@ -11,6 +11,7 @@ import type { ContextoRequisicao } from '../common/interfaces/contexto-requisica
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { decimalParaString } from '../common/utils/decimal.util';
+import { filtroDeLeiloesVisiveis, rascunhoOculto } from '../common/utils/visibilidade-leiloes.util';
 import { camposFaltandoNoPerfil, mensagemPerfilIncompleto } from '../common/utils/perfil-completo.util';
 import {
   calcularPaginacao,
@@ -33,6 +34,8 @@ import type { AtualizarAuctionDto } from './dto/atualizar-auction.dto';
 import type { CriarAuctionDto } from './dto/criar-auction.dto';
 import type { IndicadoresAuctionResposta } from './dto/indicadores-auction-resposta.dto';
 import type { MudarStatusDto } from './dto/mudar-status.dto';
+import type { ReativarAuctionDto } from './dto/reativar-auction.dto';
+import { DURACAO_MAXIMA_HORAS, excedeDuracaoMaxima } from './dto/periodo-valido.validator';
 import { transicaoEhValida } from './transicoes-status';
 
 // Percentual com uma casa decimal (0 quando nao ha itens)
@@ -118,11 +121,13 @@ export class AuctionsService {
       busca?: string;
       status?: AuctionStatus;
     },
+    usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<Auction & { capaDocumentoId: string | null; capaPadrao: string }>> {
     const paginacao = calcularPaginacao(params);
     const where: Prisma.AuctionWhereInput = {
       vendedorId: params.vendedorId,
       status: params.status,
+      AND: [filtroDeLeiloesVisiveis(usuario)],
       ...(params.busca
         ? {
             OR: [
@@ -166,10 +171,10 @@ export class AuctionsService {
 
   // Quantos leiloes existem em cada status (opcionalmente so de um vendedor).
   // Alimenta os paineis: a tela nao precisa mais somar listagens
-  async resumoPorStatus(vendedorId?: string): Promise<Record<AuctionStatus | 'total', number>> {
+  async resumoPorStatus(vendedorId?: string, usuario?: UsuarioAutenticado): Promise<Record<AuctionStatus | 'total', number>> {
     const grupos = await this.prisma.auction.groupBy({
       by: ['status'],
-      where: { vendedorId },
+      where: { vendedorId, AND: [filtroDeLeiloesVisiveis(usuario)] },
       _count: { _all: true },
     });
     const resumo = { DRAFT: 0, SCHEDULED: 0, OPEN: 0, CLOSED: 0, CANCELED: 0, total: 0 };
@@ -193,7 +198,17 @@ export class AuctionsService {
   async buscarPorId(id: string): Promise<Auction> {
     const leilao = await this.prisma.auction.findUnique({ where: { id } });
     if (!leilao) {
-      throw new NotFoundException('Leilao nao encontrado');
+      throw new NotFoundException('Leilão não encontrado');
+    }
+    return leilao;
+  }
+
+  // Para a rota PUBLICA de detalhe: o rascunho só abre para o dono e o ADMIN (os demais recebem 404).
+  // As demais telas do sistema seguem usando buscarPorId (que não filtra por quem pergunta)
+  async buscarVisivelPorId(id: string, usuario?: UsuarioAutenticado): Promise<Auction> {
+    const leilao = await this.buscarPorId(id);
+    if (rascunhoOculto(leilao, usuario)) {
+      throw new NotFoundException('Leilão não encontrado');
     }
     return leilao;
   }
@@ -251,7 +266,7 @@ export class AuctionsService {
     if (usuario.papel === 'ADMIN') return;
     if (leilao.vendedorId !== usuario.id) {
       throw new ForbiddenException(
-        'Voce so pode gerenciar os seus proprios leiloes',
+        'Você só pode gerenciar os seus próprios leilões',
       );
     }
   }
@@ -270,7 +285,7 @@ export class AuctionsService {
       // ainda nao foi publicado (DRAFT)
       if (leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel editar um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível editar um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 
@@ -280,6 +295,9 @@ export class AuctionsService {
       const novoFim = dto.dataFim ? new Date(dto.dataFim) : leilao.dataFim;
       if (novoFim <= novoInicio) {
         throw new ConflictException('dataFim deve ser depois de dataInicio');
+      }
+      if (excedeDuracaoMaxima(novoInicio, novoFim)) {
+        throw new ConflictException(`O leilão pode durar no máximo ${DURACAO_MAXIMA_HORAS} horas (2 dias)`);
       }
 
       const atualizado = await this.prisma.auction.update({
@@ -327,11 +345,12 @@ export class AuctionsService {
 
       if (!transicaoEhValida(leilao.status, dto.status)) {
         throw new ConflictException(
-          `Nao e possivel mudar de ${leilao.status} para ${dto.status}`,
+          `Não é possível mudar de ${leilao.status} para ${dto.status}`,
         );
       }
 
       await this.conferirCoerenciaDaPublicacao(leilao, dto.status);
+      await this.conferirCancelamentoComLances(leilao, dto.status, usuario);
 
       const atualizado = await this.aplicarMudancaStatus(
         leilao,
@@ -367,6 +386,110 @@ export class AuctionsService {
     }
   }
 
+  // 🔎 Reativar um leilão cancelado (só o ADMIN, com motivo): ele volta ao estado em que estava ANTES de ser
+  // cancelado (lido do histórico). Se estava aberto/agendado e o prazo já venceu, ganha mais 48h, como uma prorrogação.
+  // Os itens que o cancelamento deixou indisponíveis voltam a ficar disponíveis; os lances continuam guardados
+  async reativar(
+    id: string,
+    dto: ReativarAuctionDto,
+    usuario: UsuarioAutenticado,
+    contexto: ContextoRequisicao,
+  ): Promise<Auction> {
+    try {
+      const leilao = await this.buscarPorId(id);
+      if (leilao.status !== AuctionStatus.CANCELED) {
+        throw new ConflictException('Só é possível reativar um leilão cancelado');
+      }
+
+      // Estado anterior ao cancelamento; sem histórico (ex.: dado antigo), volta como rascunho
+      const cancelamento = await this.prisma.auctionStatusHistory.findFirst({
+        where: { leilaoId: id, statusNovo: AuctionStatus.CANCELED },
+        orderBy: { criadoEm: 'desc' },
+        select: { statusAnterior: true },
+      });
+      const alvo = cancelamento?.statusAnterior ?? AuctionStatus.DRAFT;
+
+      const agora = new Date();
+      const prazoVencido =
+        (alvo === AuctionStatus.OPEN || alvo === AuctionStatus.SCHEDULED) && leilao.dataFim <= agora;
+      const novoFim = prazoVencido ? new Date(agora.getTime() + DURACAO_MAXIMA_HORAS * 3_600_000) : leilao.dataFim;
+
+      const atualizado = await this.prisma.$transaction(async (tx) => {
+        // Mesma ordem de travas do lance e do cancelamento (itens -> leilão), para nunca haver deadlock
+        await tx.$queryRaw`
+          SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${id} ORDER BY id FOR UPDATE
+        `;
+        // Troca "compare-and-swap": só reativa se ainda está cancelado (duas reativações juntas: só uma vale)
+        const { count } = await tx.auction.updateMany({
+          where: { id, status: AuctionStatus.CANCELED },
+          data: { status: alvo, dataFim: novoFim },
+        });
+        if (count === 0) {
+          throw new ConflictException('O leilão mudou de estado enquanto você agia; recarregue e tente de novo');
+        }
+        // Num leilão cancelado, todo item UNSOLD foi deixado assim pelo cancelamento
+        await tx.auctionItem.updateMany({
+          where: { leilaoId: id, status: ItemStatus.UNSOLD },
+          data: { status: ItemStatus.AVAILABLE },
+        });
+        await tx.auctionStatusHistory.create({
+          data: {
+            leilaoId: id,
+            statusAnterior: AuctionStatus.CANCELED,
+            statusNovo: alvo,
+            alteradoPorId: usuario.id,
+            motivo: prazoVencido
+              ? `Reativado: ${dto.motivo} (prazo vencido: novo fim ${novoFim.toISOString()})`
+              : `Reativado: ${dto.motivo}`,
+          },
+        });
+        return tx.auction.findUniqueOrThrow({ where: { id } });
+      });
+
+      await this.registrarAuditoria('LEILAO_REATIVADO', id, usuario, contexto, AuditResult.SUCCESS, 200, dto.motivo);
+
+      // Tempo real: só depois do commit avisamos quem está olhando cada item (a tela busca o estado novo)
+      try {
+        const itens = await this.prisma.auctionItem.findMany({ where: { leilaoId: id }, select: { id: true } });
+        for (const item of itens) this.lancesGateway.emitirLeilaoReativado(item.id, atualizado.dataFim.toISOString());
+      } catch (erroAviso) {
+        // A reativação já foi gravada: falha no aviso não pode virar erro
+        this.logger.error(`Falha ao avisar reativação: ${(erroAviso as Error).message}`);
+      }
+      return atualizado;
+    } catch (erro) {
+      await this.registrarAuditoria(
+        'LEILAO_REATIVACAO_REJEITADA',
+        id,
+        usuario,
+        contexto,
+        AuditResult.REJECTED,
+        this.statusDoErro(erro),
+        this.motivoDoErro(erro),
+      );
+      throw erro;
+    }
+  }
+
+  // 🔎 Cancelar um leilao ABERTO que ja recebeu lances: so o ADMIN (com motivo, auditado). Se o vendedor
+  // pudesse, cancelaria quando o preco nao agrada, prejudicando quem ja deu lance. Os lances ficam
+  // guardados (imutaveis); o leilao so muda de estado
+  private async conferirCancelamentoComLances(
+    leilao: Auction,
+    novoStatus: AuctionStatus,
+    usuario: UsuarioAutenticado,
+  ): Promise<void> {
+    if (novoStatus !== AuctionStatus.CANCELED || leilao.status !== AuctionStatus.OPEN) return;
+    if (usuario.papel === 'ADMIN') return;
+
+    const lances = await this.prisma.bid.count({ where: { item: { leilaoId: leilao.id } } });
+    if (lances > 0) {
+      throw new ForbiddenException(
+        `Este leilão já recebeu ${lances} lance(s) e não pode ser cancelado pelo vendedor. Peça ao administrador (com o motivo).`,
+      );
+    }
+  }
+
   // 🔎 Publicar (agendar/abrir) so faz sentido com o leilao pronto: nao se agenda um leilao
   // vazio nem um que ja deveria ter terminado (ele ficaria preso, sem nunca fechar)
   private async conferirCoerenciaDaPublicacao(
@@ -376,12 +499,12 @@ export class AuctionsService {
     if (novoStatus !== AuctionStatus.SCHEDULED && novoStatus !== AuctionStatus.OPEN) return;
 
     if (leilao.dataFim <= new Date()) {
-      throw new ConflictException('A data de fim deste leilao ja passou');
+      throw new ConflictException('A data de fim deste leilão já passou');
     }
     if (novoStatus === AuctionStatus.SCHEDULED) {
       const itens = await this.prisma.auctionItem.count({ where: { leilaoId: leilao.id } });
       if (itens === 0) {
-        throw new ConflictException('Adicione ao menos um item antes de agendar o leilao');
+        throw new ConflictException('Adicione ao menos um item antes de agendar o leilão');
       }
     }
   }
@@ -400,10 +523,13 @@ export class AuctionsService {
     const atualizado = await this.prisma.$transaction(async (tx) => {
       // Ao fechar, trava os itens ANTES de mudar o status: um lance em
       // andamento termina primeiro (ou espera e ja ve o leilao fechado),
-      // entao o vencedor calculado nunca fica desatualizado
-      if (novoStatus === AuctionStatus.CLOSED) {
+      // entao o vencedor calculado nunca fica desatualizado.
+      // 🔎 Ao CANCELAR tambem: o lance trava o item e depois grava no leilao (anti-sniping); se o cancelamento
+      // travasse o leilao primeiro e os itens depois, as duas transacoes se esperariam (deadlock, erro 500).
+      // Todo mundo trava na mesma ordem (itens -> leilao), e "ORDER BY id" mantem a ordem entre os proprios itens
+      if (novoStatus === AuctionStatus.CLOSED || novoStatus === AuctionStatus.CANCELED) {
         await tx.$queryRaw`
-          SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${leilao.id} FOR UPDATE
+          SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${leilao.id} ORDER BY id FOR UPDATE
         `;
       }
 
@@ -415,7 +541,7 @@ export class AuctionsService {
         data: { status: novoStatus },
       });
       if (count === 0) {
-        throw new ConflictException('O leilao mudou de estado enquanto voce agia; recarregue e tente de novo');
+        throw new ConflictException('O leilão mudou de estado enquanto você agia; recarregue e tente de novo');
       }
       const resultado = await tx.auction.findUniqueOrThrow({ where: { id: leilao.id } });
 
@@ -428,6 +554,15 @@ export class AuctionsService {
           motivo,
         },
       });
+
+      // 🔎 Leilão cancelado: os itens ainda "disponíveis" ficam indisponíveis (UNSOLD); não faz sentido
+      // mostrar "Disponível" para uma peça cujo leilão não vai acontecer
+      if (novoStatus === AuctionStatus.CANCELED) {
+        await tx.auctionItem.updateMany({
+          where: { leilaoId: leilao.id, status: ItemStatus.AVAILABLE },
+          data: { status: ItemStatus.UNSOLD },
+        });
+      }
 
       // Ao fechar o leilao, cada item precisa de um destino: vendido (com
       // vencedor) ou nao vendido. O banco exige as duas coisas juntas
@@ -449,8 +584,8 @@ export class AuctionsService {
         entidadeId: troca.itemId,
         resultado: AuditResult.SUCCESS,
         motivo: troca.novoVencedorId
-          ? `Lider (lance ${troca.valorDoLider}) estava desativado: vence o proximo lance ativo (${troca.valorFinal})`
-          : `Todos os licitantes estavam desativados (maior lance ${troca.valorDoLider}): peca nao vendida`,
+          ? `Líder (lance ${troca.valorDoLider}) estava desativado: vence o próximo lance ativo (${troca.valorFinal})`
+          : `Todos os licitantes estavam desativados (maior lance ${troca.valorDoLider}): peça não vendida`,
         statusHttp: 200,
       });
     }
@@ -561,7 +696,7 @@ export class AuctionsService {
       // Nunca apagar um leilao que ja saiu do rascunho (pode ter itens/lances)
       if (leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel remover um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível remover um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 
@@ -595,7 +730,7 @@ export class AuctionsService {
   private motivoDoErro(erro: unknown): string {
     return erro instanceof HttpException
       ? erro.message
-      : 'Erro interno ao processar o leilao';
+      : 'Erro interno ao processar o leilão';
   }
 
   private registrarAuditoria(

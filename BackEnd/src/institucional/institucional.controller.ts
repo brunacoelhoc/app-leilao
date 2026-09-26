@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiSecurity, ApiExcludeController, ApiTags } from '@nestjs/swagger';
 
 // Dados da casa de leiloes (endereco, contato, horario). Ficam aqui, no servidor,
 // para a tela nao ter "regra" nem numeros fixos: o rodape so exibe o que chega
@@ -26,16 +26,17 @@ function estaAtendendo(agora: Date): boolean {
   return util && hora >= CASA.atendimento.abre && hora < CASA.atendimento.fecha;
 }
 
+@ApiExcludeController()
 @ApiTags('Institucional')
 @ApiSecurity('api-key')
 @Controller('institucional')
 export class InstitucionalController {
   @Get()
   @ApiOperation({
-    summary: 'Dados da casa de leiloes para o rodape (livre, sem login)',
+    summary: 'Dados da casa de leilões para o rodapé (livre, sem login)',
     description: '"atendendoAgora" e calculado pelo servidor no fuso de Brasilia.',
   })
-  @ApiOkResponse({ description: 'Nome, endereco, contato e horario de atendimento' })
+  @ApiOkResponse({ description: 'Nome, endereço, contato e horário de atendimento' })
   obter() {
     return {
       nome: CASA.nome,

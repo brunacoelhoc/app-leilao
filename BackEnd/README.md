@@ -41,7 +41,7 @@ avaliação **AV-08 — Plataforma de Leilões**.
 
 ## Requisitos
 
-- Node.js 20+ (testado com Node 24)
+- Node.js **24 (LTS)** (o mesmo do Docker e do CI; há um `.nvmrc` na raiz do repositório)
 - PostgreSQL 18 (ou compatível) rodando localmente ou acessível pela rede
 - npm
 
@@ -86,8 +86,8 @@ alguma estiver ausente ou em formato inválido — ver `src/config/variaveis-amb
 | --------------------- | ------------------------------------------------------------------------ | ------------------------------------------------- |
 | `DATABASE_URL`        | String de conexão do PostgreSQL                                          | `postgresql://postgres:senha@localhost:5432/leiloes` |
 | `JWT_SECRET`          | Segredo para assinar o JWT (mínimo 32 caracteres, não pode ser o exemplo) | um valor longo e aleatório                        |
-| `JWT_EXPIRES_IN`      | Validade do **access token** (curto; a renovação é pelo refresh token)  | `15m`                                             |
-| `PORT`                | Porta HTTP da API                                                       | `3000`                                            |
+| `JWT_EXPIRES_IN`      | Validade do **access token** (curto; a renovação é pelo refresh token)  | `35m`                                             |
+| `PORT`                | Porta HTTP da API                                                       | `3092`                                            |
 | `CEP_API_URL`         | URL base do ViaCEP (integração externa, seção 7 do enunciado)           | `https://viacep.com.br/ws`                        |
 | `CEP_API_TIMEOUT_MS`  | Timeout da chamada ao ViaCEP                                            | `5000`                                            |
 | `DATABASE_URL_TESTE`  | Banco separado só para os testes e2e (apagado e recriado a cada execução; o nome precisa conter `test`) | `postgresql://postgres:senha@localhost:5432/leiloes_teste` |
@@ -165,7 +165,7 @@ npm run start:prod    # roda o build (node dist/main)
 ```
 
 A API sobe em `http://localhost:<PORT>`, com todas as rotas sob o prefixo
-`/api` (ex.: `http://localhost:3000/api/saude`).
+`/api` (ex.: `http://localhost:3092/api/saude`).
 
 ## Rodando com Docker
 
@@ -185,7 +185,7 @@ serviços:
 | Serviço    | Container                       | Porta no host | Observação                                                  |
 | ---------- | -------------------------------- | -------------- | ------------------------------------------------------------ |
 | `postgres` | `avaliacao-bimestral-postgres-1` | `5433` (não `5432`, para não brigar com um Postgres local já instalado) | Dados persistidos em um volume nomeado |
-| `api`      | `avaliacao-bimestral-api-1`      | `3000`          | Roda `prisma migrate deploy` automaticamente antes de subir |
+| `api`      | `avaliacao-bimestral-api-1`      | `3092`          | Roda `prisma migrate deploy` automaticamente antes de subir |
 
 A API dentro do container reaproveita o `BackEnd/.env` que você já tem
 configurado (mesmo `JWT_SECRET`, `API_KEY` etc.) — só o `DATABASE_URL` é
@@ -216,7 +216,7 @@ já usa o caminho certo.
 ## Testes
 
 ```bash
-npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 19 suítes / 249 testes)
+npm run test         # unitários (Jest) -- 7 suítes / 36 testes (e2e: 21 suítes / 262 testes)
 npm run test:e2e      # end-to-end, contra um banco de TESTE separado (--runInBand: ver nota)
 npm run lint          # oxlint --type-aware
 ```
@@ -249,7 +249,7 @@ npm run lint          # oxlint --type-aware
   valor errado, a resposta é sempre `401`.
 - **JWT** (`Authorization: Bearer <token>`): exigido nas rotas que precisam
   de um usuário logado. Obtido em `POST /auth/login`. É um **access token curto**
-  (`JWT_EXPIRES_IN`, 15 min) e carrega `{ sub: id, papel, sid }` (`sid` = id da sessão).
+  (`JWT_EXPIRES_IN`, 35 min) e carrega `{ sub: id, papel, sid }` (`sid` = id da sessão).
   A cada requisição autenticada a API **reconsulta o usuário e a sessão no banco** —
   se a conta foi desativada ou apagada, ou a sessão foi encerrada, o acesso é
   cortado imediatamente, sem esperar o token expirar.
@@ -335,12 +335,13 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | --- | --- | --- | --- | --- |
 | GET | `/users/me` | Autenticado | — | `200` o próprio perfil · `401` |
 | PATCH | `/users/me` | Autenticado | `{ nome?, email?, telefone?, endereco?, cpf?, avatarUrl?, senhaAtual? }` | `200` · `400` (formato inválido; **trocar o e-mail exige `senhaAtual` correta**) · `401` · `409` (e-mail já cadastrado) |
+| POST | `/users/me/encerrar-conta` | Autenticado | `{ senhaAtual }` | `204` **LGPD**: anonimiza os dados pessoais (nome, e-mail, telefone, CPF, endereço, avatar), inativa a conta, revoga as sessões e inutiliza a senha; o histórico imutável (lances, leilões, pedidos, auditoria) permanece como "Usuário removido" · `400` senha incorreta · `401` · `403` ADMIN não encerra por aqui · `409` pendências (peça em disputa, leilão aberto/agendado ou pedido não finalizado) · `429` |
 | PATCH | `/users/me/senha` | Autenticado | `{ senhaAtual, novaSenha }` | `204` · `400` (senha atual errada ou nova fraca) · `401` |
 | PATCH | `/users/me/modo` | Autenticado | `{ modo: "BIDDER" ou "SELLER" }` | `200` troca o modo da conta na hora, **sem completar perfil** (vendedor cria leilões e não dá lance; comprador dá lance e não cria leilão) · `400` modo inválido · `401` · `403` ADMIN não troca de modo · `409` já está nesse modo |
 | POST | `/users` | ADMIN | `{ nome, email, senha, papel }` | `201` cria usuário já com o papel escolhido · `400` · `401` · `403` · `409` |
 | GET | `/users/:id` | ADMIN | — | `200` dados **completos** (a consulta é auditada) · `400` · `401` · `403` · `404` |
 | GET | `/users` | ADMIN | — | `200` lista de usuários (sem senha; e-mail, telefone, CPF e endereço **mascarados** pelo backend) · `401` · `403` |
-| PATCH | `/users/:id/desativar` | ADMIN | query opcional `?forcar=true` | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação, **ou usuário disputando peça em leilão em andamento**; com `forcar=true` desativa mesmo assim, para emergências como fraude, e a ação é auditada como `USUARIO_DESATIVADO_FORCADO`) |
+| PATCH | `/users/:id/desativar` | ADMIN | query opcional `?forcar=true` | `200` · `400` id inválido · `401` · `403` · `404` · `409` (autodesativação, **ou usuário disputando peça / dono de leilão aberto ou agendado**; com `forcar=true` desativa mesmo assim, para emergências como fraude, e a ação é auditada como `USUARIO_DESATIVADO_FORCADO`) |
 | PATCH | `/users/:id/reativar` | ADMIN | — | `200` · `400` · `401` · `403` · `404` |
 
 ### Categories (`/categories`)
@@ -362,7 +363,7 @@ brevidade) e exigem o cabeçalho `X-API-KEY`. "Auth" indica se precisa de
 | GET | `/auctions/:id` | Livre | — | `200` · `400` · `404` |
 | GET | `/auctions/:id/indicadores` | Livre | — | `200` `{ totalItens, totalLances, maiorLance, itensVendidos, itensNaoVendidos, itensDisponiveis, arrecadadoTotal }` · `400` · `404` |
 | PATCH | `/auctions/:id` | SELLER dono / ADMIN | campos parciais | `200` · `400` · `401` · `403` (não é o dono) · `404` · `409` (fora de `DRAFT`) |
-| PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` · `404` · `409` (transição inválida; agendar sem itens ou com `dataFim` já passada; ou o leilão mudou de estado ao mesmo tempo) |
+| PATCH | `/auctions/:id/status` | SELLER dono / ADMIN | `{ status, motivo? }` (`motivo` obrigatório se `status=CANCELED`) | `200` (fecha com definição de vencedor, se `CLOSED`) · `400` · `401` · `403` (não é o dono, **ou o vendedor tentou cancelar um leilão ABERTO que já recebeu lances: só o ADMIN cancela, com motivo**) · `404` · `409` (transição inválida; agendar sem itens ou com `dataFim` já passada; ou o leilão mudou de estado ao mesmo tempo) |
 | DELETE | `/auctions/:id` | SELLER dono / ADMIN | — | `204` · `401` · `403` · `404` · `409` (fora de `DRAFT`) |
 
 Máquina de estados: `DRAFT → SCHEDULED → OPEN → CLOSED`; `CANCELED` alcançável
@@ -370,7 +371,8 @@ de qualquer estado não-final. Ao fechar (`CLOSED`), cada item do leilão vira
 `SOLD` (com o vencedor = **maior lance de uma conta ativa**) ou `UNSOLD` (sem nenhum lance ativo).
 Se quem liderava foi desativado (só possível com `forcar=true`), o lance dele é **pulado**: a peça vai
 para o próximo maior lance de uma conta ativa, **pelo valor desse lance**, e a troca fica na auditoria
-(`ITEM_VENCEDOR_SUBSTITUIDO`). O encerramento automático só fecha se o prazo continua o mesmo que ele leu
+(`ITEM_VENCEDOR_SUBSTITUIDO`). O detalhe da peça (`GET /auction-items/:id`) traz `avisoResultado`, um texto
+explicando que o maior lance foi desconsiderado (conta desativada) e qual é o valor final. O encerramento automático só fecha se o prazo continua o mesmo que ele leu
 (um lance de anti-sniping no meio tempo impede o fechamento).
 
 Cada leilão volta com `transicoesPermitidas` (para onde ele pode ir agora) e
@@ -490,11 +492,11 @@ Substitua `SUA_API_KEY` pelo valor de `API_KEY` do seu `.env`.
 **Registrar e logar:**
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/registrar \
+curl -X POST http://localhost:3092/api/auth/registrar \
   -H "X-API-KEY: SUA_API_KEY" -H "Content-Type: application/json" \
   -d '{"nome":"Ana Compradora","email":"ana@teste.com","senha":"Abc12345!"}'
 
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:3092/api/auth/login \
   -H "X-API-KEY: SUA_API_KEY" -H "Content-Type: application/json" \
   -d '{"email":"ana@teste.com","senha":"Abc12345!"}'
 # -> { "accessToken": "...", "usuario": { ... } }
@@ -505,11 +507,11 @@ curl -X POST http://localhost:3000/api/auth/login \
 ```bash
 TOKEN="o accessToken do login de um usuário SELLER"
 
-curl -X POST http://localhost:3000/api/auctions \
+curl -X POST http://localhost:3092/api/auctions \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"titulo":"Leilão de Arte","dataInicio":"2027-01-01T00:00:00.000Z","dataFim":"2027-01-10T00:00:00.000Z"}'
 
-curl -X POST http://localhost:3000/api/auction-items \
+curl -X POST http://localhost:3092/api/auction-items \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"titulo":"Quadro raro","precoInicial":100,"incrementoMinimo":10,"cep":"01310100","leilaoId":"<id-do-leilao>","categoriaId":"<id-da-categoria>"}'
 ```
@@ -517,14 +519,14 @@ curl -X POST http://localhost:3000/api/auction-items \
 **Abrir o leilão e dar um lance (BIDDER):**
 
 ```bash
-curl -X PATCH http://localhost:3000/api/auctions/<id>/status \
+curl -X PATCH http://localhost:3092/api/auctions/<id>/status \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" -H "Content-Type: application/json" \
   -d '{"status":"SCHEDULED"}'
-curl -X PATCH http://localhost:3000/api/auctions/<id>/status \
+curl -X PATCH http://localhost:3092/api/auctions/<id>/status \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" -H "Content-Type: application/json" \
   -d '{"status":"OPEN"}'
 
-curl -X POST http://localhost:3000/api/auction-items/<itemId>/bids \
+curl -X POST http://localhost:3092/api/auction-items/<itemId>/bids \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_BIDDER" -H "Content-Type: application/json" \
   -d '{"valor":100}'
 ```
@@ -532,7 +534,7 @@ curl -X POST http://localhost:3000/api/auction-items/<itemId>/bids \
 **Enviar uma foto do item:**
 
 ```bash
-curl -X POST http://localhost:3000/api/auction-items/<itemId>/documents \
+curl -X POST http://localhost:3092/api/auction-items/<itemId>/documents \
   -H "X-API-KEY: SUA_API_KEY" -H "Authorization: Bearer $TOKEN_SELLER" \
   -F "tipo=PHOTO" -F "arquivo=@/caminho/para/foto.jpg"
 ```

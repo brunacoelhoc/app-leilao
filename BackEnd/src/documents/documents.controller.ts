@@ -11,6 +11,7 @@ import {
   UseGuards,
   UseInterceptors,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -25,13 +26,14 @@ import {
   ApiOperation,
   ApiParam,
   ApiSecurity,
-  ApiTags,
+  ApiExcludeController, ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { SemChaveApi } from '../common/decorators/sem-chave-api.decorator';
 import { DocumentType } from '../generated/prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtOpcionalGuard } from '../auth/jwt-opcional.guard';
 import { ApiPaginacaoQuery, ApiRespostaPaginada } from '../common/dto/api-resposta-paginada.decorator';
 import { ContextoDaRequisicao } from '../common/decorators/contexto-requisicao.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -58,6 +60,7 @@ const PARAM_ITEM_ID = {
 
 // So o SELLER dono do leilao do item (ou ADMIN) envia arquivo. Listar e
 // baixar sao livres (as fotos ajudam a atrair lances, nao faz sentido esconder)
+@ApiExcludeController()
 @ApiTags('Documents')
 @ApiSecurity('api-key')
 @Controller()
@@ -86,18 +89,18 @@ export class DocumentsController {
     },
   })
   @ApiOperation({
-    summary: 'Envia uma foto/documento do item (dono do leilao ou ADMIN)',
+    summary: 'Envia uma foto/documento do item (dono do leilão ou ADMIN)',
     description:
       'Tipos aceitos: image/jpeg, image/png, application/pdf (mimetype e assinatura real do arquivo, ' +
-      'real, nao a extensao do nome). Tamanho maximo configuravel via ' +
+      'real, não a extensão do nome). Tamanho máximo configurável via ' +
       'UPLOAD_MAX_SIZE_MB do .env. Nome de arquivo salvo em disco e sempre ' +
       'gerado (UUID), nunca o nome original.',
   })
   @ApiParam(PARAM_ITEM_ID)
   @ApiCreatedResponse({ description: 'Arquivo salvo (com hash SHA-256, tamanho e mimetype gravados)', type: DocumentoResposta, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Sem arquivo, tipo nao aceito, arquivo maior que o limite, ou "tipo" invalido', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e o dono do leilao nem ADMIN', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Sem arquivo, tipo não aceito, arquivo maior que o limite, ou "tipo" inválido', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token inválido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é o dono do leilão nem ADMIN', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
   enviar(
     @Param('itemId', ParseUuidPipePt) itemId: string,
@@ -114,12 +117,12 @@ export class DocumentsController {
   @ApiParam(PARAM_ITEM_ID)
   @ApiPaginacaoQuery()
   @ApiRespostaPaginada(DocumentoResposta)
-  @ApiBadRequestResponse({ description: 'itemId nao e um uuid valido', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'itemId não é um uuid válido', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
   listarPorItem(
     @Param('itemId', ParseUuidPipePt) itemId: string,
     @Query() query: PaginacaoQueryDto,
-  ): Promise<RespostaPaginada<Document>> {
+  ): Promise<RespostaPaginada<Omit<Document, 'enviadoPorId' | 'nomeArquivo'>>> {
     return this.documentsService.listarPorItem(itemId, query);
   }
 
@@ -128,18 +131,18 @@ export class DocumentsController {
   @Get('documents/:id/foto')
   @SemChaveApi()
   @ApiOperation({
-    summary: 'Foto de uma peca, para exibir direto no navegador (livre, sem chave nem login)',
-    description: 'So documentos do tipo PHOTO. Documentos (certificados, laudos) NAO saem por aqui.',
+    summary: 'Foto de uma peça, para exibir direto no navegador (livre, sem chave nem login)',
+    description: 'Só documentos do tipo PHOTO. Documentos (certificados, laudos) NAO saem por aqui.',
   })
   @ApiParam({ name: 'id', description: 'Id (uuid) do documento do tipo PHOTO' })
-  @ApiNotFoundResponse({ description: 'Nao existe, nao e foto, ou o arquivo sumiu do disco', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Não existe, não é foto, ou o arquivo sumiu do disco', type: ErroResposta })
   async foto(
     @Param('id', ParseUuidPipePt) id: string,
     @Res() resposta: Response,
   ): Promise<void> {
     const { documento, caminhoArquivo } = await this.documentsService.buscarParaDownload(id);
     if (documento.tipo !== DocumentType.PHOTO) {
-      throw new NotFoundException('Foto nao encontrada');
+      throw new NotFoundException('Foto não encontrada');
     }
     resposta.setHeader('Content-Type', documento.mimeType);
     // O front (outra origem) precisa poder exibir a imagem; o Helmet, por padrao, bloqueia
@@ -151,7 +154,13 @@ export class DocumentsController {
   }
 
   @Get('documents/:id/download')
-  @ApiOperation({ summary: 'Baixa o arquivo (livre, sem login)' })
+  @UseGuards(JwtOpcionalGuard)
+  @ApiBearerAuth('jwt')
+  @ApiOperation({
+    summary: 'Baixa o arquivo (fotos: livre; certificados e laudos: exigem login)',
+    description: 'A X-API-KEY fica no navegador e por isso não protege nada sozinha: documentos do tipo DOCUMENT só saem para quem está logado.',
+  })
+  @ApiUnauthorizedResponse({ description: 'Documento (não foto) pedido sem login', type: ErroResposta })
   @ApiParam({ name: 'id', description: 'Id (uuid) do documento' })
   @ApiOkResponse({
     description: 'Arquivo (stream), com o nome original no Content-Disposition',
@@ -162,14 +171,20 @@ export class DocumentsController {
       'application/pdf': { schema: { type: 'string', format: 'binary' } },
     },
   })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Documento inexistente, ou o registro existe mas o arquivo sumiu do disco', type: ErroResposta })
   async baixar(
     @Param('id', ParseUuidPipePt) id: string,
     @Res() resposta: Response,
+    @CurrentUser() usuario?: UsuarioAutenticado,
   ): Promise<void> {
     const { documento, caminhoArquivo } =
       await this.documentsService.buscarParaDownload(id);
+
+    // Certificados e laudos: so com login (a chave de API sozinha nao basta, ela fica no navegador)
+    if (documento.tipo === DocumentType.DOCUMENT && !usuario) {
+      throw new UnauthorizedException('Faça login para baixar este documento');
+    }
 
     resposta.download(caminhoArquivo, documento.nomeOriginal, (erro) => {
       // Chegou aqui depois que a resposta ja comecou a ser enviada (ou

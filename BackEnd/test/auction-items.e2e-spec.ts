@@ -25,7 +25,7 @@ describe('AuctionItems (e2e)', () => {
   const EMAIL_BIDDER = 'items.bidder@teste.com';
   const SENHA_TESTE = 'Abc12345!';
 
-  async function criarUsuario(nome: string, email: string, papel?: string) {
+  async function criarUsuario(nome: string, email: string, papel?: 'BIDDER' | 'SELLER' | 'ADMIN') {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
@@ -72,8 +72,8 @@ describe('AuctionItems (e2e)', () => {
       .set('Authorization', `Bearer ${tokenSeller}`)
       .send({
         titulo: 'Items E2E Leilao Draft',
-        dataInicio: '2027-01-01T00:00:00.000Z',
-        dataFim: '2027-01-10T00:00:00.000Z',
+        dataInicio: '2099-01-01T00:00:00.000Z',
+        dataFim: '2099-01-02T00:00:00.000Z',
       });
     leilaoDraftId = (auctionResponse.body as { id: string }).id;
   }, 30_000); // varios registros/logins reais (bcrypt) -- 5s padrao do Jest e curto demais
@@ -155,7 +155,7 @@ describe('AuctionItems (e2e)', () => {
         cep: '00000000',
       });
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('CEP nao encontrado');
+      expect(resposta.body.mensagem).toContain('CEP não encontrado');
     });
   });
 
@@ -183,19 +183,32 @@ describe('AuctionItems (e2e)', () => {
     });
 
     it('consulta por relacionamento: itens de um leilao', async () => {
+      // O leilão está em rascunho: só o dono vê os itens dele (visitante recebe lista vazia; ver o teste abaixo)
       const resposta = await rota(
         'get',
         `?leilaoId=${leilaoDraftId}`,
+        tokenSeller,
       ).expect(200);
       const itens = resposta.body.dados as { leilaoId: string }[];
       expect(itens.length).toBeGreaterThan(0);
       expect(itens.every((i) => i.leilaoId === leilaoDraftId)).toBe(true);
     });
 
+    it('itens de leilão em RASCUNHO: visitante não vê na lista nem pelo link; o dono e o ADMIN veem', async () => {
+      const lista = await rota('get', `?leilaoId=${leilaoDraftId}`).expect(200);
+      expect(lista.body.dados).toHaveLength(0);
+      const dono = await rota('get', `?leilaoId=${leilaoDraftId}`, tokenSeller).expect(200);
+      const itemId = (dono.body.dados as { id: string }[])[0].id;
+
+      await rota('get', `/${itemId}`).expect(404); // visitante, pelo link direto
+      await rota('get', `/${itemId}`, tokenSeller).expect(200); // dono
+    });
+
     it('consulta por relacionamento: itens de uma categoria', async () => {
       const resposta = await rota(
         'get',
         `?categoriaId=${categoriaId}`,
+        tokenSeller, // os itens de teste estão em leilão em rascunho: só o dono os vê
       ).expect(200);
       const itens = resposta.body.dados as { categoriaId: string }[];
       expect(itens.length).toBeGreaterThan(0);
@@ -234,7 +247,7 @@ describe('AuctionItems (e2e)', () => {
 
     it('id malformado no GET -> 400 em portugues', async () => {
       const resposta = await rota('get', '/nao-e-um-uuid').expect(400);
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
   });
 
@@ -278,8 +291,8 @@ describe('AuctionItems (e2e)', () => {
         .set('Authorization', `Bearer ${tokenSeller}`)
         .send({
           titulo: 'Items E2E Leilao Vai Abrir',
-          dataInicio: '2027-02-01T00:00:00.000Z',
-          dataFim: '2027-02-10T00:00:00.000Z',
+          dataInicio: '2099-02-01T00:00:00.000Z',
+          dataFim: '2099-02-02T00:00:00.000Z',
         });
       const outroLeilaoId = (outroLeilao.body as { id: string }).id;
 

@@ -36,7 +36,7 @@ export class ApiKeyGuard implements CanActivate {
 
     // Sem chave enviada ou sem chave configurada: bloqueia
     if (typeof chaveRecebida !== 'string' || !chaveCorreta) {
-      throw new UnauthorizedException('API key ausente ou inválida');
+      throw new UnauthorizedException('API key ausente. Envie o cabeçalho X-API-KEY (no Swagger, use Authorize > api-key).');
     }
 
     // Compara de forma segura (evita descobrir a chave pelo tempo de resposta)
@@ -46,7 +46,7 @@ export class ApiKeyGuard implements CanActivate {
       recebida.length !== correta.length ||
       !timingSafeEqual(recebida, correta)
     ) {
-      throw new UnauthorizedException('API key ausente ou inválida');
+      throw new UnauthorizedException('API key inválida. Confira o valor do cabeçalho X-API-KEY.');
     }
 
     // Chave certa: deixa a requisicao seguir para a rota

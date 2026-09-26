@@ -79,7 +79,7 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
       await leilaoComLances([{ valor: 60, quem: licitante.id }]);
 
       const res = await api('patch', `/users/${licitante.id}/desativar`, tokenAdmin).expect(409);
-      expect(res.body.mensagem).toMatch(/disputando 1 peca/);
+      expect(res.body.mensagem).toMatch(/disputando 1 peça/);
       expect((await prisma.user.findUniqueOrThrow({ where: { id: licitante.id } })).ativo).toBe(true);
     });
 
@@ -91,6 +91,32 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
       const { leilaoId } = await leilaoComLances([{ valor: 60, quem: aposFechar.id }]);
       await fechar(leilaoId);
       await api('patch', `/users/${aposFechar.id}/desativar`, tokenAdmin).expect(200);
+    });
+
+    it('vendedor com leilao ABERTO ou AGENDADO nao pode ser desativado -> 409; sem leiloes em andamento, pode', async () => {
+      const dono = await criarUsuario('donoleilao', 'SELLER');
+      const leilao = await prisma.auction.create({
+        data: { titulo: 'Leilao do dono', status: 'OPEN', dataInicio: new Date(Date.now() - 3_600_000), dataFim: new Date(Date.now() + 3_600_000), vendedorId: dono.id },
+      });
+      const res = await api('patch', `/users/${dono.id}/desativar`, tokenAdmin).expect(409);
+      expect(res.body.mensagem).toMatch(/dono de 1 leilão/);
+
+      // agendado tambem conta
+      await prisma.auction.update({ where: { id: leilao.id }, data: { status: 'SCHEDULED' } });
+      await api('patch', `/users/${dono.id}/desativar`, tokenAdmin).expect(409);
+
+      // encerrado/cancelado: libera
+      await prisma.auction.update({ where: { id: leilao.id }, data: { status: 'CANCELED' } });
+      await api('patch', `/users/${dono.id}/desativar`, tokenAdmin).expect(200);
+    });
+
+    it('forcar=true tambem libera o vendedor com leilao em andamento (o leilao segue e fecha pelo horario)', async () => {
+      const dono = await criarUsuario('donoforcado', 'SELLER');
+      const leilao = await prisma.auction.create({
+        data: { titulo: 'Leilao forcado', status: 'OPEN', dataInicio: new Date(Date.now() - 3_600_000), dataFim: new Date(Date.now() + 3_600_000), vendedorId: dono.id },
+      });
+      await api('patch', `/users/${dono.id}/desativar?forcar=true`, tokenAdmin).expect(200);
+      expect((await prisma.auction.findUniqueOrThrow({ where: { id: leilao.id } })).status).toBe('OPEN');
     });
 
     it('forcar=true (emergencia, ex.: fraude) desativa mesmo em disputa e fica na auditoria', async () => {
@@ -122,6 +148,11 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
       expect(item.lanceAtual?.toString()).toBe('100');
       const registro = await prisma.auditLog.findFirst({ where: { acao: 'ITEM_VENCEDOR_SUBSTITUIDO', entidadeId: itemId } });
       expect(registro?.motivo).toMatch(/desativado/);
+
+      // transparencia: o detalhe da peca explica por que o valor final e menor que o lance mais alto do historico
+      const detalhe = await request(app.getHttpServer()).get(`/api/auction-items/${itemId}`).set('X-API-KEY', chave).expect(200);
+      expect(detalhe.body.avisoResultado).toMatch(/desconsiderado.*conta.*desativada/);
+      expect(detalhe.body.avisoResultado).toContain('120,00');
     });
 
     it('pula QUANTOS desativados forem necessarios (o terceiro maior vence)', async () => {
@@ -171,6 +202,8 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
       expect(item.vencedorId).toBe(b.id);
       expect(item.lanceAtual?.toString()).toBe('120');
       expect(await prisma.auditLog.count({ where: { acao: 'ITEM_VENCEDOR_SUBSTITUIDO', entidadeId: itemId } })).toBe(0);
+      const detalhe = await request(app.getHttpServer()).get(`/api/auction-items/${itemId}`).set('X-API-KEY', chave).expect(200);
+      expect(detalhe.body.avisoResultado).toBeNull(); // sem lance desconsiderado, sem aviso
     });
   });
 });

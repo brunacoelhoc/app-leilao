@@ -7,23 +7,23 @@ import { AuctionStatus } from '../../generated/prisma/client';
 // Filtros de GET /auctions: paginacao (herdada) + consulta por
 // relacionamento (leiloes de um vendedor) + busca por texto e status
 export class ListarAuctionsQueryDto extends PaginacaoQueryDto {
-  @ApiPropertyOptional({ description: 'Filtra pelos leiloes de um vendedor' })
+  @ApiPropertyOptional({ description: 'Filtra pelos leilões de um vendedor' })
   @IsOptional()
-  @IsUUID('4', { message: 'vendedorId deve ser um uuid valido' })
+  @IsUUID('4', { message: 'vendedorId deve ser um uuid válido' })
   vendedorId?: string;
 
   @ApiPropertyOptional({
-    description: 'Busca por trecho do titulo ou da descricao (sem diferenciar maiusculas)',
+    description: 'Busca por trecho do título ou da descrição (sem diferenciar maiúsculas)',
   })
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString()
-  @MaxLength(100, { message: 'busca deve ter no maximo 100 caracteres' })
+  @MaxLength(100, { message: 'busca deve ter no máximo 100 caracteres' })
   busca?: string;
 
-  @ApiPropertyOptional({ enum: AuctionStatus, description: 'Filtra pelo status do leilao' })
+  @ApiPropertyOptional({ enum: AuctionStatus, description: 'Filtra pelo status do leilão' })
   @IsOptional()
   @IsEnum(AuctionStatus, {
     message: `status deve ser um de: ${Object.values(AuctionStatus).join(', ')}`,

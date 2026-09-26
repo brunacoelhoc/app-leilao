@@ -133,7 +133,7 @@
       <div class="linha">
       <div class="campo">
         <label for="dataInicio">Início</label>
-        <input id="dataInicio" name="dataInicio" type="datetime-local" [(ngModel)]="dataInicio" (blur)="tocar('dataInicio')" [class.invalido]="erro('dataInicio')" [attr.aria-invalid]="erro('dataInicio') ? 'true' : null" [attr.aria-describedby]="erro('dataInicio') ? 'erro-dataInicio' : null" />
+        <input id="dataInicio" name="dataInicio" type="datetime-local" [min]="dataMinima" [(ngModel)]="dataInicio" (blur)="tocar('dataInicio')" [class.invalido]="erro('dataInicio')" [attr.aria-invalid]="erro('dataInicio') ? 'true' : null" [attr.aria-describedby]="erro('dataInicio') ? 'erro-dataInicio' : null" />
         @if (erro('dataInicio'); as msg) {
           <small class="msg-campo" role="alert" [id]="'erro-dataInicio'">{{ msg }}</small>
         }

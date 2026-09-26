@@ -27,7 +27,7 @@
             [attr.aria-label]="item.destaque.titulo + ', ' + item.destaque.etiqueta"
             [attr.aria-current]="item.deslocamento === 0 ? 'true' : null"
           >
-            <button type="button" class="abrir" (click)="aberto.set(item.destaque)" [attr.aria-label]="'Ver detalhes: ' + item.destaque.titulo">
+            <button type="button" class="abrir" (click)="aoClicarCard(item)" [attr.aria-label]="(item.deslocamento === 0 ? 'Ver detalhes: ' : 'Trazer para o centro: ') + item.destaque.titulo">
               <span class="imagem">
                 @if (capaDe(item.destaque); as capa) {
                   <img [src]="capa" alt="" loading="lazy" />

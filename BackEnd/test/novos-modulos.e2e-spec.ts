@@ -153,10 +153,12 @@ describe('Novos modulos (e2e)', () => {
     it('GET /auctions/resumo conta por status (livre) e filtra por vendedor', async () => {
       await criarLeilao('OPEN');
       await criarLeilao('DRAFT');
-      const res = await api('get', `/auctions/resumo?vendedorId=${sellerId}`).expect(200);
+      const res = await api('get', `/auctions/resumo?vendedorId=${sellerId}`, tokenSeller).expect(200);
       expect(res.body).toMatchObject({ OPEN: 1, DRAFT: 1, CLOSED: 0, total: 2 });
+      const publico = await api('get', `/auctions/resumo?vendedorId=${sellerId}`).expect(200); // visitante: sem o rascunho
+      expect(publico.body).toMatchObject({ OPEN: 1, DRAFT: 0, CLOSED: 0, total: 1 });
       const geral = await api('get', '/auctions/resumo').expect(200);
-      expect(geral.body.total).toBeGreaterThanOrEqual(2);
+      expect(geral.body.total).toBeGreaterThanOrEqual(1);
     });
 
     it('GET /admin/resumo: 200 para ADMIN, 403 para outros, 401 sem login', async () => {
@@ -215,8 +217,8 @@ describe('Novos modulos (e2e)', () => {
     });
 
     it('logado escreve com o leilao aberto (texto sem espacos nas pontas)', async () => {
-      const res = await api('post', `/auctions/${leilaoAberto}/chat`, tokenBidder).send({ texto: '  Peca linda!  ' }).expect(201);
-      expect(res.body).toMatchObject({ texto: 'Peca linda!', autorPapel: 'BIDDER' });
+      const res = await api('post', `/auctions/${leilaoAberto}/chat`, tokenBidder).send({ texto: '  Peça linda!  ' }).expect(201);
+      expect(res.body).toMatchObject({ texto: 'Peça linda!', autorPapel: 'BIDDER' });
     });
 
     it('vazio ou acima de 300 caracteres -> 400; sem login -> 401', async () => {
@@ -228,7 +230,7 @@ describe('Novos modulos (e2e)', () => {
     it('leitura e livre e vem em ordem cronologica', async () => {
       await api('post', `/auctions/${leilaoAberto}/chat`, tokenSeller).send({ texto: 'Segunda mensagem' }).expect(201);
       const res = await api('get', `/auctions/${leilaoAberto}/chat`).expect(200);
-      expect(res.body.map((m: { texto: string }) => m.texto)).toEqual(['Peca linda!', 'Segunda mensagem']);
+      expect(res.body.map((m: { texto: string }) => m.texto)).toEqual(['Peça linda!', 'Segunda mensagem']);
     });
 
     it('so se conversa com o leilao ABERTO (fechado e rascunho -> 409); leilao inexistente -> 404', async () => {
@@ -350,7 +352,7 @@ describe('Novos modulos (e2e)', () => {
     it('sem brecha: o dono nunca da lance no proprio leilao, mesmo voltando ao modo comprador', async () => {
       await api('patch', '/users/me/modo', tokenA).send({ modo: 'BIDDER' }).expect(200);
       const res = await api('post', `/auction-items/${itemDeA}/bids`, tokenA).send({ valor: 500 }).expect(403);
-      expect(res.body.mensagem).toContain('proprio item');
+      expect(res.body.mensagem).toContain('próprio item');
       await api('patch', '/users/me/modo', tokenA).send({ modo: 'SELLER' }).expect(200);
     });
 
@@ -593,10 +595,11 @@ describe('Novos modulos (e2e)', () => {
         expect(res.headers['cache-control']).toContain('max-age');
       });
 
-      it('certificados e laudos (DOCUMENT) NAO saem por essa rota (404) e o download continua exigindo a chave', async () => {
+      it('certificados e laudos (DOCUMENT) NAO saem por essa rota (404); o download exige a chave E o login', async () => {
         await request(app.getHttpServer()).get(`/api/documents/${documentoId}/foto`).expect(404);
-        await request(app.getHttpServer()).get(`/api/documents/${documentoId}/download`).expect(401);
-        await api('get', `/documents/${documentoId}/download`).expect(200);
+        await request(app.getHttpServer()).get(`/api/documents/${documentoId}/download`).expect(401); // sem a chave
+        await api('get', `/documents/${documentoId}/download`).expect(401); // so a chave nao basta (ela fica no navegador)
+        await api('get', `/documents/${documentoId}/download`, tokenBidder).expect(200); // logado: baixa
       });
 
       it('as demais rotas continuam exigindo a chave', async () => {

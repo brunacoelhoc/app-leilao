@@ -30,7 +30,7 @@ export class ObrasService {
         documentos: { where: { tipo: DocumentType.PHOTO }, orderBy: { criadoEm: 'asc' }, take: 1, select: { nomeOriginal: true } },
       },
     });
-    if (!item) throw new NotFoundException('Item nao encontrado');
+    if (!item) throw new NotFoundException('Item não encontrado');
 
     const chave = item.documentos[0]?.nomeOriginal.replace(/\.jpe?g$/i, '') ?? '';
     const candidata = CATALOGO_OBRAS[chave];
@@ -46,7 +46,7 @@ export class ObrasService {
         ? {
             ...catalogo,
             autenticidade: 'REPRODUCAO',
-            autenticidadeTexto: `Esta peca e uma reproducao de demonstracao. O original e uma obra de dominio publico, conservada em ${catalogo.localAtual}.`,
+            autenticidadeTexto: `Esta peça e uma reprodução de demonstração. O original e uma obra de domínio público, conservada em ${catalogo.localAtual}.`,
           }
         : null,
       itemId: item.id,

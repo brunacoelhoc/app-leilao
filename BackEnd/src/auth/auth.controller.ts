@@ -47,13 +47,13 @@ export class AuthController {
   @ApiOperation({
     summary: 'Cria uma conta nova',
     description:
-      'Sempre nasce como BIDDER -- nao existe campo "papel" aceito aqui, ' +
-      'de proposito (evita autopromocao a ADMIN/SELLER pelo cadastro).',
+      'Sempre nasce como BIDDER -- não existe campo "papel" aceito aqui, ' +
+      'de propósito (evita autopromoção a ADMIN/SELLER pelo cadastro).',
   })
   @ApiCreatedResponse({ description: 'Conta criada (sem a senha na resposta)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Corpo invalido (nome curto, e-mail invalido, senha fora do padrao, campo desconhecido como "papel")', type: ErroResposta })
-  @ApiConflictResponse({ description: 'Ja existe uma conta com este e-mail', type: ErroResposta })
-  @ApiTooManyRequestsResponse({ description: 'Mais de 10 tentativas de registro no ultimo minuto', type: ErroResposta, headers: HEADER_RETRY_AFTER })
+  @ApiBadRequestResponse({ description: 'Corpo inválido (nome curto, e-mail inválido, senha fora do padrão, campo desconhecido como "papel")', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Já existe uma conta com este e-mail', type: ErroResposta })
+  @ApiTooManyRequestsResponse({ description: 'Mais de 10 tentativas de registro no último minuto', type: ErroResposta, headers: HEADER_RETRY_AFTER })
   registrar(
     @Body() dto: RegistrarUsuarioDto,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
@@ -71,15 +71,15 @@ export class AuthController {
   @ApiOperation({
     summary: 'Autentica e devolve o token JWT',
     description:
-      'A mesma mensagem generica ("Credenciais invalidas") sai tanto para ' +
+      'A mesma mensagem genérica ("Credenciais inválidas") sai tanto para ' +
       'e-mail inexistente quanto para senha errada, e o tempo de resposta e ' +
-      'igual nos dois casos -- ninguem descobre quais e-mails estao cadastrados.',
+      'igual nos dois casos -- ninguém descobre quais e-mails estão cadastrados.',
   })
-  @ApiOkResponse({ description: 'Login ok: devolve { accessToken, usuario }', headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Corpo invalido (e-mail invalido, senha ausente)', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'E-mail inexistente ou senha errada (mensagem generica, de proposito)', type: ErroResposta })
+  @ApiOkResponse({ description: 'Login ok: devolve { accessToken, usuário }', headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Corpo inválido (e-mail inválido, senha ausente)', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'E-mail inexistente ou senha errada (mensagem genérica, de propósito)', type: ErroResposta })
   @ApiForbiddenResponse({ description: 'Senha certa, mas a conta foi desativada pelo ADMIN', type: ErroResposta })
-  @ApiTooManyRequestsResponse({ description: 'Mais de 10 tentativas de login no ultimo minuto', type: ErroResposta, headers: HEADER_RETRY_AFTER })
+  @ApiTooManyRequestsResponse({ description: 'Mais de 10 tentativas de login no último minuto', type: ErroResposta, headers: HEADER_RETRY_AFTER })
   login(
     @Body() dto: LoginDto,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
@@ -92,15 +92,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({
-    summary: 'Pede um codigo de recuperacao de senha (passo 1)',
+    summary: 'Pede um código de recuperação de senha (passo 1)',
     description:
-      'Gera um codigo de 6 digitos valido por 15 minutos (guardado so como hash) e o "envia" por e-mail ' +
-      '(entrega simulada: o codigo aparece no log do servidor). A resposta e SEMPRE a mesma, exista o e-mail ou nao. ' +
+      'Gera um código de 6 dígitos válido por 15 minutos (guardado só como hash) e o "envia" por e-mail ' +
+      '(entrega simulada: o código aparece no log do servidor). A resposta e SEMPRE a mesma, exista o e-mail ou não. ' +
       'Limite de 3 pedidos por hora por conta; um pedido novo cancela o anterior.',
   })
-  @ApiOkResponse({ description: 'Resposta generica: { mensagem }', headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'E-mail com formato invalido', type: ErroResposta })
-  @ApiTooManyRequestsResponse({ description: 'Mais de 5 pedidos no ultimo minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
+  @ApiOkResponse({ description: 'Resposta genérica: { mensagem }', headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'E-mail com formato inválido', type: ErroResposta })
+  @ApiTooManyRequestsResponse({ description: 'Mais de 5 pedidos no último minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
   esqueciSenha(
     @Body() dto: EsqueciSenhaDto,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
@@ -112,14 +112,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({
-    summary: 'Troca a senha com o codigo recebido (passo 2)',
+    summary: 'Troca a senha com o código recebido (passo 2)',
     description:
-      'O codigo e de uso unico, vale 15 minutos e aceita no maximo 5 tentativas (depois disso e queimado e e preciso pedir outro). ' +
-      'Todo erro de codigo devolve a mesma mensagem. A nova senha segue a mesma regra de forca do cadastro.',
+      'O código e de uso único, vale 15 minutos e aceita no máximo 5 tentativas (depois disso e queimado e e preciso pedir outro). ' +
+      'Todo erro de código devolve a mesma mensagem. A nova senha segue a mesma regra de força do cadastro.',
   })
   @ApiOkResponse({ description: 'Senha trocada: { mensagem }', headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Corpo invalido (codigo fora de 6 digitos, senha fraca) ou codigo incorreto/expirado/usado', type: ErroResposta })
-  @ApiTooManyRequestsResponse({ description: 'Mais de 10 tentativas no ultimo minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
+  @ApiBadRequestResponse({ description: 'Corpo inválido (código fora de 6 dígitos, senha fraca) ou código incorreto/expirado/usado', type: ErroResposta })
+  @ApiTooManyRequestsResponse({ description: 'Mais de 10 tentativas no último minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
   redefinirSenha(
     @Body() dto: RedefinirSenhaDto,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
@@ -134,14 +134,14 @@ export class AuthController {
   @ApiOperation({
     summary: 'Renova o access token com o refresh token',
     description:
-      'O access token dura poucos minutos. O refresh token e rotativo e de uso unico: a resposta traz um par novo e o ' +
-      'anterior deixa de valer. Se um refresh token ja usado aparecer de novo (possivel roubo), a sessao inteira e revogada. ' +
-      'A sessao expira apos 7 dias sem uso.',
+      'O access token dura poucos minutos. O refresh token é rotativo e de uso único: a resposta traz um par novo e o ' +
+      'anterior deixa de valer. Se um refresh token já usado aparecer de novo (possível roubo), a sessão inteira e revogada. ' +
+      'A sessão expira após 7 dias sem uso.',
   })
-  @ApiOkResponse({ description: 'Par novo: { accessToken, refreshToken, usuario }', headers: HEADER_REQUEST_ID })
+  @ApiOkResponse({ description: 'Par novo: { accessToken, refreshToken, usuário }', headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'refreshToken ausente ou mal formado', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'Refresh token invalido, ja usado, revogado ou expirado (mensagem unica)', type: ErroResposta })
-  @ApiTooManyRequestsResponse({ description: 'Mais de 20 renovacoes no ultimo minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
+  @ApiUnauthorizedResponse({ description: 'Refresh token inválido, já usado, revogado ou expirado (mensagem única)', type: ErroResposta })
+  @ApiTooManyRequestsResponse({ description: 'Mais de 20 renovações no último minuto (por IP)', type: ErroResposta, headers: HEADER_RETRY_AFTER })
   renovar(
     @Body() dto: RefreshDto,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,
@@ -155,11 +155,11 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth('jwt')
   @ApiOperation({
-    summary: 'Encerra a sessao atual (logout que invalida o token)',
-    description: 'O access token usado e o refresh token da mesma sessao param de funcionar imediatamente.',
+    summary: 'Encerra a sessão atual (logout que invalida o token)',
+    description: 'O access token usado e o refresh token da mesma sessão param de funcionar imediatamente.',
   })
-  @ApiNoContentResponse({ description: 'Sessao encerrada', headers: HEADER_REQUEST_ID })
-  @ApiUnauthorizedResponse({ description: 'Token ausente, invalido ou sessao ja encerrada', type: ErroResposta })
+  @ApiNoContentResponse({ description: 'Sessão encerrada', headers: HEADER_REQUEST_ID })
+  @ApiUnauthorizedResponse({ description: 'Token ausente, inválido ou sessão já encerrada', type: ErroResposta })
   async sair(
     @CurrentUser() usuario: UsuarioAutenticado,
     @ContextoDaRequisicao() contexto: ContextoRequisicao,

@@ -12,6 +12,7 @@ import { configurarAplicacao } from './../src/configurar-aplicacao';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { CorsIoAdapter } from './../src/realtime/cors-io.adapter';
 import { PERFIL_COMPLETO } from './perfil-teste';
+import type { AddressInfo, Server } from 'node:net';
 
 // Espera o proximo evento de um socket (ou falha em 5s)
 function esperar<T>(socket: Socket, evento: string): Promise<T> {
@@ -32,12 +33,13 @@ describe('Tempo real (e2e)', () => {
   let socket: Socket;
   let tokenSeller: string;
   let tokenBidder: string;
+  let tokenAdmin: string;
   let leilaoId: string;
   let itemId: string;
 
   const SENHA = 'Abc12345!';
 
-  async function criarUsuario(nome: string, email: string, papel?: 'SELLER') {
+  async function criarUsuario(nome: string, email: string, papel?: 'SELLER' | 'ADMIN') {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
@@ -64,7 +66,7 @@ describe('Tempo real (e2e)', () => {
     configurarAplicacao(app);
     app.useWebSocketAdapter(new CorsIoAdapter(app));
     await app.listen(0); // porta livre qualquer: o socket precisa de servidor de verdade
-    const porta = (app.getHttpServer().address() as { port: number }).port;
+    const porta = ((app.getHttpServer() as unknown as Server).address() as AddressInfo).port;
 
     chave = app.get(ConfigService).getOrThrow<string>('API_KEY');
     prisma = app.get(PrismaService);
@@ -72,15 +74,18 @@ describe('Tempo real (e2e)', () => {
     const sufixo = Date.now();
     tokenSeller = await criarUsuario('Vendedor Realtime', `rt.seller.${sufixo}@teste.com`, 'SELLER');
     tokenBidder = await criarUsuario('Maria Ganhadora Silva', `rt.bidder.${sufixo}@teste.com`);
+    tokenAdmin = await criarUsuario('Admin Realtime', `rt.admin.${sufixo}@teste.com`, 'ADMIN');
     const categoria = await prisma.category.create({ data: { nome: `RT Categoria ${sufixo}` } });
 
     const agora = Date.now();
     const leilao = await api('post', '/api/auctions', tokenSeller).send({
       titulo: 'RT Leilao',
-      dataInicio: new Date(agora - 86400000).toISOString(),
+      dataInicio: new Date(agora + 3600000).toISOString(),
       dataFim: new Date(agora + 86400000).toISOString(),
     });
     leilaoId = (leilao.body as { id: string }).id;
+    // A API não aceita início no passado: o leilão "já em andamento" tem o início recuado direto no banco
+    await prisma.auction.update({ where: { id: leilaoId }, data: { dataInicio: new Date(agora - 86400000) } });
     const item = await api('post', '/api/auction-items', tokenSeller).send({
       titulo: 'RT Item',
       precoInicial: 100,
@@ -122,6 +127,17 @@ describe('Tempo real (e2e)', () => {
     expect(evento.licitanteNome).toBe('Maria G.');
   });
 
+  it('avisa a sala do item quando o admin reativa o leilao cancelado', async () => {
+    await api('patch', `/api/auctions/${leilaoId}/status`, tokenAdmin).send({ status: 'CANCELED', motivo: 'Teste' }).expect(200);
+
+    const avisou = esperar<{ itemId: string; dataFim: string }>(socket, 'leilao-reativado');
+    await api('patch', `/api/auctions/${leilaoId}/reativar`, tokenAdmin).send({ motivo: 'Foi engano' }).expect(200);
+
+    const evento = await avisou;
+    expect(evento.itemId).toBe(itemId);
+    expect(new Date(evento.dataFim).getTime()).toBeGreaterThan(Date.now());
+  });
+
   it('fecha sozinho quando o prazo acaba e avisa o ganhador', async () => {
     // Simula o tempo passando: o fim do leilao vira "1 segundo atras"
     await prisma.auction.update({ where: { id: leilaoId }, data: { dataFim: new Date(Date.now() - 1000) } });
@@ -158,10 +174,11 @@ describe('Tempo real (e2e)', () => {
     const agora = Date.now();
     const leilao = await api('post', '/api/auctions', tokenSeller).send({
       titulo: 'RT Leilao 2',
-      dataInicio: new Date(agora - 60000).toISOString(),
+      dataInicio: new Date(agora + 60000).toISOString(),
       dataFim: new Date(agora + 600000).toISOString(),
     });
     const id2 = (leilao.body as { id: string }).id;
+    await prisma.auction.update({ where: { id: id2 }, data: { dataInicio: new Date(agora - 60000) } });
     const item = await api('post', '/api/auction-items', tokenSeller).send({
       titulo: 'RT Item 2', precoInicial: 100, incrementoMinimo: 10, cep: '01310100', leilaoId: id2, categoriaId: cat.id,
     });

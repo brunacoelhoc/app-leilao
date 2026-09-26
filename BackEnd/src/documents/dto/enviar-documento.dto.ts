@@ -7,6 +7,6 @@ export class EnviarDocumentoDto {
   @IsEnum(DocumentType, {
     message: `tipo deve ser um destes: ${Object.values(DocumentType).join(', ')}`,
   })
-  @IsNotEmpty({ message: 'tipo e obrigatorio' })
+  @IsNotEmpty({ message: 'tipo e obrigatório' })
   tipo: DocumentType;
 }

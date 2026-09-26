@@ -46,7 +46,9 @@
           <article class="cartao item-card">
             <div class="linha-topo">
               <h3>{{ item.titulo }}</h3>
-              <span [class]="classeSeloItem(item.status)">{{ ROTULO_STATUS_ITEM[item.status] }}</span>
+              @if (item.status !== 'AVAILABLE') {
+                <span [class]="classeSeloItem(item.status)">{{ ROTULO_STATUS_ITEM[item.status] }}</span>
+              }
             </div>
             <p class="descricao">{{ item.descricao || 'Sem descrição.' }}</p>
             <ul class="numeros">

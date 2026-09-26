@@ -43,6 +43,10 @@ export class LeiloesService {
     return this.http.patch<Leilao>(`${this.base}/${id}/status`, { status, motivo });
   }
 
+  reativar(id: string, motivo: string): Observable<Leilao> {
+    return this.http.patch<Leilao>(`${this.base}/${id}/reativar`, { motivo });
+  }
+
   remover(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }

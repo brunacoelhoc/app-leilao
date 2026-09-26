@@ -40,6 +40,19 @@ describe('CepService', () => {
     expect(httpService.get).toHaveBeenCalledWith('/01310100/json/');
   });
 
+  it('CEP "geral" de cidade pequena (logradouro vazio) e VALIDO: devolve a cidade, sem rua', async () => {
+    // Resposta real do ViaCEP para 68590000 (Jacundá/PA): cidade e UF preenchidas, rua vazia
+    httpService.get.mockReturnValue(of({ data: { cep: '68590-000', logradouro: '', localidade: 'Jacundá', uf: 'PA' } }));
+
+    await expect(service.buscar('68590000')).resolves.toEqual({ logradouro: '', cidade: 'Jacundá', uf: 'PA' });
+  });
+
+  it('resposta sem cidade nem erro (formato inesperado) -> BadRequestException, nao um endereco vazio', async () => {
+    httpService.get.mockReturnValue(of({ data: { logradouro: '', localidade: '' } }));
+
+    await expect(service.buscar('11111111')).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('CEP com formato valido mas inexistente (ViaCEP responde erro:true) -> BadRequestException', async () => {
     httpService.get.mockReturnValue(of({ data: { erro: 'true' } }));
 

@@ -21,7 +21,7 @@ env:
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/leiloes_ci
   JWT_SECRET: chave-de-teste-do-ci-nao-usar-em-producao-123
   JWT_EXPIRES_IN: 15m
-  PORT: 3000
+  PORT: 3092
   CEP_API_URL: https://viacep.com.br/ws
   CEP_API_TIMEOUT_MS: 5000
   UPLOAD_MAX_SIZE_MB: 5

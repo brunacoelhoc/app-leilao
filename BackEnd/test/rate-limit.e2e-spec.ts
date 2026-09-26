@@ -63,7 +63,7 @@ describe('Rate limiting (e2e)', () => {
       .expect(429);
 
     expect((bloqueado.body as { erro: string }).erro).toBe(
-      'Muitas requisicoes',
+      'Muitas requisições',
     );
     expect(bloqueado.headers['retry-after']).toBeDefined();
   });

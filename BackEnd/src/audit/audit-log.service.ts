@@ -31,7 +31,7 @@ export class AuditLogService {
       await this.prisma.auditLog.create({ data: dados });
     } catch (erro) {
       this.logger.error(
-        `Falha ao gravar auditoria (acao=${dados.acao}): ${erro instanceof Error ? erro.message : 'erro desconhecido'}`,
+        `Falha ao gravar auditoria (ação=${dados.acao}): ${erro instanceof Error ? erro.message : 'erro desconhecido'}`,
       );
     }
   }

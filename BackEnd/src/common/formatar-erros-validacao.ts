@@ -9,7 +9,7 @@ export function formatarErrosDeValidacao(erros: ValidationError[]): string[] {
   for (const erro of erros) {
     if (erro.constraints?.whitelistValidation) {
       mensagens.push(
-        `O campo '${erro.property}' nao e reconhecido ou nao pode ser enviado nesta requisicao`,
+        `O campo '${erro.property}' não e reconhecido ou não pode ser enviado nesta requisição`,
       );
     } else if (erro.constraints) {
       mensagens.push(...Object.values(erro.constraints));

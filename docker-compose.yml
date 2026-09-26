@@ -1,15 +1,21 @@
+# Nome fixo do projeto: os volumes viram "avaliacao-bimestral_<volume>" mesmo
+# que a pasta seja renomeada/clonada com outro nome (senao o Docker criaria um
+# banco novo e vazio e os dados antigos ficariam "sumidos" no volume velho)
+name: avaliacao-bimestral
+
 services:
   postgres:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: leiloes
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env da raiz}
       POSTGRES_DB: leiloes
     # Porta diferente da padrao (5433, nao 5432) para nao brigar com um
-    # Postgres local ja instalado na maquina (ex.: o usado no dia a dia fora do Docker)
+    # Postgres local ja instalado na maquina. Presa em 127.0.0.1: so esta
+    # maquina enxerga o banco (a rede da empresa/casa nao)
     ports:
-      - '5433:5432'
+      - '127.0.0.1:5433:5432'
     volumes:
       # Postgres 18+ mudou a convencao: o volume agora fica em
       # /var/lib/postgresql (nao mais /var/lib/postgresql/data)
@@ -36,10 +42,40 @@ services:
     environment:
       DATABASE_URL: postgresql://leiloes:${POSTGRES_PASSWORD}@postgres:5432/leiloes
     ports:
-      - '3000:3000'
+      - '3092:3092'
     volumes:
       - leiloes_uploads:/app/uploads
+
+  # Painel web do banco (http://localhost:5050) ja ligado ao Postgres acima --
+  # assim ninguem precisa cadastrar servidor a mao nem enxerga o banco errado
+  pgadmin:
+    image: dpage/pgadmin4:9
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@leiloes.dev
+      PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD}
+      # Uso local (single user): sem tela de login nem senha mestra
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '127.0.0.1:5050:80'
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - leiloes_pgadmin_data:/var/lib/pgadmin
+    # Monta o arquivo de senha (pgpass) na subida, com a senha do .env, para o
+    # servidor pre-cadastrado abrir sem pedir senha
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - >
+        echo "postgres:5432:leiloes:leiloes:$$POSTGRES_PASSWORD" > /tmp/pgpass &&
+        chmod 600 /tmp/pgpass &&
+        exec /entrypoint.sh
 
 volumes:
   leiloes_postgres_data:
   leiloes_uploads:
+  leiloes_pgadmin_data:

@@ -14,6 +14,7 @@ import { DocumentosService } from '../../services/documentos.service';
 import { ItensService } from '../../services/itens.service';
 import { LancesService } from '../../services/lances.service';
 import { LeiloesService } from '../../services/leiloes.service';
+import { PedidoPosLeilao } from '../../shared/pedido-pos-leilao/pedido-pos-leilao';
 import { Visualizador3d } from '../../shared/visualizador-3d/visualizador-3d';
 
 interface FotoCarregada {
@@ -22,12 +23,13 @@ interface FotoCarregada {
 }
 
 const INTERVALO_SINCRONIA_MS = 5000;
+const PASSO_LANCE = 50; // os botoes do campo de lance sobem/descem de R$ 50 em R$ 50
 
 import { Voltar } from '../../shared/botao-voltar/botao-voltar';
 
 @Component({
   selector: 'app-item-detalhe',
-  imports: [Voltar, RouterLink, DatePipe, FormsModule, Visualizador3d],
+  imports: [Voltar, RouterLink, DatePipe, FormsModule, Visualizador3d, PedidoPosLeilao],
   templateUrl: './item-detalhe.html',
   styleUrl: './item-detalhe.css',
 })
@@ -107,9 +109,7 @@ export class ItemDetalhe {
   constructor() {
     this.itemId = this.route.snapshot.paramMap.get('id')!;
     this.carregarTudo();
-    if (this.auth.estaLogado()) {
-      this.lancesService.minhaSituacao(this.itemId).subscribe({ next: (m) => this.minhaSituacao.set(m) });
-    }
+    this.atualizarMinhaSituacao();
     this.ouvirTempoReal();
 
     const relogio = setInterval(() => this.batida(), 1000);
@@ -175,6 +175,12 @@ export class ItemDetalhe {
   }
 
   // Lances e a finalização chegam aqui na hora (WebSocket), sem recarregar
+  // Pergunta ao servidor se posso dar lance agora (muda quando alguem cobre o meu lance, ou eu cubro o dos outros)
+  private atualizarMinhaSituacao(): void {
+    if (!this.auth.estaLogado()) return;
+    this.lancesService.minhaSituacao(this.itemId).subscribe({ next: (m) => this.minhaSituacao.set(m) });
+  }
+
   private ouvirTempoReal(): void {
     this.tempoReal
       .observarItem(this.itemId)
@@ -193,6 +199,13 @@ export class ItemDetalhe {
               ? { ...r, dados: [{ ...lance, licitanteNome }, ...r.dados], total: r.total + 1 }
               : r,
           );
+          this.atualizarMinhaSituacao(); // se alguem cobriu o meu lance, o botao libera na hora
+        } else if (evento.tipo === 'reconectado' || evento.tipo === 'leilao-reativado') {
+          // A conexao caiu e voltou: pode ter perdido lances, prorrogacao ou o fim do lote. Busca tudo de novo
+          // (o cronometro volta a contar a partir do que o servidor informa)
+          this.carregarItemELeilao(false);
+          this.carregarLances();
+          this.atualizarMinhaSituacao();
         } else {
           this.finalizar(evento.dados);
         }
@@ -252,6 +265,14 @@ export class ItemDetalhe {
     this.valorLance = Number(valor);
   }
 
+  // Botoes "− R$ 50" / "+ R$ 50": ajustam o campo de 50 em 50, sem cair abaixo do minimo aceito
+  protected readonly PASSO_LANCE = PASSO_LANCE;
+
+  ajustarLance(sinal: 1 | -1): void {
+    const base = this.valorLance ?? this.lanceMinimo();
+    this.valorLance = Math.max(this.lanceMinimo(), Math.round((base + sinal * PASSO_LANCE) * 100) / 100);
+  }
+
   darLance(): void {
     if (!this.valorLance || !this.podeDarLance()) return;
     this.erroLance.set(null);
@@ -276,7 +297,7 @@ export class ItemDetalhe {
   // Aviso quando o motivo e "sou administrador", "estou no modo vendedor" ou "sou o dono" (os demais casos ja tem texto proprio)
   readonly avisoDeRestricao = computed(() => {
     const m = this.minhaSituacao();
-    return m && (m.motivo === 'ADMIN' || m.motivo === 'MODO_VENDEDOR' || m.motivo === 'PERFIL_INCOMPLETO' || m.motivo === 'DONO') && !this.indisponivel() ? m.mensagem : null;
+    return m && (m.motivo === 'ADMIN' || m.motivo === 'MODO_VENDEDOR' || m.motivo === 'PERFIL_INCOMPLETO' || m.motivo === 'DONO' || m.motivo === 'JA_LIDERA') && !this.indisponivel() ? m.mensagem : null;
   });
 
   podeDarLance(): boolean {

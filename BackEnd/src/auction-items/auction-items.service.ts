@@ -9,6 +9,7 @@ import { AuditLogService } from '../audit/audit-log.service';
 import { CepService } from '../cep/cep.service';
 import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
 import { decimalParaString } from '../common/utils/decimal.util';
+import { filtroDeLeiloesVisiveis, rascunhoOculto } from '../common/utils/visibilidade-leiloes.util';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import {
   calcularPaginacao,
@@ -69,6 +70,7 @@ function paraResposta(itemComRelacoes: ItemComContagem): AuctionItemResposta {
           ? 'Ver peça'
           : 'Ver resultado',
     capaPadrao: capaPadrao(item.id),
+    avisoResultado: null, // so o detalhe da peca preenche (buscarPorId)
     situacao,
     segundosParaMudanca,
     prorrogacoes: leilao?.prorrogacoes ?? 0,
@@ -103,18 +105,18 @@ export class AuctionItemsService {
         where: { id: dto.leilaoId },
       });
       if (!leilao) {
-        throw new NotFoundException('Leilao nao encontrado');
+        throw new NotFoundException('Leilão não encontrado');
       }
 
       if (usuario.papel !== 'ADMIN' && leilao.vendedorId !== usuario.id) {
         throw new ForbiddenException(
-          'Voce so pode adicionar itens aos seus proprios leiloes',
+          'Você só pode adicionar itens aos seus próprios leilões',
         );
       }
 
       if (leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel adicionar itens a um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível adicionar itens a um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 
@@ -122,7 +124,7 @@ export class AuctionItemsService {
         where: { id: dto.categoriaId },
       });
       if (!categoria) {
-        throw new NotFoundException('Categoria nao encontrada');
+        throw new NotFoundException('Categoria não encontrada');
       }
 
       // Integracao externa (HttpService/ViaCEP): busca o endereco a partir do
@@ -143,7 +145,7 @@ export class AuctionItemsService {
           conservacao: dto.conservacao,
           procedencia: dto.procedencia,
           cep: dto.cep,
-          logradouro: endereco.logradouro,
+          logradouro: endereco.logradouro || null, // CEP geral de cidade pequena vem sem rua
           cidade: endereco.cidade,
           uf: endereco.uf,
           leilaoId: dto.leilaoId,
@@ -176,11 +178,14 @@ export class AuctionItemsService {
   // Consultas por relacionamento: itens de um leilao e/ou itens de uma categoria
   async listarTodos(
     filtros: FiltrosListagem,
+    usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<AuctionItemResposta>> {
     const paginacao = calcularPaginacao(filtros);
     const where: Prisma.AuctionItemWhereInput = {
       leilaoId: filtros.leilaoId,
       categoriaId: filtros.categoriaId,
+      // Itens de leilão cancelado só aparecem para o dono e o ADMIN
+      leilao: filtroDeLeiloesVisiveis(usuario),
       ...(filtros.busca
         ? {
             OR: [
@@ -215,21 +220,38 @@ export class AuctionItemsService {
     return paginar(itens.map((item) => paraResposta(item)), total, paginacao);
   }
 
-  async buscarPorId(id: string): Promise<AuctionItemResposta> {
+  async buscarPorId(id: string, usuario?: UsuarioAutenticado): Promise<AuctionItemResposta> {
     const item = await this.prisma.auctionItem.findUnique({
       where: { id },
       include: {
           _count: { select: { lances: true } },
           vencedor: { select: { nome: true } },
           leilao: {
-            select: { status: true, dataInicio: true, dataFim: true, prorrogacoes: true },
+            select: { status: true, vendedorId: true, dataInicio: true, dataFim: true, prorrogacoes: true },
           },
         },
     });
-    if (!item) {
-      throw new NotFoundException('Item nao encontrado');
+    // Peça de leilão em rascunho: só o dono e o ADMIN veem (os demais recebem 404)
+    if (!item || (item.leilao && rascunhoOculto(item.leilao, usuario))) {
+      throw new NotFoundException('Item não encontrado');
     }
-    return paraResposta(item);
+    const resposta = paraResposta(item);
+    resposta.avisoResultado = await this.avisoDoResultado(item);
+    return resposta;
+  }
+
+  // 🔎 Transparencia do resultado: se o maior lance foi de uma conta DESATIVADA, ele foi pulado no fechamento e o valor
+  // final e menor que o lance mais alto do historico. O servidor explica (a tela so exibe o texto)
+  private async avisoDoResultado(item: AuctionItem): Promise<string | null> {
+    if (item.status !== 'SOLD' || item.lanceAtual === null) return null;
+    const maior = await this.prisma.bid.findFirst({
+      where: { itemId: item.id },
+      orderBy: { valor: 'desc' },
+      select: { valor: true },
+    });
+    if (!maior || !maior.valor.greaterThan(item.lanceAtual)) return null;
+    const moeda = (v: Prisma.Decimal) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return `O lance mais alto (${moeda(maior.valor)}) foi desconsiderado porque a conta que o fez foi desativada. O valor final é o do maior lance válido (${moeda(item.lanceAtual)}).`;
   }
 
   // Busca o item JUNTO com o leilao, para conferir o dono e o status do leilao
@@ -239,7 +261,7 @@ export class AuctionItemsService {
       include: { leilao: true },
     });
     if (!item) {
-      throw new NotFoundException('Item nao encontrado');
+      throw new NotFoundException('Item não encontrado');
     }
     return item;
   }
@@ -251,7 +273,7 @@ export class AuctionItemsService {
     if (usuario.papel === 'ADMIN') return;
     if (vendedorIdDoLeilao !== usuario.id) {
       throw new ForbiddenException(
-        'Voce so pode gerenciar itens dos seus proprios leiloes',
+        'Você só pode gerenciar itens dos seus próprios leilões',
       );
     }
   }
@@ -268,7 +290,7 @@ export class AuctionItemsService {
 
       if (item.leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel editar itens de um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível editar itens de um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 
@@ -277,7 +299,7 @@ export class AuctionItemsService {
           where: { id: dto.categoriaId },
         });
         if (!categoria) {
-          throw new NotFoundException('Categoria nao encontrada');
+          throw new NotFoundException('Categoria não encontrada');
         }
       }
 
@@ -302,7 +324,7 @@ export class AuctionItemsService {
           conservacao: dto.conservacao,
           procedencia: dto.procedencia,
           cep: dto.cep,
-          logradouro: endereco?.logradouro,
+          logradouro: endereco ? endereco.logradouro || null : undefined,
           cidade: endereco?.cidade,
           uf: endereco?.uf,
           categoriaId: dto.categoriaId,
@@ -342,7 +364,7 @@ export class AuctionItemsService {
 
       if (item.leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel remover itens de um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível remover itens de um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 

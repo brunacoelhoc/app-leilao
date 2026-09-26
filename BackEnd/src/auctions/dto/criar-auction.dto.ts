@@ -1,3 +1,5 @@
+import { Transform } from 'class-transformer';
+import { aparar } from '../../common/utils/aparar-texto.util';
 import {
   IsDateString,
   IsNotEmpty,
@@ -6,32 +8,36 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { DataDepoisDe } from './periodo-valido.validator';
+import { DataDepoisDe, DuracaoMaximaDe, NaoNoPassado } from './periodo-valido.validator';
 
 export class CriarAuctionDto {
-  @MaxLength(120, { message: 'titulo deve ter no maximo 120 caracteres' })
-  @MinLength(3, { message: 'titulo deve ter no minimo 3 caracteres' })
-  @IsString({ message: 'titulo deve ser um texto' })
-  @IsNotEmpty({ message: 'titulo e obrigatorio' })
+  @Transform(aparar)
+  @MaxLength(120, { message: 'título deve ter no máximo 120 caracteres' })
+  @MinLength(3, { message: 'título deve ter no mínimo 3 caracteres' })
+  @IsString({ message: 'título deve ser um texto' })
+  @IsNotEmpty({ message: 'título e obrigatório' })
   titulo: string;
 
-  @MaxLength(500, { message: 'descricao deve ter no maximo 500 caracteres' })
-  @IsString({ message: 'descricao deve ser um texto' })
+  @MaxLength(500, { message: 'descrição deve ter no máximo 500 caracteres' })
+  @IsString({ message: 'descrição deve ser um texto' })
   @IsOptional()
   descricao?: string;
 
+  @NaoNoPassado()
   @IsDateString(
     {},
-    { message: 'dataInicio deve ser uma data valida (ISO 8601)' },
+    { message: 'dataInicio deve ser uma data válida (ISO 8601)' },
   )
-  @IsNotEmpty({ message: 'dataInicio e obrigatoria' })
+  @IsNotEmpty({ message: 'dataInicio e obrigatória' })
   dataInicio: string;
 
-  // O validador customizado confere que dataFim vem depois de dataInicio
+  // Os validadores customizados conferem que dataFim vem depois de dataInicio e
+  // que o periodo nao passa de 48 horas
+  @DuracaoMaximaDe('dataInicio')
   @DataDepoisDe('dataInicio', {
     message: 'dataFim deve ser uma data depois de dataInicio',
   })
-  @IsDateString({}, { message: 'dataFim deve ser uma data valida (ISO 8601)' })
-  @IsNotEmpty({ message: 'dataFim e obrigatoria' })
+  @IsDateString({}, { message: 'dataFim deve ser uma data válida (ISO 8601)' })
+  @IsNotEmpty({ message: 'dataFim e obrigatória' })
   dataFim: string;
 }

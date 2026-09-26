@@ -28,7 +28,7 @@ describe('Auctions (e2e)', () => {
   const SENHA_TESTE = 'Abc12345!';
 
   // Ajuda a registrar+logar um usuario e (se precisar) promove-lo a outro papel
-  async function criarUsuario(nome: string, email: string, papel?: string) {
+  async function criarUsuario(nome: string, email: string, papel?: 'BIDDER' | 'SELLER' | 'ADMIN') {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
@@ -120,8 +120,39 @@ describe('Auctions (e2e)', () => {
 
   const dadosValidos = (titulo: string) => ({
     titulo,
-    dataInicio: '2027-01-01T00:00:00.000Z',
-    dataFim: '2027-01-10T00:00:00.000Z',
+    dataInicio: '2099-01-01T00:00:00.000Z',
+    dataFim: '2099-01-02T00:00:00.000Z',
+  });
+
+  describe('data retroativa', () => {
+    it('criar com dataInicio no passado -> 400', async () => {
+      const agora = Date.now();
+      const resposta = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Retroativo',
+        dataInicio: new Date(agora - 86400000).toISOString(),
+        dataFim: new Date(agora + 86400000).toISOString(),
+      });
+      expect(resposta.status).toBe(400);
+      expect(resposta.body.mensagem).toContain('A data de início não pode estar no passado');
+    });
+
+    it('editar dataInicio para o passado -> 400', async () => {
+      const criado = await rota('post', '', tokenSeller).send(dadosValidos('Auctions E2E Editar Retroativo'));
+      const resposta = await rota('patch', `/${criado.body.id}`, tokenSeller).send({
+        dataInicio: new Date(Date.now() - 86400000).toISOString(),
+      });
+      expect(resposta.status).toBe(400);
+    });
+
+    it('dataInicio daqui a poucos minutos (dentro da tolerancia) -> 201', async () => {
+      const agora = Date.now();
+      const resposta = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Agora',
+        dataInicio: new Date(agora).toISOString(),
+        dataFim: new Date(agora + 3600000).toISOString(),
+      });
+      expect(resposta.status).toBe(201);
+    });
   });
 
   describe('autorizacao: so SELLER cria', () => {
@@ -156,7 +187,7 @@ describe('Auctions (e2e)', () => {
         await prisma.auction.findUniqueOrThrow({ where: { id: criado.body.id as string } })
       ).vendedorId;
 
-      const resposta = await rota('get', `?vendedorId=${idVendedor}`).expect(200);
+      const resposta = await rota('get', `?vendedorId=${idVendedor}`, tokenSeller).expect(200); // rascunho: só o dono vê
       const leiloes = resposta.body.dados as { id: string; vendedorId: string }[];
       expect(leiloes.length).toBeGreaterThan(0);
       expect(leiloes.every((l) => l.vendedorId === idVendedor)).toBe(true);
@@ -178,7 +209,39 @@ describe('Auctions (e2e)', () => {
 
     it('id malformado -> 400 em portugues', async () => {
       const resposta = await rota('get', '/nao-e-um-uuid').expect(400);
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
+    });
+  });
+
+  describe('rascunho e privado: so o dono e o ADMIN enxergam', () => {
+    it('visitante, comprador e outro vendedor nao veem na lista, no resumo nem pelo link (404)', async () => {
+      const criado = await rota('post', '', tokenSeller).send(dadosValidos('Auctions E2E Rascunho Privado'));
+      const id = criado.body.id as string;
+      const ids = async (token?: string) => ((await rota('get', '?limite=100', token).expect(200)).body.dados as { id: string }[]).map((l) => l.id);
+
+      expect(await ids()).not.toContain(id);
+      expect(await ids(tokenBidder)).not.toContain(id);
+      expect(await ids(tokenOutroSeller)).not.toContain(id);
+      await rota('get', `/${id}`).expect(404);
+      await rota('get', `/${id}`, tokenBidder).expect(404);
+      await rota('get', `/${id}`, tokenOutroSeller).expect(404);
+      expect((await rota('get', '/resumo').expect(200)).body.DRAFT).toBe(0);
+    });
+
+    it('o dono e o ADMIN veem (lista e link), e depois de publicar (SCHEDULED) todos veem', async () => {
+      const criado = await rota('post', '', tokenSeller).send(dadosValidos('Auctions E2E Rascunho Dono'));
+      const id = criado.body.id as string;
+      const ids = async (token?: string) => ((await rota('get', '?limite=100', token).expect(200)).body.dados as { id: string }[]).map((l) => l.id);
+
+      expect(await ids(tokenSeller)).toContain(id);
+      expect(await ids(tokenAdmin)).toContain(id);
+      await rota('get', `/${id}`, tokenSeller).expect(200);
+      await rota('get', `/${id}`, tokenAdmin).expect(200);
+
+      await adicionarItem(id);
+      await rota('patch', `/${id}/status`, tokenSeller).send({ status: 'SCHEDULED' }).expect(200);
+      expect(await ids()).toContain(id); // publicado: aparece para todos
+      await rota('get', `/${id}`).expect(200);
     });
   });
 
@@ -327,10 +390,15 @@ describe('Auctions (e2e)', () => {
       const agora = Date.now();
       const criado = await rota('post', '', tokenSeller).send({
         titulo: 'Auctions E2E Agendar Vencido',
-        dataInicio: new Date(agora - 2 * 86400000).toISOString(),
-        dataFim: new Date(agora - 86400000).toISOString(),
+        dataInicio: new Date(agora + 3600000).toISOString(),
+        dataFim: new Date(agora + 7200000).toISOString(),
       });
       await adicionarItem(criado.body.id as string);
+      // A API não aceita início no passado: o leilão "vencido" é montado direto no banco
+      await prisma.auction.update({
+        where: { id: criado.body.id as string },
+        data: { dataInicio: new Date(agora - 2 * 86400000), dataFim: new Date(agora - 86400000) },
+      });
 
       const resposta = await rota('patch', `/${criado.body.id}/status`, tokenSeller)
         .send({ status: 'SCHEDULED' });
@@ -374,13 +442,13 @@ describe('Auctions (e2e)', () => {
       );
 
       await rota('patch', `/${criado.body.id}/status`, tokenSeller)
-        .send({ status: 'CANCELED', motivo: 'Item indisponivel' })
+        .send({ status: 'CANCELED', motivo: 'Item indisponível' })
         .expect(200);
 
       const historico = await prisma.auctionStatusHistory.findFirst({
         where: { leilaoId: criado.body.id as string, statusNovo: 'CANCELED' },
       });
-      expect(historico?.motivo).toBe('Item indisponivel');
+      expect(historico?.motivo).toBe('Item indisponível');
     });
   });
 
@@ -391,7 +459,7 @@ describe('Auctions (e2e)', () => {
       );
 
       const resposta = await rota('patch', `/${criado.body.id}`, tokenSeller)
-        .send({ dataInicio: '2027-02-01T00:00:00.000Z' }); // dataFim gravada: 2027-01-10
+        .send({ dataInicio: '2099-02-01T00:00:00.000Z' }); // dataFim gravada: 2027-01-02
 
       expect(resposta.status).toBe(409);
       expect(resposta.body.mensagem).toContain('dataFim deve ser depois de dataInicio');
@@ -402,14 +470,31 @@ describe('Auctions (e2e)', () => {
     it('dataFim antes de dataInicio -> 400', async () => {
       const resposta = await rota('post', '', tokenSeller).send({
         titulo: 'Auctions E2E Datas Invertidas',
-        dataInicio: '2027-01-10T00:00:00.000Z',
-        dataFim: '2027-01-01T00:00:00.000Z',
+        dataInicio: '2099-01-10T00:00:00.000Z',
+        dataFim: '2099-01-01T00:00:00.000Z',
       });
 
       expect(resposta.status).toBe(400);
       expect(resposta.body.mensagem).toEqual([
         'dataFim deve ser uma data depois de dataInicio',
       ]);
+    });
+
+    it('leilao com mais de 48 horas -> 400; exatamente 48 horas passa', async () => {
+      const longo = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Prazo Longo',
+        dataInicio: '2099-03-01T00:00:00.000Z',
+        dataFim: '2099-03-03T00:00:01.000Z', // 48h + 1s
+      });
+      expect(longo.status).toBe(400);
+      expect(longo.body.mensagem).toEqual(['O leilão pode durar no máximo 48 horas (2 dias)']);
+
+      const limite = await rota('post', '', tokenSeller).send({
+        titulo: 'Auctions E2E Prazo Limite',
+        dataInicio: '2099-03-01T00:00:00.000Z',
+        dataFim: '2099-03-03T00:00:00.000Z', // exatamente 48h
+      });
+      expect(limite.status).toBe(201);
     });
   });
 
@@ -430,10 +515,12 @@ describe('Auctions (e2e)', () => {
     const agora = Date.now();
     const leilao = await rota('post', '', tokenSeller).send({
       titulo,
-      dataInicio: new Date(agora - 86400000).toISOString(),
+      dataInicio: new Date(agora + 3600000).toISOString(),
       dataFim: new Date(agora + 86400000).toISOString(),
     });
     const leilaoId = leilao.body.id as string;
+    // A API não aceita início no passado: o leilão "já em andamento" tem o início recuado direto no banco
+    await prisma.auction.update({ where: { id: leilaoId }, data: { dataInicio: new Date(agora - 86400000) } });
 
     const item = await request(app.getHttpServer())
       .post('/api/auction-items')
@@ -527,7 +614,7 @@ describe('Auctions (e2e)', () => {
       const resposta = await rota('get', '/nao-e-um-uuid/indicadores').expect(
         400,
       );
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
 
     it('id valido mas inexistente -> 404', () => {

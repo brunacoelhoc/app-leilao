@@ -7,8 +7,8 @@ import { HEADER_REQUEST_ID } from '../swagger-headers';
 // em cada endpoint
 export function ApiPaginacaoQuery() {
   return applyDecorators(
-    ApiQuery({ name: 'pagina', required: false, type: Number, description: 'Pagina atual (comeca em 1, padrao 1)' }),
-    ApiQuery({ name: 'limite', required: false, type: Number, description: 'Itens por pagina (padrao 20, maximo 100)' }),
+    ApiQuery({ name: 'pagina', required: false, type: Number, description: 'Página atual (começa em 1, padrão 1)' }),
+    ApiQuery({ name: 'limite', required: false, type: Number, description: 'Itens por página (padrão 20, máximo 100)' }),
   );
 }
 

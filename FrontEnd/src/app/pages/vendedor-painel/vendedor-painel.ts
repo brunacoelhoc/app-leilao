@@ -8,6 +8,7 @@ import { AuthService } from '../../core/auth.service';
 import { mensagemDeErro } from '../../core/erro.util';
 import { formatarCep, somenteDigitos } from '../../core/mascara.util';
 import { AuctionStatus, Categoria, Leilao, RespostaPaginada } from '../../core/models';
+import { erroDoFim, erroDoInicio } from '../../core/periodo-leilao.util';
 import { ROTULO_STATUS_LEILAO, classeSeloLeilao } from '../../core/status.util';
 import { CategoriasService } from '../../services/categorias.service';
 import { DocumentosService } from '../../services/documentos.service';
@@ -66,6 +67,11 @@ export class VendedorPainel {
   descricao = '';
   dataInicio = '';
   dataFim = '';
+  // Menor data que o calendário deixa escolher (agora, no fuso do aparelho): o campo já bloqueia dias passados
+  protected get dataMinima(): string {
+    const agora = new Date();
+    return new Date(agora.getTime() - agora.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  }
   itemTitulo = '';
   itemDescricao = '';
   itemPrecoInicial: number | null = null;
@@ -162,13 +168,9 @@ export class VendedorPainel {
       case 'titulo':
         return vazio(this.titulo) ? 'Por favor, insira o título do leilão.' : null;
       case 'dataInicio':
-        return !this.dataInicio ? 'Por favor, escolha a data de início.' : null;
+        return erroDoInicio(this.dataInicio);
       case 'dataFim':
-        if (!this.dataFim) return 'Por favor, escolha a data de término.';
-        if (this.dataInicio && new Date(this.dataFim) <= new Date(this.dataInicio)) {
-          return 'O término precisa ser depois do início.';
-        }
-        return null;
+        return erroDoFim(this.dataInicio, this.dataFim);
       case 'itemTitulo':
         return vazio(this.itemTitulo) ? 'Por favor, dê um nome à peça.' : null;
       case 'itemPreco':

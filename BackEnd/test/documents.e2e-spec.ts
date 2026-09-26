@@ -31,7 +31,7 @@ describe('Documents (e2e)', () => {
   // Comeca com a assinatura real de um JPEG (FF D8 FF): o servidor confere os primeiros bytes
   const BUFFER_FOTO = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from('conteudo de uma foto, so para o teste')]);
 
-  async function criarUsuario(nome: string, email: string, papel?: string) {
+  async function criarUsuario(nome: string, email: string, papel?: 'BIDDER' | 'SELLER' | 'ADMIN') {
     await request(app.getHttpServer())
       .post('/api/auth/registrar')
       .set('X-API-KEY', chave)
@@ -83,8 +83,8 @@ describe('Documents (e2e)', () => {
       .set('Authorization', `Bearer ${tokenSeller}`)
       .send({
         titulo: 'Documents E2E Leilao',
-        dataInicio: '2027-01-01T00:00:00.000Z',
-        dataFim: '2027-01-10T00:00:00.000Z',
+        dataInicio: '2099-01-01T00:00:00.000Z',
+        dataFim: '2099-01-02T00:00:00.000Z',
       });
     leilaoId = (leilao.body as { id: string }).id;
 
@@ -170,7 +170,7 @@ describe('Documents (e2e)', () => {
         .set('Authorization', `Bearer ${tokenSeller}`)
         .field('tipo', 'PHOTO');
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('Arquivo e obrigatorio');
+      expect(resposta.body.mensagem).toContain('Arquivo e obrigatório');
     });
 
     it('executavel disfarcado de foto (mimetype image/jpeg, conteudo "MZ") -> 400 pela assinatura real', async () => {
@@ -182,7 +182,7 @@ describe('Documents (e2e)', () => {
         .field('tipo', 'PHOTO')
         .attach('arquivo', executavel, 'foto.jpg');
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('nao corresponde');
+      expect(resposta.body.mensagem).toContain('não corresponde');
     });
 
     it('PNG enviado como .jpg (tipo diferente do conteudo) -> 400', async () => {
@@ -194,7 +194,7 @@ describe('Documents (e2e)', () => {
         .field('tipo', 'PHOTO')
         .attach('arquivo', png, 'foto.jpg');
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('nao corresponde');
+      expect(resposta.body.mensagem).toContain('não corresponde');
     });
 
     it('PDF de verdade (comeca com %PDF-) e aceito como DOCUMENT', async () => {
@@ -216,7 +216,7 @@ describe('Documents (e2e)', () => {
         .field('tipo', 'PHOTO')
         .attach('arquivo', BUFFER_FOTO, 'virus.exe');
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('nao permitido');
+      expect(resposta.body.mensagem).toContain('não permitido');
     });
 
     it('arquivo maior que o limite configurado (UPLOAD_MAX_SIZE_MB) -> 400', async () => {
@@ -258,7 +258,7 @@ describe('Documents (e2e)', () => {
         .get('/api/auction-items/nao-e-um-uuid/documents')
         .set('X-API-KEY', chave);
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
   });
 
@@ -295,6 +295,18 @@ describe('Documents (e2e)', () => {
       );
     });
 
+
+    it('a listagem PUBLICA nao mostra quem enviou (id de usuario) nem o nome do arquivo em disco', async () => {
+      const resposta = await request(app.getHttpServer())
+        .get(`/api/auction-items/${itemId}/documents`)
+        .set('X-API-KEY', chave)
+        .expect(200);
+
+      const documento = (resposta.body.dados as Record<string, unknown>[])[0];
+      expect(documento).not.toHaveProperty('enviadoPorId');
+      expect(documento).not.toHaveProperty('nomeArquivo');
+      expect(documento.hash).toMatch(/^[a-f0-9]{64}$/); // o hash e intencional: prova de integridade do arquivo
+    });
     it('GET /documents/:id/download baixa o arquivo com o nome original', async () => {
       const lista = await request(app.getHttpServer())
         .get(`/api/auction-items/${itemId}/documents`)

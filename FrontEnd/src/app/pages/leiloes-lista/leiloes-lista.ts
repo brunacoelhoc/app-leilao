@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 import { mensagemDeErro } from '../../core/erro.util';
 import { AuctionStatus, Leilao, RespostaPaginada } from '../../core/models';
 import { ROTULO_STATUS_LEILAO, classeSeloLeilao } from '../../core/status.util';
@@ -35,7 +36,14 @@ export class LeiloesLista {
   // Filtros da tela (busca por texto e status)
   busca = '';
   status: AuctionStatus | '' = '';
-  protected readonly statusOpcoes = Object.entries(ROTULO_STATUS_LEILAO) as [AuctionStatus, string][];
+  private readonly auth = inject(AuthService);
+  // Rascunho e Cancelado são privados (a API só devolve para o dono e o ADMIN): não adianta oferecer o filtro a visitantes e compradores
+  protected get statusOpcoes(): [AuctionStatus, string][] {
+    const podeVerRestritos = ['SELLER', 'ADMIN'].includes(this.auth.usuario()?.papel ?? '');
+    return (Object.entries(ROTULO_STATUS_LEILAO) as [AuctionStatus, string][]).filter(
+      ([status]) => podeVerRestritos || (status !== 'DRAFT' && status !== 'CANCELED'),
+    );
+  }
   private temporizadorBusca?: ReturnType<typeof setTimeout>;
 
   constructor() {

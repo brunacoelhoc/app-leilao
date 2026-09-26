@@ -95,21 +95,21 @@ export class BidsService {
         `;
         const item = linhas[0];
         if (!item) {
-          throw new NotFoundException('Item nao encontrado');
+          throw new NotFoundException('Item não encontrado');
         }
 
         const leilao = await tx.auction.findUnique({
           where: { id: item.leilaoId },
         });
         if (!leilao) {
-          throw new NotFoundException('Leilao nao encontrado');
+          throw new NotFoundException('Leilão não encontrado');
         }
 
         // 🔎 Regra obrigatoria: NINGUEM lanca no proprio leilao, seja qual for o papel
         // (uma mesma conta pode comprar e vender, mas nunca nos seus proprios itens)
         if (leilao.vendedorId === usuario.id) {
           throw new ForbiddenException(
-            'Voce nao pode dar lance no seu proprio item',
+            'Você não pode dar lance no seu próprio item',
           );
         }
 
@@ -117,17 +117,31 @@ export class BidsService {
         // E as datas -- nunca confiamos so no status gravado
         if (leilao.status !== AuctionStatus.OPEN) {
           throw new ConflictException(
-            'Este leilao nao esta aberto para lances',
+            'Este leilão não está aberto para lances',
           );
         }
         const agora = new Date();
         if (agora < leilao.dataInicio || agora > leilao.dataFim) {
-          throw new ConflictException('Fora do periodo do leilao');
+          throw new ConflictException('Fora do período do leilão');
         }
 
         if (item.status !== ItemStatus.AVAILABLE) {
           throw new ConflictException(
-            'Este item nao esta disponivel para lances',
+            'Este item não está disponível para lances',
+          );
+        }
+
+        // 🔎 Ninguem cobre o proprio lance: quem ja esta liderando espera alguem cobrir.
+        // Conferido DENTRO da transacao (com o item travado), entao dois cliques
+        // rapidos do mesmo usuario nunca passam os dois
+        const lider = await tx.bid.findFirst({
+          where: { itemId },
+          orderBy: [{ valor: 'desc' }, { criadoEm: 'desc' }],
+          select: { licitanteId: true },
+        });
+        if (lider?.licitanteId === usuario.id) {
+          throw new ConflictException(
+            'Seu lance já é o maior deste item. Aguarde alguém cobri-lo para dar outro',
           );
         }
 
@@ -205,7 +219,7 @@ export class BidsService {
           entidade: 'Auction',
           entidadeId: prazo.leilaoId,
           resultado: AuditResult.SUCCESS,
-          motivo: `Lance nos ultimos minutos: novo fim ${prazo.dataFim.toISOString()} (prorrogacao ${prazo.prorrogacoes})`,
+          motivo: `Lance nos últimos minutos: novo fim ${prazo.dataFim.toISOString()} (prorrogação ${prazo.prorrogacoes})`,
           statusHttp: 201,
           ...contexto,
         });
@@ -267,7 +281,7 @@ export class BidsService {
       where: { id: itemId },
     });
     if (!item) {
-      throw new NotFoundException('Item nao encontrado');
+      throw new NotFoundException('Item não encontrado');
     }
 
     const paginacao = calcularPaginacao(params);
@@ -386,7 +400,7 @@ export class BidsService {
       where: { id: itemId },
       include: { leilao: { select: { vendedorId: true, status: true, dataInicio: true, dataFim: true } } },
     });
-    if (!item) throw new NotFoundException('Item nao encontrado');
+    if (!item) throw new NotFoundException('Item não encontrado');
 
     const euSouDono = item.leilao.vendedorId === usuario.id;
     const eu = await this.prisma.user.findUnique({
@@ -417,6 +431,16 @@ export class BidsService {
     } else if (item.status !== ItemStatus.AVAILABLE) {
       motivo = 'ITEM_INDISPONIVEL';
       mensagem = 'Esta peça não está mais disponível.';
+    } else {
+      const lider = await this.prisma.bid.findFirst({
+        where: { itemId },
+        orderBy: [{ valor: 'desc' }, { criadoEm: 'desc' }],
+        select: { licitanteId: true },
+      });
+      if (lider?.licitanteId === usuario.id) {
+        motivo = 'JA_LIDERA';
+        mensagem = 'Seu lance é o maior. Aguarde alguém cobri-lo para dar outro.';
+      }
     }
     return { permitido: motivo === null, motivo, mensagem, euSouDono, euSouVencedor };
   }

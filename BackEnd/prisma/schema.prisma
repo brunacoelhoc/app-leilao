@@ -35,6 +35,24 @@ enum ItemStatus {
   UNSOLD // nao vendido (o leilao fechou sem lances)
 }
 
+// Pos-leilao do vencedor: paga (simulado) e depois escolhe como recebe a peca
+enum PedidoStatus {
+  AGUARDANDO_PAGAMENTO // vendido, o vencedor ainda nao pagou
+  PAGO // pagamento simulado confirmado; libera escolher retirada/entrega
+  FINALIZADO // retirada ou entrega definida (com codigo de retirada ou endereco)
+}
+
+enum FormaPagamento {
+  PIX
+  CARTAO
+  BOLETO
+}
+
+enum TipoEntrega {
+  RETIRADA // o comprador busca no endereco da peca
+  ENTREGA // a peca e enviada para o endereco do comprador
+}
+
 // Tipo do arquivo enviado: foto do item ou documento (certificado, laudo)
 enum DocumentType {
   PHOTO // foto do item
@@ -61,7 +79,7 @@ model User {
   avatarUrl          String? // opcional: identificador de um avatar pronto (ex.: "raposa") ou uma imagem pequena em base64
   termosAceitosEm    DateTime? // quando aceitou os termos de uso (o servidor grava no cadastro)
   redefinicoesSenha  PasswordReset[]
-  sessoes             Session[]
+  sessoes            Session[]
   criadoEm           DateTime               @default(now()) // data de criacao, preenchida sozinha
   atualizadoEm       DateTime               @updatedAt // o Prisma atualiza a cada alteracao
   leiloes            Auction[] // lista dos leiloes que este usuario criou
@@ -69,6 +87,7 @@ model User {
   itensGanhos        AuctionItem[] // itens que este usuario venceu
   lances             Bid[] // lances dados por este usuario
   mensagens          ChatMessage[] // mensagens que este usuario escreveu no chat dos leiloes
+  pedidos            Pedido[] // pedidos (pagamento/retirada) das pecas que este usuario arrematou
   documentosEnviados Document[] // arquivos enviados por este usuario
   auditorias         AuditLog[] // acoes registradas na auditoria feitas por este usuario
 }
@@ -91,7 +110,7 @@ model Auction {
   status       AuctionStatus          @default(DRAFT) // todo leilao nasce como rascunho
   dataInicio   DateTime // quando o leilao abre para lances
   dataFim      DateTime // quando o leilao fecha (pode ser estendido pelo anti-sniping)
-  prorrogacoes Int          @default(0) // quantas vezes o prazo foi estendido por lances nos ultimos minutos
+  prorrogacoes Int                    @default(0) // quantas vezes o prazo foi estendido por lances nos ultimos minutos
   vendedorId   String // guarda o id do usuario dono do leilao (chave estrangeira)
   vendedor     User                   @relation(fields: [vendedorId], references: [id], onDelete: Restrict) // liga ao usuario
   criadoEm     DateTime               @default(now())
@@ -102,6 +121,7 @@ model Auction {
 
   @@index([vendedorId]) // deixa mais rapido buscar os leiloes de um vendedor
   @@index([status, dataFim]) // deixa rapido listar leiloes por estado, ordenados pelo termino
+  @@index([criadoEm]) // a listagem de leiloes ordena do mais novo para o mais antigo
 }
 
 // Historico: guarda cada mudanca de estado de um leilao (quem mudou, de qual para qual e quando)
@@ -147,12 +167,35 @@ model AuctionItem {
   categoria        Category   @relation(fields: [categoriaId], references: [id], onDelete: Restrict) // liga a categoria
   lances           Bid[] // lances recebidos por este item
   documentos       Document[] // fotos e documentos deste item
+  pedido           Pedido? // pagamento e retirada do vencedor (so existe depois que o item e vendido)
   criadoEm         DateTime   @default(now())
   atualizadoEm     DateTime   @updatedAt
 
   @@index([leilaoId]) // deixa rapido buscar os itens de um leilao
   @@index([categoriaId]) // deixa rapido buscar os itens de uma categoria
   @@index([vencedorId]) // deixa rapido buscar os itens que um usuario ganhou
+  @@index([criadoEm]) // a listagem de itens ordena do mais novo para o mais antigo
+}
+
+// Pedido: o que acontece depois que o item e vendido. Um por item (itemId unico);
+// e criado quando o vencedor abre a tela de pagamento pela primeira vez
+model Pedido {
+  id              String          @id @default(uuid())
+  itemId          String          @unique // um item vendido tem no maximo um pedido
+  item            AuctionItem     @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  compradorId     String // o vencedor do item
+  comprador       User            @relation(fields: [compradorId], references: [id], onDelete: Restrict)
+  valor           Decimal         @db.Decimal(12, 2) // lance vencedor (copiado, para o pedido nao mudar)
+  status          PedidoStatus    @default(AGUARDANDO_PAGAMENTO)
+  formaPagamento  FormaPagamento? // preenchido ao pagar
+  pagoEm          DateTime?
+  tipoEntrega     TipoEntrega? // preenchido ao escolher retirada/entrega
+  enderecoEntrega String? // so quando tipoEntrega = ENTREGA
+  codigoRetirada  String? // so quando tipoEntrega = RETIRADA (o comprador apresenta na retirada)
+  criadoEm        DateTime        @default(now())
+  atualizadoEm    DateTime        @updatedAt
+
+  @@index([compradorId])
 }
 
 // Lance: cada oferta feita em um item. Nunca e editado nem apagado (serve de historico e auditoria)
@@ -225,6 +268,7 @@ model ChatMessage {
   criadoEm DateTime @default(now())
 
   @@index([leilaoId, criadoEm]) // deixa rapido buscar a conversa de um leilao em ordem
+  @@index([autorId]) // chave estrangeira: deixa rapido achar as mensagens de um usuario (e apagar/anonimizar sem varrer a tabela)
 }
 
 // Pedido de recuperacao de senha: guarda so o HASH do codigo (nunca o codigo), com validade e limite de tentativas
