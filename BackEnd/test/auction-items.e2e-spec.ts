@@ -183,19 +183,32 @@ describe('AuctionItems (e2e)', () => {
     });
 
     it('consulta por relacionamento: itens de um leilao', async () => {
+      // O leilão está em rascunho: só o dono vê os itens dele (visitante recebe lista vazia; ver o teste abaixo)
       const resposta = await rota(
         'get',
         `?leilaoId=${leilaoDraftId}`,
+        tokenSeller,
       ).expect(200);
       const itens = resposta.body.dados as { leilaoId: string }[];
       expect(itens.length).toBeGreaterThan(0);
       expect(itens.every((i) => i.leilaoId === leilaoDraftId)).toBe(true);
     });
 
+    it('itens de leilão em RASCUNHO: visitante não vê na lista nem pelo link; o dono e o ADMIN veem', async () => {
+      const lista = await rota('get', `?leilaoId=${leilaoDraftId}`).expect(200);
+      expect(lista.body.dados).toHaveLength(0);
+      const dono = await rota('get', `?leilaoId=${leilaoDraftId}`, tokenSeller).expect(200);
+      const itemId = (dono.body.dados as { id: string }[])[0].id;
+
+      await rota('get', `/${itemId}`).expect(404); // visitante, pelo link direto
+      await rota('get', `/${itemId}`, tokenSeller).expect(200); // dono
+    });
+
     it('consulta por relacionamento: itens de uma categoria', async () => {
       const resposta = await rota(
         'get',
         `?categoriaId=${categoriaId}`,
+        tokenSeller, // os itens de teste estão em leilão em rascunho: só o dono os vê
       ).expect(200);
       const itens = resposta.body.dados as { categoriaId: string }[];
       expect(itens.length).toBeGreaterThan(0);

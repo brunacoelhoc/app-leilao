@@ -9,7 +9,7 @@ import { AuditLogService } from '../audit/audit-log.service';
 import { CepService } from '../cep/cep.service';
 import type { ContextoRequisicao } from '../common/interfaces/contexto-requisicao.interface';
 import { decimalParaString } from '../common/utils/decimal.util';
-import { filtroDeLeiloesVisiveis } from '../common/utils/visibilidade-cancelados.util';
+import { filtroDeLeiloesVisiveis, rascunhoOculto } from '../common/utils/visibilidade-leiloes.util';
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import {
   calcularPaginacao,
@@ -220,18 +220,19 @@ export class AuctionItemsService {
     return paginar(itens.map((item) => paraResposta(item)), total, paginacao);
   }
 
-  async buscarPorId(id: string): Promise<AuctionItemResposta> {
+  async buscarPorId(id: string, usuario?: UsuarioAutenticado): Promise<AuctionItemResposta> {
     const item = await this.prisma.auctionItem.findUnique({
       where: { id },
       include: {
           _count: { select: { lances: true } },
           vencedor: { select: { nome: true } },
           leilao: {
-            select: { status: true, dataInicio: true, dataFim: true, prorrogacoes: true },
+            select: { status: true, vendedorId: true, dataInicio: true, dataFim: true, prorrogacoes: true },
           },
         },
     });
-    if (!item) {
+    // Peça de leilão em rascunho: só o dono e o ADMIN veem (os demais recebem 404)
+    if (!item || (item.leilao && rascunhoOculto(item.leilao, usuario))) {
       throw new NotFoundException('Item nao encontrado');
     }
     const resposta = paraResposta(item);

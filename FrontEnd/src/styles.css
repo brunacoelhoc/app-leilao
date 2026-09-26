@@ -9,8 +9,8 @@
   --cor-superficie-alt: #f4f1ea;
   --cor-borda: #e0d2b4;
   --cor-texto: #2c2118;
-  --cor-texto-suave: #7a6a55;
-  --cor-dourado: #8c6d3b; /* bronze */
+  --cor-texto-suave: #6d5e4a; /* escurecido: #7a6a55 reprovava no contraste dos cartoes do carrossel */
+  --cor-dourado: #7d6133; /* bronze (escurecido: #8c6d3b dava 4,26:1 de contraste; este dá 5,1:1) */
   --cor-dourado-suave: #c5a059; /* dourado envelhecido */
   --cor-marrom: #4a2e1f;
   --cor-marrom-escuro: #2f1c11;
@@ -545,4 +545,16 @@ router-outlet + * {
   top: 1.25rem;
   left: 1.25rem;
   z-index: 2;
+}
+
+/* Alvos de toque: em tela pequena ou toque, botoes e campos com pelo menos 36px de altura (WCAG 2.2 pede no minimo 24px) */
+@media (max-width: 640px), (pointer: coarse) {
+  button:not(.olho):not(.passo),
+  select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]) {
+    min-height: 36px;
+  }
+  .barra-a11y button {
+    min-height: 36px;
+  }
 }

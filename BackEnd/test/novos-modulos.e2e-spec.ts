@@ -153,10 +153,12 @@ describe('Novos modulos (e2e)', () => {
     it('GET /auctions/resumo conta por status (livre) e filtra por vendedor', async () => {
       await criarLeilao('OPEN');
       await criarLeilao('DRAFT');
-      const res = await api('get', `/auctions/resumo?vendedorId=${sellerId}`).expect(200);
+      const res = await api('get', `/auctions/resumo?vendedorId=${sellerId}`, tokenSeller).expect(200);
       expect(res.body).toMatchObject({ OPEN: 1, DRAFT: 1, CLOSED: 0, total: 2 });
+      const publico = await api('get', `/auctions/resumo?vendedorId=${sellerId}`).expect(200); // visitante: sem o rascunho
+      expect(publico.body).toMatchObject({ OPEN: 1, DRAFT: 0, CLOSED: 0, total: 1 });
       const geral = await api('get', '/auctions/resumo').expect(200);
-      expect(geral.body.total).toBeGreaterThanOrEqual(2);
+      expect(geral.body.total).toBeGreaterThanOrEqual(1);
     });
 
     it('GET /admin/resumo: 200 para ADMIN, 403 para outros, 401 sem login', async () => {

@@ -134,10 +134,12 @@ export class AuctionItemsController {
   @ApiOkResponse({ description: 'Item encontrado', type: AuctionItemResposta, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
+  @UseGuards(JwtOpcionalGuard)
   buscarPorId(
     @Param('id', ParseUuidPipePt) id: string,
+    @CurrentUser() usuario?: UsuarioAutenticado,
   ): Promise<AuctionItemResposta> {
-    return this.auctionItemsService.buscarPorId(id);
+    return this.auctionItemsService.buscarPorId(id, usuario);
   }
 
   @Patch(':id')

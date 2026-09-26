@@ -144,6 +144,7 @@
   padding: 0.15rem 0.55rem;
   cursor: pointer;
   font-size: 0.75rem;
+  min-height: 24px;
 }
 
 .barra-a11y button:hover,
@@ -191,4 +192,11 @@
   border-radius: 4px;
   background: var(--cor-superficie-alt);
   white-space: nowrap;
+}
+
+/* Celular ou toque: alvo de pelo menos 36px (esta regra fica aqui porque a do componente tem prioridade sobre a global) */
+@media (max-width: 640px), (pointer: coarse) {
+  .barra-a11y button {
+    min-height: 36px;
+  }
 }

@@ -152,9 +152,13 @@ export class AuctionsController {
   @ApiOkResponse({ description: 'Leilao encontrado', type: AuctionResposta, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Leilao inexistente', type: ErroResposta })
-  buscarPorId(@Param('id', ParseUuidPipePt) id: string): Promise<AuctionResposta> {
+  @UseGuards(JwtOpcionalGuard)
+  buscarPorId(
+    @Param('id', ParseUuidPipePt) id: string,
+    @CurrentUser() usuario?: UsuarioAutenticado,
+  ): Promise<AuctionResposta> {
     // O detalhe tambem traz a capa (o front nao precisa procurar a foto nos itens)
-    return Promise.all([this.auctionsService.buscarPorId(id), this.auctionsService.capaDoLeilao(id)]).then(
+    return Promise.all([this.auctionsService.buscarVisivelPorId(id, usuario), this.auctionsService.capaDoLeilao(id)]).then(
       ([leilao, capaDocumentoId]) => comTransicoes({ ...leilao, capaDocumentoId, capaPadrao: capaPadrao(id) }),
     );
   }

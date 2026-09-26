@@ -76,7 +76,7 @@
 
 .card.dist-2,
 .card.dist-m2 {
-  opacity: 0.7;
+  opacity: 0.92; /* era 0.7: apagava demais e reprovava no contraste (WCAG) */
   transform: translateY(-50%) translateX(calc(var(--o) * 96%)) translateZ(-140px) rotateY(calc(var(--o) * -18deg)) scale(0.8);
 }
 

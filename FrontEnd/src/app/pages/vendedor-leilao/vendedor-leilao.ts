@@ -271,8 +271,9 @@ export class VendedorLeilao {
       .atualizar(this.leilaoId, {
         titulo: this.leilaoTitulo.trim(),
         descricao: this.leilaoDescricao.trim(),
-        dataInicio: new Date(this.leilaoInicio).toISOString(),
-        dataFim: new Date(this.leilaoFim).toISOString(),
+        // Só envia a data que mudou: a API não aceita início no passado, e o rascunho pode ter sido criado há dias
+        ...(this.leilaoInicio !== this.paraCampoData(this.leilao()!.dataInicio) ? { dataInicio: new Date(this.leilaoInicio).toISOString() } : {}),
+        ...(this.leilaoFim !== this.paraCampoData(this.leilao()!.dataFim) ? { dataFim: new Date(this.leilaoFim).toISOString() } : {}),
       })
       .subscribe({
         next: (l) => {

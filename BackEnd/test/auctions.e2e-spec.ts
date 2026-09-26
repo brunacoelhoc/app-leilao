@@ -187,7 +187,7 @@ describe('Auctions (e2e)', () => {
         await prisma.auction.findUniqueOrThrow({ where: { id: criado.body.id as string } })
       ).vendedorId;
 
-      const resposta = await rota('get', `?vendedorId=${idVendedor}`).expect(200);
+      const resposta = await rota('get', `?vendedorId=${idVendedor}`, tokenSeller).expect(200); // rascunho: só o dono vê
       const leiloes = resposta.body.dados as { id: string; vendedorId: string }[];
       expect(leiloes.length).toBeGreaterThan(0);
       expect(leiloes.every((l) => l.vendedorId === idVendedor)).toBe(true);
@@ -210,6 +210,38 @@ describe('Auctions (e2e)', () => {
     it('id malformado -> 400 em portugues', async () => {
       const resposta = await rota('get', '/nao-e-um-uuid').expect(400);
       expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+    });
+  });
+
+  describe('rascunho e privado: so o dono e o ADMIN enxergam', () => {
+    it('visitante, comprador e outro vendedor nao veem na lista, no resumo nem pelo link (404)', async () => {
+      const criado = await rota('post', '', tokenSeller).send(dadosValidos('Auctions E2E Rascunho Privado'));
+      const id = criado.body.id as string;
+      const ids = async (token?: string) => ((await rota('get', '?limite=100', token).expect(200)).body.dados as { id: string }[]).map((l) => l.id);
+
+      expect(await ids()).not.toContain(id);
+      expect(await ids(tokenBidder)).not.toContain(id);
+      expect(await ids(tokenOutroSeller)).not.toContain(id);
+      await rota('get', `/${id}`).expect(404);
+      await rota('get', `/${id}`, tokenBidder).expect(404);
+      await rota('get', `/${id}`, tokenOutroSeller).expect(404);
+      expect((await rota('get', '/resumo').expect(200)).body.DRAFT).toBe(0);
+    });
+
+    it('o dono e o ADMIN veem (lista e link), e depois de publicar (SCHEDULED) todos veem', async () => {
+      const criado = await rota('post', '', tokenSeller).send(dadosValidos('Auctions E2E Rascunho Dono'));
+      const id = criado.body.id as string;
+      const ids = async (token?: string) => ((await rota('get', '?limite=100', token).expect(200)).body.dados as { id: string }[]).map((l) => l.id);
+
+      expect(await ids(tokenSeller)).toContain(id);
+      expect(await ids(tokenAdmin)).toContain(id);
+      await rota('get', `/${id}`, tokenSeller).expect(200);
+      await rota('get', `/${id}`, tokenAdmin).expect(200);
+
+      await adicionarItem(id);
+      await rota('patch', `/${id}/status`, tokenSeller).send({ status: 'SCHEDULED' }).expect(200);
+      expect(await ids()).toContain(id); // publicado: aparece para todos
+      await rota('get', `/${id}`).expect(200);
     });
   });
 

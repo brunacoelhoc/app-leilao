@@ -11,7 +11,7 @@ import type { ContextoRequisicao } from '../common/interfaces/contexto-requisica
 import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 import { capaPadrao } from '../common/utils/capa-padrao.util';
 import { decimalParaString } from '../common/utils/decimal.util';
-import { filtroDeLeiloesVisiveis } from '../common/utils/visibilidade-cancelados.util';
+import { filtroDeLeiloesVisiveis, rascunhoOculto } from '../common/utils/visibilidade-leiloes.util';
 import { camposFaltandoNoPerfil, mensagemPerfilIncompleto } from '../common/utils/perfil-completo.util';
 import {
   calcularPaginacao,
@@ -198,6 +198,16 @@ export class AuctionsService {
   async buscarPorId(id: string): Promise<Auction> {
     const leilao = await this.prisma.auction.findUnique({ where: { id } });
     if (!leilao) {
+      throw new NotFoundException('Leilao nao encontrado');
+    }
+    return leilao;
+  }
+
+  // Para a rota PUBLICA de detalhe: o rascunho só abre para o dono e o ADMIN (os demais recebem 404).
+  // As demais telas do sistema seguem usando buscarPorId (que não filtra por quem pergunta)
+  async buscarVisivelPorId(id: string, usuario?: UsuarioAutenticado): Promise<Auction> {
+    const leilao = await this.buscarPorId(id);
+    if (rascunhoOculto(leilao, usuario)) {
       throw new NotFoundException('Leilao nao encontrado');
     }
     return leilao;
