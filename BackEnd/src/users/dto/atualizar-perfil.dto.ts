@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import { aparar } from '../../common/utils/aparar-texto.util';
 import { IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { normalizarEmail } from '../../common/utils/normalizar-email.util';
 
 // Autoedicao do proprio perfil (PATCH /users/me). Nunca inclui "papel" nem
 // "ativo" -- ninguem se promove ou reativa sozinho por aqui
@@ -13,6 +14,7 @@ export class AtualizarPerfilDto {
   nome?: string;
 
   // Trocar o e-mail troca a identidade de login: exige a senha atual (abaixo)
+  @Transform(normalizarEmail) // sem isso "Ana@X.com" era gravado com maiuscula e o login (que procura em minuscula) nunca mais achava a conta
   @IsOptional()
   @IsEmail({}, { message: 'email deve ser um e-mail valido' })
   @MaxLength(180, { message: 'email deve ter no maximo 180 caracteres' })

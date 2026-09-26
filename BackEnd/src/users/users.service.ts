@@ -161,7 +161,13 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.update({ where: { id }, data: { ativo: false } });
+    // Desativar também derruba as sessões na hora (o token já deixaria de valer pela conferência de "ativo", mas assim
+    // não sobra sessão viva no banco esperando uma tentativa de renovar)
+    const [desativado] = await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id }, data: { ativo: false } }),
+      this.prisma.session.updateMany({ where: { usuarioId: id, revogadaEm: null }, data: { revogadaEm: new Date() } }),
+    ]);
+    return desativado;
   }
 
   // 🔎 ENCERRAR A PROPRIA CONTA (LGPD: direito ao apagamento). O historico (lances, leiloes, pedidos, auditoria) nao pode sumir

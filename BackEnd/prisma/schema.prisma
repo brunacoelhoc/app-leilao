@@ -121,6 +121,7 @@ model Auction {
 
   @@index([vendedorId]) // deixa mais rapido buscar os leiloes de um vendedor
   @@index([status, dataFim]) // deixa rapido listar leiloes por estado, ordenados pelo termino
+  @@index([criadoEm]) // a listagem de leiloes ordena do mais novo para o mais antigo
 }
 
 // Historico: guarda cada mudanca de estado de um leilao (quem mudou, de qual para qual e quando)
@@ -173,6 +174,7 @@ model AuctionItem {
   @@index([leilaoId]) // deixa rapido buscar os itens de um leilao
   @@index([categoriaId]) // deixa rapido buscar os itens de uma categoria
   @@index([vencedorId]) // deixa rapido buscar os itens que um usuario ganhou
+  @@index([criadoEm]) // a listagem de itens ordena do mais novo para o mais antigo
 }
 
 // Pedido: o que acontece depois que o item e vendido. Um por item (itemId unico);
@@ -266,6 +268,7 @@ model ChatMessage {
   criadoEm DateTime @default(now())
 
   @@index([leilaoId, criadoEm]) // deixa rapido buscar a conversa de um leilao em ordem
+  @@index([autorId]) // chave estrangeira: deixa rapido achar as mensagens de um usuario (e apagar/anonimizar sem varrer a tabela)
 }
 
 // Pedido de recuperacao de senha: guarda so o HASH do codigo (nunca o codigo), com validade e limite de tentativas
