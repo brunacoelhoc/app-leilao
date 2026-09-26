@@ -33,18 +33,18 @@ export class DestaqueResposta {
   @ApiPropertyOptional({ nullable: true, example: '2500', description: 'Maior lance entre os itens (null se nenhum lance)' })
   maiorLance: string | null;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Id de uma foto (PHOTO) do leilao para usar de capa; null se nenhum item tem foto' })
+  @ApiPropertyOptional({ nullable: true, description: 'Id de uma foto (PHOTO) do leilão para usar de capa; null se nenhum item tem foto' })
   capaDocumentoId: string | null;
 
-  @ApiProperty({ description: 'Caminho de uma obra do acervo para usar quando nao ha foto enviada' })
+  @ApiProperty({ description: 'Caminho de uma obra do acervo para usar quando não há foto enviada' })
   capaPadrao: string;
 
-  @ApiProperty({ example: 'Participar', description: 'Texto do botao do card: "Ver resultado" se encerrado, senao "Participar"' })
+  @ApiProperty({ example: 'Participar', description: 'Texto do botão do card: "Ver resultado" se encerrado, senão "Participar"' })
   rotuloAcao: string;
 
   @ApiPropertyOptional({
     nullable: true,
-    description: 'Preenchido so quando o leilao tem exatamente 1 item: "Participar" leva direto para a sala dele',
+    description: 'Preenchido só quando o leilão tem exatamente 1 item: "Participar" leva direto para a sala dele',
   })
   itemUnicoId: string | null;
 }

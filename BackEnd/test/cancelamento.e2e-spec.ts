@@ -86,7 +86,7 @@ describe('Cancelamento de leilao com lances (e2e)', () => {
   it('vendedor NAO cancela leilao aberto COM lances -> 403 e o leilao continua aberto', async () => {
     const id = await leilaoAberto(true);
     const res = await cancelar(id, vendedor.token).expect(403);
-    expect(res.body.mensagem).toMatch(/ja recebeu 1 lance/);
+    expect(res.body.mensagem).toMatch(/já recebeu 1 lance/);
     expect(await statusDoBanco(id)).toBe('OPEN');
     // a tentativa recusada fica na auditoria
     const registro = await prisma.auditLog.findFirst({ where: { acao: 'LEILAO_MUDANCA_STATUS_REJEITADA', entidadeId: id } });
@@ -239,7 +239,7 @@ describe('Cancelamento de leilao com lances (e2e)', () => {
       expect(await statusDoBanco(id)).toBe('CANCELED');
 
       const aberto = await leilaoAberto(false);
-      await reativar(aberto, admin.token, 'Nao esta cancelado').expect(409);
+      await reativar(aberto, admin.token, 'Não esta cancelado').expect(409);
     });
 
     it('depois de reativado o leilao volta a aparecer para o comprador', async () => {

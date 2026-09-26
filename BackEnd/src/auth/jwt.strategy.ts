@@ -35,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // Reconsulta o banco a cada requisicao: se o usuario foi apagado ou
     // desativado DEPOIS de emitir o token, o acesso e cortado na hora
     if (!usuario || !usuario.ativo) {
-      throw new UnauthorizedException('Sessao invalida ou usuario desativado');
+      throw new UnauthorizedException('Sessão inválida ou usuário desativado');
     }
 
     // 🔎 O token so vale enquanto a SESSAO dele estiver ativa: logout, troca de senha e reuso suspeito

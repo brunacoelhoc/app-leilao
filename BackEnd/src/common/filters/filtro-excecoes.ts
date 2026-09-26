@@ -11,15 +11,15 @@ import { Prisma } from '../../generated/prisma/client';
 
 // Nome em portugues de cada codigo HTTP
 const NOMES_DOS_ERROS: Record<number, string> = {
-  400: 'Requisicao invalida',
-  401: 'Nao autorizado',
+  400: 'Requisição inválida',
+  401: 'Não autorizado',
   403: 'Acesso negado',
-  404: 'Nao encontrado',
+  404: 'Não encontrado',
   409: 'Conflito',
   413: 'Corpo grande demais',
-  429: 'Muitas requisicoes',
+  429: 'Muitas requisições',
   500: 'Erro interno do servidor',
-  503: 'Servico indisponivel',
+  503: 'Serviço indisponível',
 };
 
 // O que o filtro decidiu responder: o codigo HTTP e a mensagem
@@ -88,8 +88,8 @@ export class FiltroExcecoes implements ExceptionFilter {
     const codigo = (excecao as { status?: unknown; statusCode?: unknown } | null) ?? {};
     const status = typeof codigo.status === 'number' ? codigo.status : codigo.statusCode;
     if (typeof status !== 'number' || status < 400 || status > 499) return null;
-    if (status === 413) return { statusCode: 413, mensagem: 'O corpo da requisicao e grande demais' };
-    if (status === 400) return { statusCode: 400, mensagem: 'Corpo da requisicao invalido (JSON malformado)' };
+    if (status === 413) return { statusCode: 413, mensagem: 'O corpo da requisição é grande demais' };
+    if (status === 400) return { statusCode: 400, mensagem: 'Corpo da requisição inválido (JSON malformado)' };
     return null; // outros 4xx inesperados continuam como erro interno, para nao esconder um problema nosso
   }
 
@@ -111,7 +111,7 @@ export class FiltroExcecoes implements ExceptionFilter {
       typeof mensagem === 'string' &&
       mensagem.startsWith('Cannot ')
     ) {
-      mensagem = 'Rota nao encontrada';
+      mensagem = 'Rota não encontrada';
     }
 
     return { statusCode, mensagem };
@@ -128,7 +128,7 @@ export class FiltroExcecoes implements ExceptionFilter {
       case 'P2002': // valor unico repetido (ex.: e-mail ja cadastrado)
         return {
           statusCode: 409,
-          mensagem: 'Ja existe um registro com estes dados',
+          mensagem: 'Já existe um registro com estes dados',
         };
       case 'P2003': // problema de chave estrangeira
         if (causa?.kind === 'RestrictViolation') {
@@ -136,16 +136,16 @@ export class FiltroExcecoes implements ExceptionFilter {
           return {
             statusCode: 409,
             mensagem:
-              'Este registro esta em uso por outros registros e nao pode ser removido',
+              'Este registro está em uso por outros registros e não pode ser removido',
           };
         }
         // tentou ligar a um registro que nao existe
         return {
           statusCode: 404,
-          mensagem: 'Um dos registros informados nao existe',
+          mensagem: 'Um dos registros informados não existe',
         };
       case 'P2025': // registro nao encontrado
-        return { statusCode: 404, mensagem: 'Registro nao encontrado' };
+        return { statusCode: 404, mensagem: 'Registro não encontrado' };
       case 'P2039': // erro do banco; 23514 = regra CHECK violada
         if (causa?.originalCode === '23514') {
           return {
@@ -158,7 +158,7 @@ export class FiltroExcecoes implements ExceptionFilter {
       case 'ETIMEDOUT':
       case 'P1001':
       case 'P1002':
-        return { statusCode: 503, mensagem: 'Banco de dados indisponivel' };
+        return { statusCode: 503, mensagem: 'Banco de dados indisponível' };
     }
 
     return {

@@ -105,18 +105,18 @@ export class AuctionItemsService {
         where: { id: dto.leilaoId },
       });
       if (!leilao) {
-        throw new NotFoundException('Leilao nao encontrado');
+        throw new NotFoundException('Leilão não encontrado');
       }
 
       if (usuario.papel !== 'ADMIN' && leilao.vendedorId !== usuario.id) {
         throw new ForbiddenException(
-          'Voce so pode adicionar itens aos seus proprios leiloes',
+          'Você só pode adicionar itens aos seus próprios leilões',
         );
       }
 
       if (leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel adicionar itens a um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível adicionar itens a um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 
@@ -124,7 +124,7 @@ export class AuctionItemsService {
         where: { id: dto.categoriaId },
       });
       if (!categoria) {
-        throw new NotFoundException('Categoria nao encontrada');
+        throw new NotFoundException('Categoria não encontrada');
       }
 
       // Integracao externa (HttpService/ViaCEP): busca o endereco a partir do
@@ -233,7 +233,7 @@ export class AuctionItemsService {
     });
     // Peça de leilão em rascunho: só o dono e o ADMIN veem (os demais recebem 404)
     if (!item || (item.leilao && rascunhoOculto(item.leilao, usuario))) {
-      throw new NotFoundException('Item nao encontrado');
+      throw new NotFoundException('Item não encontrado');
     }
     const resposta = paraResposta(item);
     resposta.avisoResultado = await this.avisoDoResultado(item);
@@ -251,7 +251,7 @@ export class AuctionItemsService {
     });
     if (!maior || !maior.valor.greaterThan(item.lanceAtual)) return null;
     const moeda = (v: Prisma.Decimal) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    return `O lance mais alto (${moeda(maior.valor)}) foi desconsiderado porque a conta que o fez foi desativada. O valor final e o do maior lance valido (${moeda(item.lanceAtual)}).`;
+    return `O lance mais alto (${moeda(maior.valor)}) foi desconsiderado porque a conta que o fez foi desativada. O valor final é o do maior lance válido (${moeda(item.lanceAtual)}).`;
   }
 
   // Busca o item JUNTO com o leilao, para conferir o dono e o status do leilao
@@ -261,7 +261,7 @@ export class AuctionItemsService {
       include: { leilao: true },
     });
     if (!item) {
-      throw new NotFoundException('Item nao encontrado');
+      throw new NotFoundException('Item não encontrado');
     }
     return item;
   }
@@ -273,7 +273,7 @@ export class AuctionItemsService {
     if (usuario.papel === 'ADMIN') return;
     if (vendedorIdDoLeilao !== usuario.id) {
       throw new ForbiddenException(
-        'Voce so pode gerenciar itens dos seus proprios leiloes',
+        'Você só pode gerenciar itens dos seus próprios leilões',
       );
     }
   }
@@ -290,7 +290,7 @@ export class AuctionItemsService {
 
       if (item.leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel editar itens de um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível editar itens de um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 
@@ -299,7 +299,7 @@ export class AuctionItemsService {
           where: { id: dto.categoriaId },
         });
         if (!categoria) {
-          throw new NotFoundException('Categoria nao encontrada');
+          throw new NotFoundException('Categoria não encontrada');
         }
       }
 
@@ -364,7 +364,7 @@ export class AuctionItemsService {
 
       if (item.leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel remover itens de um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível remover itens de um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 

@@ -41,7 +41,7 @@ export class PedidosService {
       create: { itemId, compradorId: usuario.id, valor: item.lanceAtual! },
     });
     if (pedido.status !== PedidoStatus.AGUARDANDO_PAGAMENTO) {
-      throw new ConflictException('Este pedido ja foi pago');
+      throw new ConflictException('Este pedido já foi pago');
     }
     const atualizado = await this.prisma.pedido.update({
       where: { id: pedido.id },
@@ -57,7 +57,7 @@ export class PedidosService {
       throw new ConflictException('Pague o pedido antes de escolher a retirada ou a entrega');
     }
     if (pedido.status === PedidoStatus.FINALIZADO) {
-      throw new ConflictException('A retirada/entrega deste pedido ja foi definida');
+      throw new ConflictException('A retirada/entrega deste pedido já foi definida');
     }
     const retirada = dto.tipoEntrega === TipoEntrega.RETIRADA;
     const atualizado = await this.prisma.pedido.update({
@@ -76,12 +76,12 @@ export class PedidosService {
   // Regras de acesso: item existe, esta VENDIDO e quem chama e o vencedor
   private async itemDoVencedor(itemId: string, usuario: UsuarioAutenticado) {
     const item = await this.prisma.auctionItem.findUnique({ where: { id: itemId } });
-    if (!item) throw new NotFoundException('Item nao encontrado');
+    if (!item) throw new NotFoundException('Item não encontrado');
     if (item.status !== ItemStatus.SOLD || !item.lanceAtual) {
-      throw new ConflictException('Este item ainda nao foi vendido');
+      throw new ConflictException('Este item ainda não foi vendido');
     }
     if (item.vencedorId !== usuario.id) {
-      throw new ForbiddenException('So o vencedor do item acessa o pagamento e a retirada');
+      throw new ForbiddenException('Só o vencedor do item acessa o pagamento e a retirada');
     }
     return item;
   }
@@ -90,7 +90,7 @@ export class PedidosService {
     pedido: Omit<Pedido, 'id' | 'compradorId' | 'criadoEm' | 'atualizadoEm'> & { id: string | null },
     item: { cidade: string | null; uf: string | null; cep: string },
   ): PedidoResposta {
-    const cidade = item.cidade && item.uf ? `${item.cidade}/${item.uf}` : 'endereco do vendedor';
+    const cidade = item.cidade && item.uf ? `${item.cidade}/${item.uf}` : 'endereço do vendedor';
     return {
       id: pedido.id,
       itemId: pedido.itemId,

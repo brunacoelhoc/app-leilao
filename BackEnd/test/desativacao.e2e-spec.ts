@@ -79,7 +79,7 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
       await leilaoComLances([{ valor: 60, quem: licitante.id }]);
 
       const res = await api('patch', `/users/${licitante.id}/desativar`, tokenAdmin).expect(409);
-      expect(res.body.mensagem).toMatch(/disputando 1 peca/);
+      expect(res.body.mensagem).toMatch(/disputando 1 peça/);
       expect((await prisma.user.findUniqueOrThrow({ where: { id: licitante.id } })).ativo).toBe(true);
     });
 
@@ -99,7 +99,7 @@ describe('Desativacao de usuario em disputa (e2e)', () => {
         data: { titulo: 'Leilao do dono', status: 'OPEN', dataInicio: new Date(Date.now() - 3_600_000), dataFim: new Date(Date.now() + 3_600_000), vendedorId: dono.id },
       });
       const res = await api('patch', `/users/${dono.id}/desativar`, tokenAdmin).expect(409);
-      expect(res.body.mensagem).toMatch(/dono de 1 leilao/);
+      expect(res.body.mensagem).toMatch(/dono de 1 leilão/);
 
       // agendado tambem conta
       await prisma.auction.update({ where: { id: leilao.id }, data: { status: 'SCHEDULED' } });

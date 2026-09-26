@@ -9,7 +9,7 @@ export class EmailSimuladoService {
 
   enviarCodigoDeRecuperacao(email: string, nome: string, codigo: string, validadeMinutos: number): void {
     this.logger.warn(
-      `[E-MAIL SIMULADO] Para: ${nome} <${email}> | Codigo de recuperacao de senha: ${codigo} (valido por ${validadeMinutos} minutos)`,
+      `[E-MAIL SIMULADO] Para: ${nome} <${email}> | Código de recuperação de senha: ${codigo} (válido por ${validadeMinutos} minutos)`,
     );
   }
 }

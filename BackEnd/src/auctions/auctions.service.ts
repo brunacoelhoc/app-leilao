@@ -198,7 +198,7 @@ export class AuctionsService {
   async buscarPorId(id: string): Promise<Auction> {
     const leilao = await this.prisma.auction.findUnique({ where: { id } });
     if (!leilao) {
-      throw new NotFoundException('Leilao nao encontrado');
+      throw new NotFoundException('Leilão não encontrado');
     }
     return leilao;
   }
@@ -208,7 +208,7 @@ export class AuctionsService {
   async buscarVisivelPorId(id: string, usuario?: UsuarioAutenticado): Promise<Auction> {
     const leilao = await this.buscarPorId(id);
     if (rascunhoOculto(leilao, usuario)) {
-      throw new NotFoundException('Leilao nao encontrado');
+      throw new NotFoundException('Leilão não encontrado');
     }
     return leilao;
   }
@@ -266,7 +266,7 @@ export class AuctionsService {
     if (usuario.papel === 'ADMIN') return;
     if (leilao.vendedorId !== usuario.id) {
       throw new ForbiddenException(
-        'Voce so pode gerenciar os seus proprios leiloes',
+        'Você só pode gerenciar os seus próprios leilões',
       );
     }
   }
@@ -285,7 +285,7 @@ export class AuctionsService {
       // ainda nao foi publicado (DRAFT)
       if (leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel editar um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível editar um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 
@@ -297,7 +297,7 @@ export class AuctionsService {
         throw new ConflictException('dataFim deve ser depois de dataInicio');
       }
       if (excedeDuracaoMaxima(novoInicio, novoFim)) {
-        throw new ConflictException(`O leilao pode durar no maximo ${DURACAO_MAXIMA_HORAS} horas (2 dias)`);
+        throw new ConflictException(`O leilão pode durar no máximo ${DURACAO_MAXIMA_HORAS} horas (2 dias)`);
       }
 
       const atualizado = await this.prisma.auction.update({
@@ -345,7 +345,7 @@ export class AuctionsService {
 
       if (!transicaoEhValida(leilao.status, dto.status)) {
         throw new ConflictException(
-          `Nao e possivel mudar de ${leilao.status} para ${dto.status}`,
+          `Não é possível mudar de ${leilao.status} para ${dto.status}`,
         );
       }
 
@@ -485,7 +485,7 @@ export class AuctionsService {
     const lances = await this.prisma.bid.count({ where: { item: { leilaoId: leilao.id } } });
     if (lances > 0) {
       throw new ForbiddenException(
-        `Este leilao ja recebeu ${lances} lance(s) e nao pode ser cancelado pelo vendedor. Peca ao administrador (com o motivo).`,
+        `Este leilão já recebeu ${lances} lance(s) e não pode ser cancelado pelo vendedor. Peça ao administrador (com o motivo).`,
       );
     }
   }
@@ -499,12 +499,12 @@ export class AuctionsService {
     if (novoStatus !== AuctionStatus.SCHEDULED && novoStatus !== AuctionStatus.OPEN) return;
 
     if (leilao.dataFim <= new Date()) {
-      throw new ConflictException('A data de fim deste leilao ja passou');
+      throw new ConflictException('A data de fim deste leilão já passou');
     }
     if (novoStatus === AuctionStatus.SCHEDULED) {
       const itens = await this.prisma.auctionItem.count({ where: { leilaoId: leilao.id } });
       if (itens === 0) {
-        throw new ConflictException('Adicione ao menos um item antes de agendar o leilao');
+        throw new ConflictException('Adicione ao menos um item antes de agendar o leilão');
       }
     }
   }
@@ -541,7 +541,7 @@ export class AuctionsService {
         data: { status: novoStatus },
       });
       if (count === 0) {
-        throw new ConflictException('O leilao mudou de estado enquanto voce agia; recarregue e tente de novo');
+        throw new ConflictException('O leilão mudou de estado enquanto você agia; recarregue e tente de novo');
       }
       const resultado = await tx.auction.findUniqueOrThrow({ where: { id: leilao.id } });
 
@@ -584,8 +584,8 @@ export class AuctionsService {
         entidadeId: troca.itemId,
         resultado: AuditResult.SUCCESS,
         motivo: troca.novoVencedorId
-          ? `Lider (lance ${troca.valorDoLider}) estava desativado: vence o proximo lance ativo (${troca.valorFinal})`
-          : `Todos os licitantes estavam desativados (maior lance ${troca.valorDoLider}): peca nao vendida`,
+          ? `Líder (lance ${troca.valorDoLider}) estava desativado: vence o próximo lance ativo (${troca.valorFinal})`
+          : `Todos os licitantes estavam desativados (maior lance ${troca.valorDoLider}): peça não vendida`,
         statusHttp: 200,
       });
     }
@@ -696,7 +696,7 @@ export class AuctionsService {
       // Nunca apagar um leilao que ja saiu do rascunho (pode ter itens/lances)
       if (leilao.status !== AuctionStatus.DRAFT) {
         throw new ConflictException(
-          'So e possivel remover um leilao que ainda esta em rascunho (DRAFT)',
+          'Só é possível remover um leilão que ainda está em rascunho (DRAFT)',
         );
       }
 
@@ -730,7 +730,7 @@ export class AuctionsService {
   private motivoDoErro(erro: unknown): string {
     return erro instanceof HttpException
       ? erro.message
-      : 'Erro interno ao processar o leilao';
+      : 'Erro interno ao processar o leilão';
   }
 
   private registrarAuditoria(

@@ -86,7 +86,7 @@ describe('Encerrar a propria conta (e2e)', () => {
 
     const depois = await prisma.user.findUniqueOrThrow({ where: { id: pessoa.id } });
     expect(depois.ativo).toBe(false);
-    expect(depois.nome).toBe('Usuario removido');
+    expect(depois.nome).toBe('Usuário removido');
     expect(depois.email).toBe(`removido.${pessoa.id}@removido.invalid`);
     expect([depois.telefone, depois.cpf, depois.endereco, depois.avatarUrl]).toEqual([null, null, null, null]);
 
@@ -98,7 +98,7 @@ describe('Encerrar a propria conta (e2e)', () => {
     // o historico permanece (imutavel), agora com o nome anonimizado
     expect(await prisma.bid.count({ where: { licitanteId: pessoa.id } })).toBe(1);
     const peca = await api('get', `/auction-items/${itemId}`).expect(200);
-    expect(peca.body.vencedorNome).toBe('Usuario removido');
+    expect(peca.body.vencedorNome).toBe('Usuário removido');
     expect(await prisma.auditLog.count({ where: { acao: 'CONTA_ENCERRADA', entidadeId: pessoa.id } })).toBe(1);
   });
 

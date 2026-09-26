@@ -16,7 +16,7 @@ const VALIDADE_MINUTOS = 15; // o codigo vale por 15 minutos
 const MAX_TENTATIVAS = 5; // 5 erros e o codigo e queimado
 const MAX_PEDIDOS_POR_HORA = 3; // por conta
 
-const MENSAGEM_PEDIDO = `Se o e-mail estiver cadastrado, enviamos um codigo de 6 digitos, valido por ${VALIDADE_MINUTOS} minutos.`;
+const MENSAGEM_PEDIDO = `Se o e-mail estiver cadastrado, enviamos um código de 6 dígitos, válido por ${VALIDADE_MINUTOS} minutos.`;
 
 @Injectable()
 export class RecuperacaoSenhaService {
@@ -37,7 +37,7 @@ export class RecuperacaoSenhaService {
         usuarioId: usuario?.id,
         acao: 'SENHA_RECUPERACAO_SOLICITADA',
         resultado: AuditResult.REJECTED,
-        motivo: usuario ? 'Conta desativada' : 'E-mail nao cadastrado',
+        motivo: usuario ? 'Conta desativada' : 'E-mail não cadastrado',
         statusHttp: 200,
         ...contexto,
       });
@@ -101,19 +101,19 @@ export class RecuperacaoSenhaService {
         ...contexto,
       });
       // Mesma mensagem para todo tipo de falha: nao entrega pista nenhuma
-      throw new BadRequestException('Codigo invalido ou expirado. Peca um novo codigo.');
+      throw new BadRequestException('Código inválido ou expirado. Peça um novo código.');
     };
 
     if (!usuario || !usuario.ativo) {
       await bcrypt.compare(dto.codigo, HASH_FICTICIO); // gasta o mesmo tempo de uma conta real
-      return recusar('E-mail nao cadastrado ou conta desativada');
+      return recusar('E-mail não cadastrado ou conta desativada');
     }
 
     const pedido = await this.prisma.passwordReset.findFirst({
       where: { usuarioId: usuario.id, usadoEm: null, expiraEm: { gt: new Date() } },
       orderBy: { criadoEm: 'desc' },
     });
-    if (!pedido) return recusar('Nenhum codigo valido (inexistente, usado ou expirado)');
+    if (!pedido) return recusar('Nenhum código válido (inexistente, usado ou expirado)');
 
     // 🔎 A tentativa e CONTADA ANTES de conferir, de forma atomica (so conta se ainda houver
     // tentativas): varios palpites ao mesmo tempo nao passam de 5
@@ -128,7 +128,7 @@ export class RecuperacaoSenhaService {
       if (pedido.tentativas + 1 >= MAX_TENTATIVAS) {
         await this.prisma.passwordReset.update({ where: { id: pedido.id }, data: { usadoEm: new Date() } });
       }
-      return recusar(`Codigo incorreto (tentativa ${pedido.tentativas + 1} de ${MAX_TENTATIVAS})`);
+      return recusar(`Código incorreto (tentativa ${pedido.tentativas + 1} de ${MAX_TENTATIVAS})`);
     }
 
     // Codigo certo: troca a senha e queima o codigo na MESMA transacao (uso unico)

@@ -49,9 +49,9 @@ export class EncerramentoAutomaticoService implements OnModuleInit, OnModuleDest
             'Encerrado automaticamente ao fim do prazo',
             true, // se um lance de ultima hora estendeu o prazo neste meio tempo, NAO fecha
           );
-          this.logger.log(`Leilao ${leilao.id} encerrado automaticamente`);
+          this.logger.log(`Leilão ${leilao.id} encerrado automaticamente`);
         } catch (erro) {
-          this.logger.warn(`Leilao ${leilao.id} nao encerrado agora: ${(erro as Error).message}`);
+          this.logger.warn(`Leilão ${leilao.id} não encerrado agora: ${(erro as Error).message}`);
         }
       }
 
@@ -68,15 +68,15 @@ export class EncerramentoAutomaticoService implements OnModuleInit, OnModuleDest
             leilao,
             AuctionStatus.OPEN,
             leilao.vendedorId,
-            'Aberto automaticamente na data de inicio',
+            'Aberto automaticamente na data de início',
           );
-          this.logger.log(`Leilao ${leilao.id} aberto automaticamente`);
+          this.logger.log(`Leilão ${leilao.id} aberto automaticamente`);
         } catch (erro) {
-          this.logger.warn(`Leilao ${leilao.id} nao aberto agora: ${(erro as Error).message}`);
+          this.logger.warn(`Leilão ${leilao.id} não aberto agora: ${(erro as Error).message}`);
         }
       }
     } catch (erro) {
-      this.logger.error(`Falha na verificacao automatica: ${(erro as Error).message}`);
+      this.logger.error(`Falha na verificação automática: ${(erro as Error).message}`);
     } finally {
       this.executando = false;
     }

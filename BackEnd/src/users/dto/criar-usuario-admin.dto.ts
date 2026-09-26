@@ -7,6 +7,6 @@ import { RegistrarUsuarioDto } from '../../auth/dto/registrar-usuario.dto';
 // (sem "aceiteTermos": o aceite e do cadastro publico, feito pela propria pessoa)
 export class CriarUsuarioAdminDto extends OmitType(RegistrarUsuarioDto, ['aceiteTermos'] as const) {
   @IsIn(['BIDDER', 'SELLER'], { message: 'papel deve ser BIDDER ou SELLER' })
-  @IsNotEmpty({ message: 'papel e obrigatorio' })
+  @IsNotEmpty({ message: 'papel e obrigatório' })
   papel: 'BIDDER' | 'SELLER';
 }

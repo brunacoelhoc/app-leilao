@@ -17,9 +17,9 @@ export class AdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiBearerAuth('jwt')
-  @ApiOperation({ summary: 'Totais da plataforma para o painel de administracao (so ADMIN)' })
-  @ApiOkResponse({ description: 'Quantidade de categorias, usuarios e leiloes', schema: { example: { categorias: 26, usuarios: 27, leiloes: 40 } } })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
+  @ApiOperation({ summary: 'Totais da plataforma para o painel de administração (só ADMIN)' })
+  @ApiOkResponse({ description: 'Quantidade de categorias, usuários e leilões', schema: { example: { categorias: 26, usuarios: 27, leiloes: 40 } } })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
   async resumo(): Promise<{ categorias: number; usuarios: number; leiloes: number }> {
     const [categorias, usuarios, leiloes] = await Promise.all([
       this.prisma.category.count(),

@@ -170,7 +170,7 @@ describe('Documents (e2e)', () => {
         .set('Authorization', `Bearer ${tokenSeller}`)
         .field('tipo', 'PHOTO');
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('Arquivo e obrigatorio');
+      expect(resposta.body.mensagem).toContain('Arquivo e obrigatório');
     });
 
     it('executavel disfarcado de foto (mimetype image/jpeg, conteudo "MZ") -> 400 pela assinatura real', async () => {
@@ -182,7 +182,7 @@ describe('Documents (e2e)', () => {
         .field('tipo', 'PHOTO')
         .attach('arquivo', executavel, 'foto.jpg');
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('nao corresponde');
+      expect(resposta.body.mensagem).toContain('não corresponde');
     });
 
     it('PNG enviado como .jpg (tipo diferente do conteudo) -> 400', async () => {
@@ -194,7 +194,7 @@ describe('Documents (e2e)', () => {
         .field('tipo', 'PHOTO')
         .attach('arquivo', png, 'foto.jpg');
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('nao corresponde');
+      expect(resposta.body.mensagem).toContain('não corresponde');
     });
 
     it('PDF de verdade (comeca com %PDF-) e aceito como DOCUMENT', async () => {
@@ -216,7 +216,7 @@ describe('Documents (e2e)', () => {
         .field('tipo', 'PHOTO')
         .attach('arquivo', BUFFER_FOTO, 'virus.exe');
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('nao permitido');
+      expect(resposta.body.mensagem).toContain('não permitido');
     });
 
     it('arquivo maior que o limite configurado (UPLOAD_MAX_SIZE_MB) -> 400', async () => {
@@ -258,7 +258,7 @@ describe('Documents (e2e)', () => {
         .get('/api/auction-items/nao-e-um-uuid/documents')
         .set('X-API-KEY', chave);
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
   });
 

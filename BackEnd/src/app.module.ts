@@ -42,7 +42,7 @@ import { SaudeModule } from './saude/saude.module';
             limit: config.getOrThrow<number>('RATE_LIMIT_MAX'),
           },
         ],
-        errorMessage: 'Muitas requisicoes. Aguarde um pouco e tente novamente.',
+        errorMessage: 'Muitas requisições. Aguarde um pouco e tente novamente.',
       }),
     }),
     // Conexao com o banco, disponivel em toda a aplicacao

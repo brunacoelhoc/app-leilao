@@ -22,22 +22,22 @@ export class AuctionResposta {
   @ApiProperty()
   dataFim: Date;
 
-  @ApiProperty({ example: 0, description: 'Quantas vezes o prazo foi estendido pelo anti-sniping (lance nos ultimos 2 minutos)' })
+  @ApiProperty({ example: 0, description: 'Quantas vezes o prazo foi estendido pelo anti-sniping (lance nos últimos 2 minutos)' })
   prorrogacoes: number;
 
-  @ApiProperty({ description: 'Id do usuario SELLER dono do leilao' })
+  @ApiProperty({ description: 'Id do usuário SELLER dono do leilão' })
   vendedorId: string;
 
-  @ApiProperty({ enum: AuctionStatus, isArray: true, description: 'Estados para os quais o leilao PODE ir agora (regra da maquina de estados, decidida pelo backend)' })
+  @ApiProperty({ enum: AuctionStatus, isArray: true, description: 'Estados para os quais o leilão PODE ir agora (regra da máquina de estados, decidida pelo backend)' })
   transicoesPermitidas: AuctionStatus[];
 
-  @ApiProperty({ description: 'true quando o leilao ainda pode ser editado, ter itens alterados e ser removido (so em rascunho). Decidido pelo backend' })
+  @ApiProperty({ description: 'true quando o leilão ainda pode ser editado, ter itens alterados e ser removido (só em rascunho). Decidido pelo backend' })
   editavel: boolean;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Id da foto de capa (so na listagem); baixe em GET /documents/:id/download' })
+  @ApiPropertyOptional({ nullable: true, description: 'Id da foto de capa (só na listagem); baixe em GET /documents/:id/download' })
   capaDocumentoId?: string | null;
 
-  @ApiPropertyOptional({ description: 'Caminho de uma obra do acervo para usar quando nao ha foto enviada (escolhida pelo servidor)' })
+  @ApiPropertyOptional({ description: 'Caminho de uma obra do acervo para usar quando não há foto enviada (escolhida pelo servidor)' })
   capaPadrao?: string;
 
   @ApiProperty()

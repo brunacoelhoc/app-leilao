@@ -31,7 +31,7 @@ bootstrap().catch((erro: { code?: string; message?: string }) => {
   const codigo = erro.code ? ` [${erro.code}]` : '';
   const mensagem = (erro.message ?? '').split('\n').find((l) => l.trim()) ?? '';
   new Logger('Bootstrap').error(
-    `Falha ao iniciar a aplicacao${codigo}: ${mensagem}`,
+    `Falha ao iniciar a aplicação${codigo}: ${mensagem}`,
   );
   process.exit(1);
 });

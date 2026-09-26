@@ -20,7 +20,7 @@ export class MensagemResposta {
   @ApiProperty({ example: 'BIDDER' })
   autorPapel: string;
 
-  @ApiPropertyOptional({ nullable: true, example: 'raposa', description: 'Avatar pronto do usuario (imagens grandes nao vao no chat)' })
+  @ApiPropertyOptional({ nullable: true, example: 'raposa', description: 'Avatar pronto do usuário (imagens grandes não vao no chat)' })
   autorAvatar: string | null;
 
   @ApiProperty()

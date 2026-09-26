@@ -69,7 +69,7 @@ describe('Infraestrutura da API (e2e)', () => {
         .expect(404)
         .expect((resposta) => {
           const corpo = resposta.body as { mensagem: string; caminho: string };
-          expect(corpo.mensagem).toBe('Rota nao encontrada');
+          expect(corpo.mensagem).toBe('Rota não encontrada');
           // Com o /api e sem a query string (que pode ter segredos)
           expect(corpo.caminho).toBe('/api/rota-que-nao-existe');
         });

@@ -67,10 +67,10 @@ export class AuctionItemsController {
   @Roles('SELLER', 'ADMIN')
   @ApiBearerAuth('jwt')
   @ApiOperation({
-    summary: 'Cria um item do leilao (dono do leilao ou ADMIN, so em DRAFT)',
+    summary: 'Cria um item do leilão (dono do leilão ou ADMIN, só em DRAFT)',
     description:
-      'O endereco de retirada (logradouro/cidade/uf) e preenchido de ' +
-      'verdade pela integracao com o ViaCEP, a partir do "cep" enviado.',
+      'O endereço de retirada (logradouro/cidade/uf) é preenchido de ' +
+      'verdade pela integração com o ViaCEP, a partir do "cep" enviado.',
   })
   @ApiCreatedResponse({
     description: 'Item criado (precoInicial/incrementoMinimo/lanceAtual sempre como string)',
@@ -87,7 +87,7 @@ export class AuctionItemsController {
       darLanceNoItem: {
         operationId: 'BidsController_darLance',
         parameters: { itemId: '$response.body#/id' },
-        description: 'Da um lance neste item (o leilao precisa estar OPEN)',
+        description: 'Dá um lance neste item (o leilão precisa estar OPEN)',
       },
       enviarDocumentoDoItem: {
         operationId: 'DocumentsController_enviar',
@@ -96,11 +96,11 @@ export class AuctionItemsController {
       },
     },
   })
-  @ApiBadRequestResponse({ description: 'Corpo invalido (preco/incremento negativo, cep com formato invalido)', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e o dono do leilao nem ADMIN', type: ErroResposta })
-  @ApiNotFoundResponse({ description: 'Leilao/categoria inexistente, ou CEP com formato valido mas nao encontrado no ViaCEP', type: ErroResposta })
-  @ApiConflictResponse({ description: 'O leilao ja saiu de DRAFT (nao aceita mais itens novos)', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Corpo inválido (preço/incremento negativo, cep com formato inválido)', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token inválido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é o dono do leilão nem ADMIN', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Leilão/categoria inexistente, ou CEP com formato válido mas não encontrado no ViaCEP', type: ErroResposta })
+  @ApiConflictResponse({ description: 'O leilão já saiu de DRAFT (não aceita mais itens novos)', type: ErroResposta })
   @ApiServiceUnavailableResponse({ description: 'ViaCEP fora do ar ou demorou demais para responder', type: ErroResposta })
   criar(
     @Body() dto: CriarAuctionItemDto,
@@ -114,10 +114,10 @@ export class AuctionItemsController {
   @Get()
   @ApiOperation({
     summary: 'Lista itens, paginado (livre, sem login)',
-    description: 'Os dois filtros sao opcionais e podem ser combinados (consulta por relacionamento).',
+    description: 'Os dois filtros são opcionais e podem ser combinados (consulta por relacionamento).',
   })
   @ApiPaginacaoQuery()
-  @ApiQuery({ name: 'leilaoId', required: false, description: 'Filtra pelos itens de um leilao' })
+  @ApiQuery({ name: 'leilaoId', required: false, description: 'Filtra pelos itens de um leilão' })
   @ApiQuery({ name: 'categoriaId', required: false, description: 'Filtra pelos itens de uma categoria' })
   @ApiRespostaPaginada(AuctionItemResposta)
   @UseGuards(JwtOpcionalGuard)
@@ -132,7 +132,7 @@ export class AuctionItemsController {
   @ApiOperation({ summary: 'Busca um item pelo id (livre, sem login)' })
   @ApiParam(PARAM_ID)
   @ApiOkResponse({ description: 'Item encontrado', type: AuctionItemResposta, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
   @UseGuards(JwtOpcionalGuard)
   buscarPorId(
@@ -146,15 +146,15 @@ export class AuctionItemsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER', 'ADMIN')
   @ApiBearerAuth('jwt')
-  @ApiOperation({ summary: 'Atualiza um item (dono do leilao ou ADMIN, so com o leilao em DRAFT)' })
+  @ApiOperation({ summary: 'Atualiza um item (dono do leilão ou ADMIN, só com o leilão em DRAFT)' })
   @ApiParam(PARAM_ID)
   @ApiOkResponse({ description: 'Item atualizado', type: AuctionItemResposta, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id invalido ou corpo invalido', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e o dono do leilao nem ADMIN', type: ErroResposta })
-  @ApiNotFoundResponse({ description: 'Item/categoria inexistente, ou CEP nao encontrado (se o cep foi trocado)', type: ErroResposta })
-  @ApiConflictResponse({ description: 'O leilao ja saiu de DRAFT', type: ErroResposta })
-  @ApiServiceUnavailableResponse({ description: 'ViaCEP fora do ar (so se o cep foi trocado)', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Id inválido ou corpo inválido', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token inválido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é o dono do leilão nem ADMIN', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Item/categoria inexistente, ou CEP não encontrado (se o cep foi trocado)', type: ErroResposta })
+  @ApiConflictResponse({ description: 'O leilão já saiu de DRAFT', type: ErroResposta })
+  @ApiServiceUnavailableResponse({ description: 'ViaCEP fora do ar (só se o cep foi trocado)', type: ErroResposta })
   atualizar(
     @Param('id', ParseUuidPipePt) id: string,
     @Body() dto: AtualizarAuctionItemDto,
@@ -169,14 +169,14 @@ export class AuctionItemsController {
   @Roles('SELLER', 'ADMIN')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth('jwt')
-  @ApiOperation({ summary: 'Remove um item (dono do leilao ou ADMIN, so com o leilao em DRAFT)' })
+  @ApiOperation({ summary: 'Remove um item (dono do leilão ou ADMIN, só com o leilão em DRAFT)' })
   @ApiParam(PARAM_ID)
   @ApiNoContentResponse({ description: 'Item removido', headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e o dono do leilao nem ADMIN', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token inválido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é o dono do leilão nem ADMIN', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
-  @ApiConflictResponse({ description: 'O leilao ja saiu de DRAFT', type: ErroResposta })
+  @ApiConflictResponse({ description: 'O leilão já saiu de DRAFT', type: ErroResposta })
   remover(
     @Param('id', ParseUuidPipePt) id: string,
     @CurrentUser() usuario: UsuarioAutenticado,

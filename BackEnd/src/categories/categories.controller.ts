@@ -65,9 +65,9 @@ export class CategoriesController {
   @ApiBearerAuth('jwt')
   @ApiOperation({ summary: 'Cria uma categoria (ADMIN)' })
   @ApiCreatedResponse({ description: 'Categoria criada', type: CategoriaResposta, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Corpo invalido (nome ausente/curto/longo demais)', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Corpo inválido (nome ausente/curto/longo demais)', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token inválido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
   criar(
     @Body() dto: CriarCategoriaDto,
     @CurrentUser() usuario: UsuarioAutenticado,
@@ -89,7 +89,7 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Busca uma categoria pelo id (livre, sem login)' })
   @ApiParam(PARAM_ID)
   @ApiOkResponse({ description: 'Categoria encontrada', type: CategoriaResposta, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Categoria inexistente', type: ErroResposta })
   buscarPorId(@Param('id', ParseUuidPipePt) id: string): Promise<Category> {
     return this.categoriesService.buscarPorId(id);
@@ -102,9 +102,9 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Atualiza uma categoria (ADMIN)' })
   @ApiParam(PARAM_ID)
   @ApiOkResponse({ description: 'Categoria atualizada', type: CategoriaResposta, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id invalido ou corpo invalido', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Id inválido ou corpo inválido', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token inválido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Categoria inexistente', type: ErroResposta })
   atualizar(
     @Param('id', ParseUuidPipePt) id: string,
@@ -123,9 +123,9 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Remove uma categoria (ADMIN)' })
   @ApiParam(PARAM_ID)
   @ApiNoContentResponse({ description: 'Categoria removida', headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token inválido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Categoria inexistente', type: ErroResposta })
   @ApiConflictResponse({ description: 'Categoria em uso por algum item (onDelete: Restrict)', type: ErroResposta })
   remover(

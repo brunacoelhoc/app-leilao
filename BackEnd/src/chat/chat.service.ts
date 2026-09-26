@@ -58,7 +58,7 @@ export class ChatService {
   async enviar(leilaoId: string, autorId: string, texto: string): Promise<MensagemResposta> {
     const leilao = await this.garantirLeilao(leilaoId);
     if (leilao.status !== AuctionStatus.OPEN) {
-      throw new ConflictException('O chat so fica aberto enquanto o leilao esta aberto');
+      throw new ConflictException('O chat só fica aberto enquanto o leilão está aberto');
     }
     const mensagem = await this.prisma.chatMessage.create({
       data: { leilaoId, autorId, texto },
@@ -71,7 +71,7 @@ export class ChatService {
 
   private async garantirLeilao(id: string): Promise<{ status: AuctionStatus }> {
     const leilao = await this.prisma.auction.findUnique({ where: { id }, select: { status: true } });
-    if (!leilao) throw new NotFoundException('Leilao nao encontrado');
+    if (!leilao) throw new NotFoundException('Leilão não encontrado');
     return leilao;
   }
 }

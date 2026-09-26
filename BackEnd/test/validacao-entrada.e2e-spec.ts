@@ -75,7 +75,7 @@ describe('Validação de entrada (e2e)', () => {
   describe('título e nome só com espaços', () => {
     it('leilão com título "   " -> 400 (antes virava um título em branco)', async () => {
       const res = await criarLeilao('   ').expect(400);
-      expect(res.body.mensagem).toContain('titulo e obrigatorio'); // aparado, vira vazio
+      expect(res.body.mensagem).toContain('título e obrigatório'); // aparado, vira vazio
     });
 
     it('título com espaços nas pontas é aparado', async () => {
@@ -147,7 +147,7 @@ describe('Validação de entrada (e2e)', () => {
   describe('paginação gigante', () => {
     it('pagina=1e30 -> 400 (antes era 500)', async () => {
       const res = await api('get', '/auctions?pagina=1e30').expect(400);
-      expect(res.body.mensagem).toContain('pagina deve ser no máximo 100000');
+      expect(res.body.mensagem).toContain('página deve ser no máximo 100000');
     });
 
     it('pagina=100000 -> 200 vazio; 100001 -> 400', async () => {

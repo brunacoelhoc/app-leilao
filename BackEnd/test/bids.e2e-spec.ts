@@ -214,7 +214,7 @@ describe('Bids (e2e)', () => {
         .set('Authorization', `Bearer ${tokenBidder1}`)
         .send({ valor: 100 });
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
   });
 
@@ -266,7 +266,7 @@ describe('Bids (e2e)', () => {
         .set('Authorization', `Bearer ${tokenBidder1}`)
         .send({ valor: 150 });
       expect(resposta.status).toBe(409);
-      expect(resposta.body.mensagem).toContain('ja e o maior');
+      expect(resposta.body.mensagem).toContain('já é o maior');
 
       const situacao = await request(app.getHttpServer())
         .get(`/api/auction-items/${itemId}/bids/minha-situacao`)
@@ -420,7 +420,7 @@ describe('Bids (e2e)', () => {
         .send({ valor: 1000 });
 
       expect(resposta.status).toBe(403);
-      expect(resposta.body.mensagem).toContain('proprio item');
+      expect(resposta.body.mensagem).toContain('próprio item');
     });
   });
 });

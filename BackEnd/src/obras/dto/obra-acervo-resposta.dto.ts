@@ -7,5 +7,5 @@ export class ObraAcervoResposta {
   @ApiProperty({ example: 'A Noite Estrelada' }) titulo: string;
   @ApiProperty({ example: 'Vincent van Gogh' }) autor: string;
   @ApiProperty({ example: '1889' }) ano: string;
-  @ApiProperty({ description: 'Pagina da obra no Wikimedia Commons (credito)' }) fonte: string;
+  @ApiProperty({ description: 'Página da obra no Wikimedia Commons (credito)' }) fonte: string;
 }

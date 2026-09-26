@@ -393,7 +393,7 @@ describe('Users (e2e)', () => {
         .set('Authorization', `Bearer ${tokenOutroAdmin}`);
 
       expect(resposta.status).toBe(409);
-      expect(resposta.body.mensagem).toContain('propria conta');
+      expect(resposta.body.mensagem).toContain('própria conta');
     });
 
     it('usuario inexistente (uuid valido) -> 404', () => {
@@ -411,7 +411,7 @@ describe('Users (e2e)', () => {
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
 
     it('ADMIN desativa outro usuario -> 200, ativo=false; login passa a dar 403', async () => {

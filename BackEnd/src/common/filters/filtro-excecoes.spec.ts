@@ -66,12 +66,12 @@ describe('FiltroExcecoes', () => {
   describe('erros HTTP do Nest e da nossa API', () => {
     it('mantem a lista de mensagens da validacao (400)', () => {
       const { statusCode, corpo } = executar(
-        new BadRequestException(['email invalido', 'senha muito curta']),
+        new BadRequestException(['email inválido', 'senha muito curta']),
       );
 
       expect(statusCode).toBe(400);
-      expect(corpo.erro).toBe('Requisicao invalida');
-      expect(corpo.mensagem).toEqual(['email invalido', 'senha muito curta']);
+      expect(corpo.erro).toBe('Requisição inválida');
+      expect(corpo.mensagem).toEqual(['email inválido', 'senha muito curta']);
     });
 
     it('traduz a rota inexistente para portugues (404)', () => {
@@ -80,17 +80,17 @@ describe('FiltroExcecoes', () => {
       );
 
       expect(statusCode).toBe(404);
-      expect(corpo.mensagem).toBe('Rota nao encontrada');
+      expect(corpo.mensagem).toBe('Rota não encontrada');
     });
 
     it('mantem a mensagem propria da API (409)', () => {
       const { statusCode, corpo } = executar(
-        new ConflictException('Lance abaixo do minimo'),
+        new ConflictException('Lance abaixo do mínimo'),
       );
 
       expect(statusCode).toBe(409);
       expect(corpo.erro).toBe('Conflito');
-      expect(corpo.mensagem).toBe('Lance abaixo do minimo');
+      expect(corpo.mensagem).toBe('Lance abaixo do mínimo');
     });
   });
 
@@ -105,26 +105,26 @@ describe('FiltroExcecoes', () => {
         nome: 'valor unico repetido (P2002)',
         erro: erroDoPrisma('P2002'),
         status: 409,
-        mensagem: 'Ja existe um registro com estes dados',
+        mensagem: 'Já existe um registro com estes dados',
       },
       {
         nome: 'apagar registro em uso (P2003 Restrict)',
         erro: erroDoPrisma('P2003', { kind: 'RestrictViolation' }),
         status: 409,
         mensagem:
-          'Este registro esta em uso por outros registros e nao pode ser removido',
+          'Este registro está em uso por outros registros e não pode ser removido',
       },
       {
         nome: 'ligar a registro inexistente (P2003 FK)',
         erro: erroDoPrisma('P2003', { kind: 'ForeignKeyConstraintViolation' }),
         status: 404,
-        mensagem: 'Um dos registros informados nao existe',
+        mensagem: 'Um dos registros informados não existe',
       },
       {
         nome: 'registro nao encontrado (P2025)',
         erro: erroDoPrisma('P2025'),
         status: 404,
-        mensagem: 'Registro nao encontrado',
+        mensagem: 'Registro não encontrado',
       },
       {
         nome: 'regra CHECK violada (P2039 / 23514)',
@@ -136,7 +136,7 @@ describe('FiltroExcecoes', () => {
         nome: 'banco fora do ar (ECONNREFUSED)',
         erro: erroDoPrisma('ECONNREFUSED'),
         status: 503,
-        mensagem: 'Banco de dados indisponivel',
+        mensagem: 'Banco de dados indisponível',
       },
     ];
 

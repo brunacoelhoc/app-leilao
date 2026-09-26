@@ -13,9 +13,9 @@ export class RankingController {
   @Get('vendedores')
   @ApiOperation({
     summary: 'Ranking dos melhores vendedores (livre, sem login)',
-    description: 'Ordenado pelo total arrecadado em pecas vendidas. So dados publicos: nome, avatar e numeros de venda.',
+    description: 'Ordenado pelo total arrecadado em peças vendidas. Só dados públicos: nome, avatar e números de venda.',
   })
-  @ApiQuery({ name: 'limite', required: false, description: 'Quantidade maxima (1 a 20, padrao 10)' })
+  @ApiQuery({ name: 'limite', required: false, description: 'Quantidade máxima (1 a 20, padrão 10)' })
   @ApiOkResponse({ type: RankingVendedorResposta, isArray: true })
   vendedores(@Query('limite') limite?: string): Promise<RankingVendedorResposta[]> {
     const n = Number.parseInt(limite ?? '', 10);

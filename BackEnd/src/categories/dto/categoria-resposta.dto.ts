@@ -10,7 +10,7 @@ export class CategoriaResposta {
   @ApiProperty({ example: 'Pintura' })
   nome: string;
 
-  @ApiPropertyOptional({ example: 'Quadros e telas de todas as epocas', nullable: true })
+  @ApiPropertyOptional({ example: 'Quadros e telas de todas as épocas', nullable: true })
   descricao: string | null;
 
   @ApiProperty()

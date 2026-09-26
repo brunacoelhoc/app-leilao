@@ -61,7 +61,7 @@ function mascarado(usuario: User): UsuarioEntity {
 @ApiTags('Users')
 @ApiSecurity('api-key')
 @ApiBearerAuth('jwt') // toda rota deste controller exige login
-@ApiUnauthorizedResponse({ description: 'Sem token, token invalido/expirado, ou X-API-KEY ausente/errada', type: ErroResposta })
+@ApiUnauthorizedResponse({ description: 'Sem token, token inválido/expirado, ou X-API-KEY ausente/errada', type: ErroResposta })
 @Controller('users')
 export class UsersController {
   constructor(
@@ -72,8 +72,8 @@ export class UsersController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Perfil do proprio usuario logado' })
-  @ApiOkResponse({ description: 'Perfil do usuario (sem a senha)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
+  @ApiOperation({ summary: 'Perfil do próprio usuário logado' })
+  @ApiOkResponse({ description: 'Perfil do usuário (sem a senha)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
   async meuPerfil(
     @CurrentUser() usuario: UsuarioAutenticado,
   ): Promise<UsuarioEntity> {
@@ -86,11 +86,11 @@ export class UsersController {
   @Patch('me')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: 'Edita o proprio perfil (nome, e-mail, telefone, endereco, cpf, avatar)',
-    description: 'Todos os campos sao opcionais. Nao altera papel, ativo nem senha. Trocar o e-mail exige a senha atual em "senhaAtual".',
+    summary: 'Edita o próprio perfil (nome, e-mail, telefone, endereço, cpf, avatar)',
+    description: 'Todos os campos são opcionais. Não altera papel, ativo nem senha. Trocar o e-mail exige a senha atual em "senhaAtual".',
   })
   @ApiOkResponse({ description: 'Perfil atualizado', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Corpo invalido (telefone/cpf com formato errado, campo desconhecido)', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Corpo inválido (telefone/cpf com formato errado, campo desconhecido)', type: ErroResposta })
   async atualizarMeuPerfil(
     @CurrentUser() usuario: UsuarioAutenticado,
     @Body() dto: AtualizarPerfilDto,
@@ -103,15 +103,15 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Troca o modo da conta: COMPRADOR (da lances) <-> VENDEDOR (cria leiloes)',
+    summary: 'Troca o modo da conta: COMPRADOR (dá lances) <-> VENDEDOR (cria leilões)',
     description:
-      'Um clique, sem completar perfil. Modo vendedor: cria leiloes e NAO da lances. Modo comprador: da lances e ' +
-      'NAO cria leiloes. Ninguem da lance no proprio leilao, seja qual for o modo. ADMIN nao troca de modo. Efeito imediato.',
+      'Um clique, sem completar perfil. Modo vendedor: cria leilões e NAO da lances. Modo comprador: da lances e ' +
+      'NAO cria leilões. Ninguém da lance no próprio leilão, seja qual for o modo. ADMIN não troca de modo. Efeito imediato.',
   })
   @ApiOkResponse({ description: 'Conta no novo modo', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'modo diferente de BIDDER/SELLER', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'ADMIN nao troca de modo', type: ErroResposta })
-  @ApiConflictResponse({ description: 'A conta ja esta nesse modo', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'ADMIN não troca de modo', type: ErroResposta })
+  @ApiConflictResponse({ description: 'A conta já está nesse modo', type: ErroResposta })
   async trocarModo(
     @CurrentUser() usuario: UsuarioAutenticado,
     @Body() dto: TrocarModoDto,
@@ -137,16 +137,16 @@ export class UsersController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Encerra a propria conta e anonimiza os dados pessoais (LGPD)',
+    summary: 'Encerra a própria conta e anonimiza os dados pessoais (LGPD)',
     description:
-      'Exige a senha atual. Nome, e-mail, telefone, CPF, endereco e avatar sao anonimizados; a conta fica inativa e sem sessoes. ' +
-      'O historico (lances, leiloes, pedidos, auditoria) e imutavel e permanece, com o nome "Usuario removido". ' +
-      'Nao e possivel com pendencias: peca em disputa, leilao aberto/agendado ou pedido nao finalizado (409). ADMIN nao encerra por aqui (403).',
+      'Exige a senha atual. Nome, e-mail, telefone, CPF, endereço e avatar são anonimizados; a conta fica inativa e sem sessões. ' +
+      'O histórico (lances, leilões, pedidos, auditoria) é imutável e permanece, com o nome "Usuário removido". ' +
+      'Não é possível com pendências: peça em disputa, leilão aberto/agendado ou pedido não finalizado (409). ADMIN não encerra por aqui (403).',
   })
   @ApiNoContentResponse({ description: 'Conta encerrada e dados anonimizados', headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'Senha atual ausente ou incorreta', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'ADMIN nao encerra a propria conta por aqui', type: ErroResposta })
-  @ApiConflictResponse({ description: 'Ha pendencias: disputa, leilao em andamento ou pedido nao finalizado', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'ADMIN não encerra a própria conta por aqui', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Há pendências: disputa, leilão em andamento ou pedido não finalizado', type: ErroResposta })
   async encerrarConta(
     @CurrentUser() usuario: UsuarioAutenticado,
     @Body() dto: EncerrarContaDto,
@@ -169,11 +169,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Troca a propria senha',
-    description: 'Exige a senha atual. A nova senha segue a mesma regra de forca do registro.',
+    summary: 'Troca a própria senha',
+    description: 'Exige a senha atual. A nova senha segue a mesma regra de força do registro.',
   })
   @ApiNoContentResponse({ description: 'Senha alterada', headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Nova senha fora do padrao exigido', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'Nova senha fora do padrão exigido', type: ErroResposta })
   async alterarMinhaSenha(
     @CurrentUser() usuario: UsuarioAutenticado,
     @Body() dto: AlterarSenhaDto,
@@ -187,13 +187,13 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({
-    summary: 'Cria um usuario ja com o papel escolhido (so ADMIN)',
-    description: 'Diferente do cadastro publico (sempre BIDDER), aqui o ADMIN escolhe BIDDER (comprador) ou SELLER (vendedor). A senha segue a mesma regra do cadastro.',
+    summary: 'Cria um usuário já com o papel escolhido (só ADMIN)',
+    description: 'Diferente do cadastro público (sempre BIDDER), aqui o ADMIN escolhe BIDDER (comprador) ou SELLER (vendedor). A senha segue a mesma regra do cadastro.',
   })
-  @ApiCreatedResponse({ description: 'Usuario criado (sem a senha na resposta)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Corpo invalido (nome curto, e-mail invalido, senha fora do padrao, papel diferente de BIDDER/SELLER)', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
-  @ApiConflictResponse({ description: 'Ja existe uma conta com este e-mail', type: ErroResposta })
+  @ApiCreatedResponse({ description: 'Usuário criado (sem a senha na resposta)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Corpo inválido (nome curto, e-mail inválido, senha fora do padrão, papel diferente de BIDDER/SELLER)', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Já existe uma conta com este e-mail', type: ErroResposta })
   async criar(
     @Body() dto: CriarUsuarioAdminDto,
     @CurrentUser() admin: UsuarioAutenticado,
@@ -217,15 +217,15 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({
-    summary: 'Lista todos os usuarios, paginado (gestao pelo ADMIN)',
-    description: 'Os dois filtros sao opcionais e podem ser combinados. E-mail, telefone, CPF e endereco saem MASCARADOS; o dado completo so em GET /users/:id.',
+    summary: 'Lista todos os usuários, paginado (gestão pelo ADMIN)',
+    description: 'Os dois filtros são opcionais e podem ser combinados. E-mail, telefone, CPF e endereço saem MASCARADOS; o dado completo só em GET /users/:id.',
   })
   @ApiPaginacaoQuery()
   @ApiQuery({ name: 'papel', enum: Role, required: false, description: 'Filtra por papel' })
   @ApiQuery({ name: 'ativo', type: 'boolean', required: false, description: 'Filtra por conta ativa/desativada' })
   @ApiQuery({ name: 'busca', required: false, description: 'Trecho do nome ou do e-mail' })
   @ApiRespostaPaginada(UsuarioEntity)
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
   async listarTodos(
     @Query() query: ListarUsuariosQueryDto,
   ): Promise<RespostaPaginada<UsuarioEntity>> {
@@ -247,14 +247,14 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({
-    summary: 'Detalhe COMPLETO de um usuario, com dados sensiveis (so ADMIN)',
+    summary: 'Detalhe COMPLETO de um usuário, com dados sensíveis (só ADMIN)',
     description: 'Cada consulta fica registrada na auditoria (USUARIO_DADOS_VISTOS).',
   })
-  @ApiParam({ name: 'id', description: 'Id (uuid) do usuario', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
-  @ApiOkResponse({ description: 'Usuario com dados completos (sem a senha)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
-  @ApiNotFoundResponse({ description: 'Usuario inexistente', type: ErroResposta })
+  @ApiParam({ name: 'id', description: 'Id (uuid) do usuário', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
+  @ApiOkResponse({ description: 'Usuário com dados completos (sem a senha)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Usuário inexistente', type: ErroResposta })
   async detalhe(
     @Param('id', ParseUuidPipePt) id: string,
     @CurrentUser() admin: UsuarioAutenticado,
@@ -278,18 +278,18 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({
-    summary: 'Desativa um usuario (gestao pelo ADMIN)',
+    summary: 'Desativa um usuário (gestão pelo ADMIN)',
     description:
-      'Bloqueia (409) quem esta disputando peca ou e dono de leilao em andamento (aberto/agendado). Em emergencia (ex.: fraude), o ADMIN pode usar ' +
-      '?forcar=true: a acao fica na auditoria e, no fechamento, os lances dessa conta sao pulados (vence o proximo maior lance de uma conta ativa).',
+      'Bloqueia (409) quem está disputando peça ou e dono de leilão em andamento (aberto/agendado). Em emergencia (ex.: fraude), o ADMIN pode usar ' +
+      '?forcar=true: a ação fica na auditoria e, no fechamento, os lances dessa conta são pulados (vence o próximo maior lance de uma conta ativa).',
   })
   @ApiQuery({ name: 'forcar', required: false, description: 'true = desativa mesmo com disputa em andamento (auditado)' })
-  @ApiParam({ name: 'id', description: 'Id (uuid) do usuario', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
-  @ApiOkResponse({ description: 'Usuario desativado (ativo=false)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
-  @ApiNotFoundResponse({ description: 'Usuario inexistente', type: ErroResposta })
-  @ApiConflictResponse({ description: 'O ADMIN esta tentando desativar a propria conta, ou o usuario esta disputando peca em leilao em andamento (sem forcar=true)', type: ErroResposta })
+  @ApiParam({ name: 'id', description: 'Id (uuid) do usuário', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
+  @ApiOkResponse({ description: 'Usuário desativado (ativo=false)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Usuário inexistente', type: ErroResposta })
+  @ApiConflictResponse({ description: 'O ADMIN está tentando desativar a própria conta, ou o usuário está disputando peça em leilão em andamento (sem forcar=true)', type: ErroResposta })
   async desativar(
     @Param('id', ParseUuidPipePt) id: string,
     @CurrentUser() usuarioLogado: UsuarioAutenticado,
@@ -319,15 +319,15 @@ export class UsersController {
   @Roles('ADMIN')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Remove um usuario SEM historico (so ADMIN)',
-    description: 'Quem ja tem leiloes, lances ou arquivos nao pode ser apagado (o banco protege): use PATCH /users/:id/desativar.',
+    summary: 'Remove um usuário SEM histórico (só ADMIN)',
+    description: 'Quem já tem leilões, lances ou arquivos não pode ser apagado (o banco protege): use PATCH /users/:id/desativar.',
   })
-  @ApiParam({ name: 'id', description: 'Id (uuid) do usuario', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
-  @ApiNoContentResponse({ description: 'Usuario removido' })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
-  @ApiNotFoundResponse({ description: 'Usuario inexistente', type: ErroResposta })
-  @ApiConflictResponse({ description: 'O usuario tem historico (ou e o proprio ADMIN): desative em vez de remover', type: ErroResposta })
+  @ApiParam({ name: 'id', description: 'Id (uuid) do usuário', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
+  @ApiNoContentResponse({ description: 'Usuário removido' })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Usuário inexistente', type: ErroResposta })
+  @ApiConflictResponse({ description: 'O usuário tem histórico (ou é o próprio ADMIN): desative em vez de remover', type: ErroResposta })
   async remover(
     @Param('id', ParseUuidPipePt) id: string,
     @CurrentUser() admin: UsuarioAutenticado,
@@ -349,12 +349,12 @@ export class UsersController {
   @Patch(':id/reativar')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Reativa um usuario (gestao pelo ADMIN)' })
-  @ApiParam({ name: 'id', description: 'Id (uuid) do usuario', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
-  @ApiOkResponse({ description: 'Usuario reativado (ativo=true)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
-  @ApiBadRequestResponse({ description: 'Id nao e um uuid valido', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Autenticado, mas nao e ADMIN', type: ErroResposta })
-  @ApiNotFoundResponse({ description: 'Usuario inexistente', type: ErroResposta })
+  @ApiOperation({ summary: 'Reativa um usuário (gestão pelo ADMIN)' })
+  @ApiParam({ name: 'id', description: 'Id (uuid) do usuário', example: '8902e525-e1a7-46ad-bfd1-c0793761faab' })
+  @ApiOkResponse({ description: 'Usuário reativado (ativo=true)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
+  @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Autenticado, mas não é ADMIN', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Usuário inexistente', type: ErroResposta })
   async reativar(
     @Param('id', ParseUuidPipePt) id: string,
   ): Promise<UsuarioEntity> {

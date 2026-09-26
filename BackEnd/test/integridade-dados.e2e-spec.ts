@@ -147,7 +147,7 @@ describe('Integridade dos dados (e2e)', () => {
       const res = await api('patch', '/users/me', token)
         .send({ email: emailDoOutro.toUpperCase(), senhaAtual: SENHA })
         .expect(409);
-      expect(res.body.mensagem).toContain('ja cadastrado');
+      expect(res.body.mensagem).toContain('já cadastrado');
     });
   });
 

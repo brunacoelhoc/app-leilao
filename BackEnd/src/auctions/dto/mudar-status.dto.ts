@@ -9,8 +9,8 @@ export class MudarStatusDto {
 
   // @ValidateIf ja torna o campo "opcional" quando a condicao e falsa (nao
   // precisa de @IsOptional aqui -- ele atrapalharia o @IsNotEmpty quando cancelar)
-  @MaxLength(300, { message: 'motivo deve ter no maximo 300 caracteres' })
+  @MaxLength(300, { message: 'motivo deve ter no máximo 300 caracteres' })
   @ValidateIf((dto: MudarStatusDto) => dto.status === AuctionStatus.CANCELED)
-  @IsNotEmpty({ message: 'motivo e obrigatorio para cancelar um leilao' })
+  @IsNotEmpty({ message: 'motivo e obrigatório para cancelar um leilão' })
   motivo?: string;
 }

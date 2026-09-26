@@ -30,11 +30,11 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Ultimas mensagens do chat do leilao, da mais antiga para a mais nova (livre, sem login)' })
-  @ApiQuery({ name: 'limite', required: false, description: '1 a 100 (padrao 50)' })
-  @ApiQuery({ name: 'depois', required: false, description: 'Data ISO: so mensagens mais novas que ela' })
+  @ApiOperation({ summary: 'Últimas mensagens do chat do leilão, da mais antiga para a mais nova (livre, sem login)' })
+  @ApiQuery({ name: 'limite', required: false, description: '1 a 100 (padrão 50)' })
+  @ApiQuery({ name: 'depois', required: false, description: 'Data ISO: só mensagens mais novas que ela' })
   @ApiOkResponse({ type: MensagemResposta, isArray: true })
-  @ApiNotFoundResponse({ description: 'Leilao inexistente', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Leilão inexistente', type: ErroResposta })
   listar(
     @Param('leilaoId', ParseUuidPipePt) leilaoId: string,
     @Query('limite') limite?: string,
@@ -54,11 +54,11 @@ export class ChatController {
   @Throttle({ default: { limit: 20, ttl: 60_000 } }) // anti-spam: 20 mensagens por minuto
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('jwt')
-  @ApiOperation({ summary: 'Envia uma mensagem ao chat (qualquer usuario logado, so com o leilao aberto)' })
+  @ApiOperation({ summary: 'Envia uma mensagem ao chat (qualquer usuário logado, só com o leilão aberto)' })
   @ApiCreatedResponse({ type: MensagemResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token ou token invalido', type: ErroResposta })
-  @ApiNotFoundResponse({ description: 'Leilao inexistente', type: ErroResposta })
-  @ApiConflictResponse({ description: 'Leilao nao esta aberto', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token ou token inválido', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Leilão inexistente', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Leilão não está aberto', type: ErroResposta })
   enviar(
     @Param('leilaoId', ParseUuidPipePt) leilaoId: string,
     @Body() dto: CriarMensagemDto,

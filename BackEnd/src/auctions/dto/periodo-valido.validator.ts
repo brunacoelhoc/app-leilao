@@ -33,7 +33,7 @@ export function DuracaoMaximaDe(nomeDoOutroCampo: string, opcoes?: ValidationOpt
           return !excedeDuracaoMaxima(inicio, fim);
         },
         defaultMessage() {
-          return `O leilao pode durar no maximo ${DURACAO_MAXIMA_HORAS} horas (2 dias)`;
+          return `O leilão pode durar no máximo ${DURACAO_MAXIMA_HORAS} horas (2 dias)`;
         },
       },
     });

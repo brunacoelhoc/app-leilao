@@ -6,7 +6,7 @@ import { BadRequestException } from '@nestjs/common';
 export const cepFalso = {
   buscar: (cep: string) => {
     if (cep === '00000000') {
-      return Promise.reject(new BadRequestException('CEP nao encontrado'));
+      return Promise.reject(new BadRequestException('CEP não encontrado'));
     }
     if (cep === '01310100') {
       return Promise.resolve({ logradouro: 'Avenida Paulista', cidade: 'São Paulo', uf: 'SP' });

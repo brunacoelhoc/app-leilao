@@ -155,7 +155,7 @@ describe('AuctionItems (e2e)', () => {
         cep: '00000000',
       });
       expect(resposta.status).toBe(400);
-      expect(resposta.body.mensagem).toContain('CEP nao encontrado');
+      expect(resposta.body.mensagem).toContain('CEP não encontrado');
     });
   });
 
@@ -247,7 +247,7 @@ describe('AuctionItems (e2e)', () => {
 
     it('id malformado no GET -> 400 em portugues', async () => {
       const resposta = await rota('get', '/nao-e-um-uuid').expect(400);
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
   });
 

@@ -12,8 +12,8 @@ export class AcervoController {
 
   @Get('acervo')
   @ApiOperation({
-    summary: 'Lista as obras do acervo de dominio publico (livre, sem login)',
-    description: 'Fonte unica do catalogo: a tela so exibe. As imagens em si ficam na pasta /acervo do front.',
+    summary: 'Lista as obras do acervo de domínio público (livre, sem login)',
+    description: 'Fonte única do catálogo: a tela só exibe. As imagens em si ficam na pasta /acervo do front.',
   })
   @ApiOkResponse({ type: [ObraAcervoResposta] })
   acervo(): ObraAcervoResposta[] {

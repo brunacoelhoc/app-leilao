@@ -137,10 +137,10 @@ describe('Categories (e2e)', () => {
 
     it('ADMIN atualiza a categoria recem-criada (200)', async () => {
       const resposta = await rota('patch', `/${idCategoriaPintura}`, tokenAdmin)
-        .send({ descricao: 'Nova descricao' })
+        .send({ descricao: 'Nova descrição' })
         .expect(200);
 
-      expect(resposta.body.descricao).toBe('Nova descricao');
+      expect(resposta.body.descricao).toBe('Nova descrição');
     });
 
     it('ADMIN remove (204, sem corpo)', async () => {
@@ -196,7 +196,7 @@ describe('Categories (e2e)', () => {
     it('id que nao e um uuid -> 400, mensagem em portugues', async () => {
       const resposta = await rota('get', '/id-nao-e-uuid').expect(400);
 
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
   });
 

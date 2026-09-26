@@ -13,7 +13,7 @@ export class DocumentoResposta {
   @ApiProperty({ example: 'foto-original.jpg', description: 'Nome que o arquivo tinha no computador de quem enviou' })
   nomeOriginal: string;
 
-  @ApiPropertyOptional({ description: 'Nome seguro (UUID) usado para salvar em disco. So vem na resposta do envio (para quem enviou), nunca na listagem publica' })
+  @ApiPropertyOptional({ description: 'Nome seguro (UUID) usado para salvar em disco. Só vem na resposta do envio (para quem enviou), nunca na listagem pública' })
   nomeArquivo: string;
 
   @ApiProperty({ example: 'image/jpeg' })
@@ -22,13 +22,13 @@ export class DocumentoResposta {
   @ApiProperty({ example: 245678, description: 'Tamanho em bytes' })
   tamanho: number;
 
-  @ApiProperty({ description: 'Impressao digital SHA-256, prova que o arquivo nao foi alterado' })
+  @ApiProperty({ description: 'Impressao digital SHA-256, prova que o arquivo não foi alterado' })
   hash: string;
 
   @ApiProperty({ description: 'Id do item a que este documento pertence' })
   itemId: string;
 
-  @ApiPropertyOptional({ description: 'Id de quem enviou. So vem na resposta do envio, nunca na listagem publica' })
+  @ApiPropertyOptional({ description: 'Id de quem enviou. Só vem na resposta do envio, nunca na listagem pública' })
   enviadoPorId: string;
 
   @ApiProperty()

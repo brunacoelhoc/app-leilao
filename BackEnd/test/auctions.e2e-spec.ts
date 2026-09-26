@@ -209,7 +209,7 @@ describe('Auctions (e2e)', () => {
 
     it('id malformado -> 400 em portugues', async () => {
       const resposta = await rota('get', '/nao-e-um-uuid').expect(400);
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
   });
 
@@ -442,13 +442,13 @@ describe('Auctions (e2e)', () => {
       );
 
       await rota('patch', `/${criado.body.id}/status`, tokenSeller)
-        .send({ status: 'CANCELED', motivo: 'Item indisponivel' })
+        .send({ status: 'CANCELED', motivo: 'Item indisponível' })
         .expect(200);
 
       const historico = await prisma.auctionStatusHistory.findFirst({
         where: { leilaoId: criado.body.id as string, statusNovo: 'CANCELED' },
       });
-      expect(historico?.motivo).toBe('Item indisponivel');
+      expect(historico?.motivo).toBe('Item indisponível');
     });
   });
 
@@ -487,7 +487,7 @@ describe('Auctions (e2e)', () => {
         dataFim: '2099-03-03T00:00:01.000Z', // 48h + 1s
       });
       expect(longo.status).toBe(400);
-      expect(longo.body.mensagem).toEqual(['O leilao pode durar no maximo 48 horas (2 dias)']);
+      expect(longo.body.mensagem).toEqual(['O leilão pode durar no máximo 48 horas (2 dias)']);
 
       const limite = await rota('post', '', tokenSeller).send({
         titulo: 'Auctions E2E Prazo Limite',
@@ -614,7 +614,7 @@ describe('Auctions (e2e)', () => {
       const resposta = await rota('get', '/nao-e-um-uuid/indicadores').expect(
         400,
       );
-      expect(resposta.body.mensagem).toBe('id deve ser um uuid valido');
+      expect(resposta.body.mensagem).toBe('id deve ser um uuid válido');
     });
 
     it('id valido mas inexistente -> 404', () => {

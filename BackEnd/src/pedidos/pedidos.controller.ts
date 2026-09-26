@@ -32,13 +32,13 @@ export class PedidosController {
   constructor(private readonly pedidosService: PedidosService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Pedido do vencedor (so consulta, nao grava). Passo 0: ver o que falta' })
+  @ApiOperation({ summary: 'Pedido do vencedor (só consulta, não grava). Passo 0: ver o que falta' })
   @ApiParam(PARAM_ITEM_ID)
   @ApiOkResponse({ type: PedidoResposta })
-  @ApiUnauthorizedResponse({ description: 'Sem token, token invalido, ou X-API-KEY ausente/errada', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Quem nao e o vencedor do item', type: ErroResposta })
+  @ApiUnauthorizedResponse({ description: 'Sem token, token inválido, ou X-API-KEY ausente/errada', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Quem não é o vencedor do item', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
-  @ApiConflictResponse({ description: 'Item ainda nao foi vendido', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Item ainda não foi vendido', type: ErroResposta })
   obter(@Param('itemId', ParseUuidPipePt) itemId: string, @CurrentUser() usuario: UsuarioAutenticado): Promise<PedidoResposta> {
     return this.pedidosService.obter(itemId, usuario);
   }
@@ -48,9 +48,9 @@ export class PedidosController {
   @ApiOperation({ summary: 'Passo 1: paga o pedido (SIMULADO: PIX, CARTAO ou BOLETO). Libera a retirada' })
   @ApiParam(PARAM_ITEM_ID)
   @ApiOkResponse({ type: PedidoResposta })
-  @ApiBadRequestResponse({ description: 'formaPagamento invalida', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Quem nao e o vencedor do item', type: ErroResposta })
-  @ApiConflictResponse({ description: 'Item nao vendido ou pedido ja pago', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'formaPagamento inválida', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Quem não é o vencedor do item', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Item não vendido ou pedido já pago', type: ErroResposta })
   pagar(
     @Param('itemId', ParseUuidPipePt) itemId: string,
     @Body() dto: PagarPedidoDto,
@@ -61,12 +61,12 @@ export class PedidosController {
 
   @Post('entrega')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Passo 2: escolhe RETIRADA (gera codigo) ou ENTREGA em casa (exige endereco). So depois de pagar' })
+  @ApiOperation({ summary: 'Passo 2: escolhe RETIRADA (gera código) ou ENTREGA em casa (exige endereço). Só depois de pagar' })
   @ApiParam(PARAM_ITEM_ID)
   @ApiOkResponse({ type: PedidoResposta })
-  @ApiBadRequestResponse({ description: 'tipoEntrega invalido, ou ENTREGA sem enderecoEntrega', type: ErroResposta })
-  @ApiForbiddenResponse({ description: 'Quem nao e o vencedor do item', type: ErroResposta })
-  @ApiConflictResponse({ description: 'Pedido ainda nao pago, ou entrega ja definida', type: ErroResposta })
+  @ApiBadRequestResponse({ description: 'tipoEntrega inválido, ou ENTREGA sem enderecoEntrega', type: ErroResposta })
+  @ApiForbiddenResponse({ description: 'Quem não é o vencedor do item', type: ErroResposta })
+  @ApiConflictResponse({ description: 'Pedido ainda não pago, ou entrega já definida', type: ErroResposta })
   definirEntrega(
     @Param('itemId', ParseUuidPipePt) itemId: string,
     @Body() dto: DefinirEntregaDto,

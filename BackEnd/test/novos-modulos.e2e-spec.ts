@@ -217,8 +217,8 @@ describe('Novos modulos (e2e)', () => {
     });
 
     it('logado escreve com o leilao aberto (texto sem espacos nas pontas)', async () => {
-      const res = await api('post', `/auctions/${leilaoAberto}/chat`, tokenBidder).send({ texto: '  Peca linda!  ' }).expect(201);
-      expect(res.body).toMatchObject({ texto: 'Peca linda!', autorPapel: 'BIDDER' });
+      const res = await api('post', `/auctions/${leilaoAberto}/chat`, tokenBidder).send({ texto: '  Peça linda!  ' }).expect(201);
+      expect(res.body).toMatchObject({ texto: 'Peça linda!', autorPapel: 'BIDDER' });
     });
 
     it('vazio ou acima de 300 caracteres -> 400; sem login -> 401', async () => {
@@ -230,7 +230,7 @@ describe('Novos modulos (e2e)', () => {
     it('leitura e livre e vem em ordem cronologica', async () => {
       await api('post', `/auctions/${leilaoAberto}/chat`, tokenSeller).send({ texto: 'Segunda mensagem' }).expect(201);
       const res = await api('get', `/auctions/${leilaoAberto}/chat`).expect(200);
-      expect(res.body.map((m: { texto: string }) => m.texto)).toEqual(['Peca linda!', 'Segunda mensagem']);
+      expect(res.body.map((m: { texto: string }) => m.texto)).toEqual(['Peça linda!', 'Segunda mensagem']);
     });
 
     it('so se conversa com o leilao ABERTO (fechado e rascunho -> 409); leilao inexistente -> 404', async () => {
@@ -352,7 +352,7 @@ describe('Novos modulos (e2e)', () => {
     it('sem brecha: o dono nunca da lance no proprio leilao, mesmo voltando ao modo comprador', async () => {
       await api('patch', '/users/me/modo', tokenA).send({ modo: 'BIDDER' }).expect(200);
       const res = await api('post', `/auction-items/${itemDeA}/bids`, tokenA).send({ valor: 500 }).expect(403);
-      expect(res.body.mensagem).toContain('proprio item');
+      expect(res.body.mensagem).toContain('próprio item');
       await api('patch', '/users/me/modo', tokenA).send({ modo: 'SELLER' }).expect(200);
     });
 

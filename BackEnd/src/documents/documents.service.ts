@@ -48,18 +48,18 @@ export class DocumentsService {
     try {
       // Presenca do arquivo
       if (!arquivo) {
-        throw new BadRequestException('Arquivo e obrigatorio');
+        throw new BadRequestException('Arquivo e obrigatório');
       }
 
       if (!TIPOS_ACEITOS.includes(arquivo.mimetype)) {
         throw new BadRequestException(
-          `Tipo de arquivo nao permitido. Aceitos: ${TIPOS_ACEITOS.join(', ')}`,
+          `Tipo de arquivo não permitido. Aceitos: ${TIPOS_ACEITOS.join(', ')}`,
         );
       }
 
       // O mimetype vem do cliente e pode mentir: o CONTEUDO (magic bytes) tem que ser do mesmo tipo
       if (tipoRealDoArquivo(arquivo.buffer) !== arquivo.mimetype) {
-        throw new BadRequestException('O conteudo do arquivo nao corresponde ao tipo informado');
+        throw new BadRequestException('O conteúdo do arquivo não corresponde ao tipo informado');
       }
 
       // Tamanho maximo configuravel pelo .env (o FileInterceptor ja tem um
@@ -78,11 +78,11 @@ export class DocumentsService {
         include: { leilao: true },
       });
       if (!item) {
-        throw new NotFoundException('Item nao encontrado');
+        throw new NotFoundException('Item não encontrado');
       }
       if (usuario.papel !== 'ADMIN' && item.leilao.vendedorId !== usuario.id) {
         throw new ForbiddenException(
-          'Voce so pode enviar arquivos para itens dos seus proprios leiloes',
+          'Você só pode enviar arquivos para itens dos seus próprios leilões',
         );
       }
 
@@ -167,7 +167,7 @@ export class DocumentsService {
       where: { id: itemId },
     });
     if (!item) {
-      throw new NotFoundException('Item nao encontrado');
+      throw new NotFoundException('Item não encontrado');
     }
 
     const paginacao = calcularPaginacao(params);
@@ -192,7 +192,7 @@ export class DocumentsService {
       where: { id },
     });
     if (!documento) {
-      throw new NotFoundException('Documento nao encontrado');
+      throw new NotFoundException('Documento não encontrado');
     }
 
     const caminhoArquivo = join(PASTA_UPLOADS, documento.nomeArquivo);
@@ -200,7 +200,7 @@ export class DocumentsService {
       await access(caminhoArquivo);
     } catch {
       // O registro existe no banco, mas o arquivo sumiu do disco
-      throw new NotFoundException('Arquivo nao encontrado no servidor');
+      throw new NotFoundException('Arquivo não encontrado no servidor');
     }
 
     return { documento, caminhoArquivo };

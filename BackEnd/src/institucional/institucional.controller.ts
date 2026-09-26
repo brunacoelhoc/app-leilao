@@ -33,10 +33,10 @@ function estaAtendendo(agora: Date): boolean {
 export class InstitucionalController {
   @Get()
   @ApiOperation({
-    summary: 'Dados da casa de leiloes para o rodape (livre, sem login)',
+    summary: 'Dados da casa de leilões para o rodapé (livre, sem login)',
     description: '"atendendoAgora" e calculado pelo servidor no fuso de Brasilia.',
   })
-  @ApiOkResponse({ description: 'Nome, endereco, contato e horario de atendimento' })
+  @ApiOkResponse({ description: 'Nome, endereço, contato e horário de atendimento' })
   obter() {
     return {
       nome: CASA.nome,

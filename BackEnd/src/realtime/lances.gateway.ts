@@ -102,7 +102,7 @@ export class LancesGateway {
   }
 
   private salaLeilao(leilaoId: string): string {
-    return `leilao:${leilaoId}`;
+    return `leilão:${leilaoId}`;
   }
 
   private sala(itemId: string): string {

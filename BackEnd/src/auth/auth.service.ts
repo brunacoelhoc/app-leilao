@@ -78,8 +78,8 @@ export class AuthService {
         acao: 'REGISTRO',
         resultado: AuditResult.REJECTED,
         motivo: duplicado
-          ? `E-mail ja cadastrado: ${dto.email}`
-          : 'Falha ao registrar novo usuario',
+          ? `E-mail já cadastrado: ${dto.email}`
+          : 'Falha ao registrar novo usuário',
         statusHttp: duplicado ? 409 : 500,
         ...contexto,
       });
@@ -105,11 +105,11 @@ export class AuthService {
         usuarioId: usuario?.id,
         acao: 'LOGIN',
         resultado: AuditResult.REJECTED,
-        motivo: 'Credenciais invalidas',
+        motivo: 'Credenciais inválidas',
         statusHttp: 401,
         ...contexto,
       });
-      throw new UnauthorizedException('Credenciais invalidas');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     // So avisamos que a conta esta desativada DEPOIS de confirmar a senha:
@@ -161,14 +161,14 @@ export class AuthService {
         statusHttp: 401,
         ...contexto,
       });
-      throw new UnauthorizedException('Sessao invalida ou expirada. Entre novamente.');
+      throw new UnauthorizedException('Sessão inválida ou expirada. Entre novamente.');
     };
     if (!resultado.ok) return recusar(resultado.motivo, resultado.usuarioId, resultado.reuso);
 
     const usuario = await this.usersService.buscarPorId(resultado.usuarioId);
     if (!usuario || !usuario.ativo) {
       await this.sessaoService.revogar(resultado.sessaoId);
-      return recusar('Usuario inexistente ou desativado', resultado.usuarioId);
+      return recusar('Usuário inexistente ou desativado', resultado.usuarioId);
     }
 
     const accessToken = await this.jwtService.signAsync({ sub: usuario.id, papel: usuario.papel, sid: resultado.sessaoId });

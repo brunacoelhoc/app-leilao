@@ -92,7 +92,7 @@ describe('Lances: prazo, robô de encerramento e reinício (e2e)', () => {
       const { itemId } = await criarLeilao({ fimMs: -5_000 });
       const res = await lance(itemId, licitantes[0], 100);
       expect(res.status).toBe(409);
-      expect(JSON.stringify(res.body.mensagem)).toContain('Fora do periodo');
+      expect(JSON.stringify(res.body.mensagem)).toContain('Fora do período');
       expect(await prisma.bid.count({ where: { itemId } })).toBe(0);
     });
 
@@ -100,14 +100,14 @@ describe('Lances: prazo, robô de encerramento e reinício (e2e)', () => {
       const { itemId } = await criarLeilao({ inicioMs: 3_600_000, fimMs: 7_200_000 });
       const res = await lance(itemId, licitantes[0], 100);
       expect(res.status).toBe(409);
-      expect(JSON.stringify(res.body.mensagem)).toContain('Fora do periodo');
+      expect(JSON.stringify(res.body.mensagem)).toContain('Fora do período');
     });
 
     it.each(['DRAFT', 'SCHEDULED', 'CLOSED', 'CANCELED'] as const)('leilão %s -> 409 "não está aberto"', async (status) => {
       const { itemId } = await criarLeilao({ status, fimMs: 3_600_000 });
       const res = await lance(itemId, licitantes[0], 100);
       expect(res.status).toBe(409);
-      expect(JSON.stringify(res.body.mensagem)).toContain('nao esta aberto');
+      expect(JSON.stringify(res.body.mensagem)).toContain('não está aberto');
     });
 
     it('o fim do prazo é respeitado depois de uma prorrogação: dentro do novo prazo entra, e o lance de antes já valia', async () => {
