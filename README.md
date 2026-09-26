@@ -421,19 +421,6 @@ aplica as migrations do zero e executa lint, build, testes unitários e e2e.
 └── REVISAO-SEGURANCA.md     Revisão de segurança
 ```
 
-## Limitações conhecidas e próximos passos
-
-Em nome da transparência, o que **ainda não** é de produção:
-
-- **E-mail simulado**: o código de recuperação de senha é escrito no log. Falta ligar um provedor real de e-mail.
-- **Pagamento simulado**: o pós-leilão registra o pagamento sem gateway real.
-- **Tokens no `localStorage`**: é um trade-off conhecido; a alternativa mais forte é cookie `httpOnly` com proteção CSRF.
-- **Usuário do banco**: a API conecta como dono das tabelas; o ideal é um usuário só da aplicação, sem `TRUNCATE` nem `ALTER`.
-- **Teste de carga**: há testes de concorrência, mas não um teste de carga sustentada.
-- **Dados de exemplo**: o seed cria leilões abertos por vários anos para facilitar a demonstração, o que foge da regra de 48 horas.
-
-Ideias para a evolução: notificações por e-mail e push, gateway de pagamento, moderação de imagens, internacionalização e mais idiomas.
-
 ## Contribuindo
 
 1. Crie uma branch a partir de `main` (`feat/…`, `fix/…`).
