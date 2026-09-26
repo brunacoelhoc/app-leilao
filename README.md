@@ -61,7 +61,6 @@ A **Belle Époque** é uma casa de leilões (fictícia) que quer levar o leilão
 
 O que dá confiança a um leilão é saber que **ninguém manipula o preço** e que **o vencedor é justo**. Por isso o sistema
 tem lances imutáveis, vendedor que não dá lance na própria peça, vencedor decidido pelo servidor e tudo auditável.
-A história completa, com os personagens e as regras, está em [`HISTORIA-DA-APLICACAO.md`](HISTORIA-DA-APLICACAO.md).
 
 | Camada | Tecnologia | Papel |
 | --- | --- | --- |
@@ -419,7 +418,7 @@ aplica as migrations do zero e executa lint, build, testes unitários e e2e.
 ├── docker-compose.yml       API + PostgreSQL + pgAdmin
 ├── .env.example             Variáveis do Docker Compose
 ├── .nvmrc                   Versão do Node recomendada
-└── *.md                     Documentação de apoio (história, segurança, glossário…)
+└── REVISAO-SEGURANCA.md     Revisão de segurança
 ```
 
 ## Limitações conhecidas e próximos passos
@@ -448,10 +447,7 @@ Regras do projeto: **regra de negócio só no back-end**, nada de segredo no Git
 
 - [`BackEnd/README.md`](BackEnd/README.md) — API, variáveis, endpoints, permissões, tempo real e decisões.
 - [`FrontEnd/README.md`](FrontEnd/README.md) — telas, rotas e como rodar a interface.
-- [`HISTORIA-DA-APLICACAO.md`](HISTORIA-DA-APLICACAO.md) — a história do produto, os personagens e as regras.
-- [`AV-08-LEILOES.md`](AV-08-LEILOES.md) — o enunciado da avaliação.
 - [`REVISAO-SEGURANCA.md`](REVISAO-SEGURANCA.md) — análise de segurança.
-- [`GLOSSARIO.md`](GLOSSARIO.md) e [`INSUMOS-APRESENTACAO.md`](INSUMOS-APRESENTACAO.md) — termos e roteiro de apresentação.
 
 ## Autoria, créditos e licença
 
