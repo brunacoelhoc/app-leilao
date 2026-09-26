@@ -41,7 +41,7 @@ avaliação **AV-08 — Plataforma de Leilões**.
 
 ## Requisitos
 
-- Node.js 20+ (testado com Node 24)
+- Node.js **24 (LTS)** (o mesmo do Docker e do CI; há um `.nvmrc` na raiz do repositório)
 - PostgreSQL 18 (ou compatível) rodando localmente ou acessível pela rede
 - npm
 
