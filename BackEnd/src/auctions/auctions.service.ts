@@ -124,18 +124,24 @@ export class AuctionsService {
     usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<Auction & { capaDocumentoId: string | null; capaPadrao: string }>> {
     const paginacao = calcularPaginacao(params);
+
+    // Busca sem acento: "leilao" tem que encontrar "Leilão". O Prisma nao tem
+    // essa funcao pronta, entao usamos a extensao unaccent do Postgres direto
+    // (parametrizada pelo $queryRaw, sem risco de injecao) so pra achar os ids
+    // que batem, e depois filtramos por id no where tipado normal
+    const idsDaBusca = params.busca
+      ? await this.prisma.$queryRaw<{ id: string }[]>`
+          SELECT id FROM "Auction"
+          WHERE unaccent(titulo) ILIKE unaccent(${'%' + params.busca + '%'})
+             OR unaccent(COALESCE(descricao, '')) ILIKE unaccent(${'%' + params.busca + '%'})
+        `
+      : null;
+
     const where: Prisma.AuctionWhereInput = {
       vendedorId: params.vendedorId,
       status: params.status,
       AND: [filtroDeLeiloesVisiveis(usuario)],
-      ...(params.busca
-        ? {
-            OR: [
-              { titulo: { contains: params.busca, mode: 'insensitive' } },
-              { descricao: { contains: params.busca, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
+      ...(idsDaBusca ? { id: { in: idsDaBusca.map((linha) => linha.id) } } : {}),
     };
     const [dados, total] = await Promise.all([
       this.prisma.auction.findMany({
@@ -215,8 +221,11 @@ export class AuctionsService {
 
   // Indicadores do dominio: resumo calculado na hora a partir dos itens/lances
   // do leilao (nao existe tabela propria para isso)
-  async obterIndicadores(id: string): Promise<IndicadoresAuctionResposta> {
-    await this.buscarPorId(id); // 404 se o leilao nao existir
+  // 🔎 Usa buscarVisivelPorId (nao buscarPorId): sem isso, dado financeiro de
+  // um leilao DRAFT/CANCELED de outro dono vazava pra quem soubesse o id,
+  // furando a mesma regra de "rascunho privado" que o resto do sistema aplica
+  async obterIndicadores(id: string, usuario?: UsuarioAutenticado): Promise<IndicadoresAuctionResposta> {
+    await this.buscarVisivelPorId(id, usuario); // 404 se o leilao nao existir ou for rascunho de outro dono
 
     const itens = await this.prisma.auctionItem.findMany({
       where: { leilaoId: id },

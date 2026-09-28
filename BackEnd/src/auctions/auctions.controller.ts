@@ -172,10 +172,12 @@ export class AuctionsController {
   @ApiOkResponse({ description: 'Indicadores do leilão', type: IndicadoresAuctionResposta, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'Id não é um uuid válido', type: ErroResposta })
   @ApiNotFoundResponse({ description: 'Leilão inexistente', type: ErroResposta })
+  @UseGuards(JwtOpcionalGuard)
   obterIndicadores(
     @Param('id', ParseUuidPipePt) id: string,
+    @CurrentUser() usuario?: UsuarioAutenticado,
   ): Promise<IndicadoresAuctionResposta> {
-    return this.auctionsService.obterIndicadores(id);
+    return this.auctionsService.obterIndicadores(id, usuario);
   }
 
   @Patch(':id')
