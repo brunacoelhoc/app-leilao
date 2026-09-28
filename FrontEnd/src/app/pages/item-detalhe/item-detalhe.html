@@ -117,8 +117,8 @@
           </div>
           <div class="atalhos" role="group" aria-label="Valores rápidos">
             @for (v of it.lancesSugeridos; track $index) {
-              <button type="button" class="atalho" (click)="usarValor(v)" [disabled]="!podeDarLance()">
-                <small>{{ ROTULOS_ATALHO[$index] }}</small>{{ moeda(v) }}
+              <button type="button" class="atalho" (click)="usarValor(v)" [disabled]="!podeDarLance()" [attr.aria-label]="ROTULOS_ATALHO[$index] + ' ' + moeda(v)">
+                {{ moeda(v) }}
               </button>
             }
           </div>
