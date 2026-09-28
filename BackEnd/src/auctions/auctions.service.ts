@@ -359,13 +359,14 @@ export class AuctionsService {
       }
 
       await this.conferirCoerenciaDaPublicacao(leilao, dto.status);
-      await this.conferirCancelamentoComLances(leilao, dto.status, usuario);
 
       const atualizado = await this.aplicarMudancaStatus(
         leilao,
         dto.status,
         usuario.id,
         dto.motivo,
+        false,
+        usuario.papel,
       );
 
       // Auditoria FORA da transacao (que ja comitou): mudanca de estado e um
@@ -480,25 +481,6 @@ export class AuctionsService {
     }
   }
 
-  // 🔎 Cancelar um leilao ABERTO que ja recebeu lances: so o ADMIN (com motivo, auditado). Se o vendedor
-  // pudesse, cancelaria quando o preco nao agrada, prejudicando quem ja deu lance. Os lances ficam
-  // guardados (imutaveis); o leilao so muda de estado
-  private async conferirCancelamentoComLances(
-    leilao: Auction,
-    novoStatus: AuctionStatus,
-    usuario: UsuarioAutenticado,
-  ): Promise<void> {
-    if (novoStatus !== AuctionStatus.CANCELED || leilao.status !== AuctionStatus.OPEN) return;
-    if (usuario.papel === 'ADMIN') return;
-
-    const lances = await this.prisma.bid.count({ where: { item: { leilaoId: leilao.id } } });
-    if (lances > 0) {
-      throw new ForbiddenException(
-        `Este leilão já recebeu ${lances} lance(s) e não pode ser cancelado pelo vendedor. Peça ao administrador (com o motivo).`,
-      );
-    }
-  }
-
   // 🔎 Publicar (agendar/abrir) so faz sentido com o leilao pronto: nao se agenda um leilao
   // vazio nem um que ja deveria ter terminado (ele ficaria preso, sem nunca fechar)
   private async conferirCoerenciaDaPublicacao(
@@ -527,6 +509,8 @@ export class AuctionsService {
     motivo?: string,
     // Encerramento por horario: so fecha se o PRAZO continua o mesmo que o robo leu (o anti-sniping pode ter estendido)
     exigirMesmoPrazo = false,
+    // So usado ao CANCELAR: quem esta cancelando (pra saber se pode cancelar com lance)
+    papelDeQuemAlterou?: string,
   ): Promise<Auction> {
     let substituicoes: SubstituicaoDeVencedor[] = [];
     const atualizado = await this.prisma.$transaction(async (tx) => {
@@ -540,6 +524,20 @@ export class AuctionsService {
         await tx.$queryRaw`
           SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${leilao.id} ORDER BY id FOR UPDATE
         `;
+      }
+
+      // 🔎 Cancelar um leilao ABERTO que ja recebeu lances: so o ADMIN. Feito AQUI (depois do lock acima, dentro
+      // da mesma transacao) e nao antes: um lance concorrente so termina de inserir depois de travar a mesma
+      // linha do item, entao contar lances so depois do lock garante que nenhum lance "passa por baixo" do
+      // cancelamento (senao o vendedor podia cancelar um leilao que acabou de receber lance, na janela entre
+      // o "conferir" e o "aplicar")
+      if (novoStatus === AuctionStatus.CANCELED && leilao.status === AuctionStatus.OPEN && papelDeQuemAlterou !== 'ADMIN') {
+        const lances = await tx.bid.count({ where: { item: { leilaoId: leilao.id } } });
+        if (lances > 0) {
+          throw new ForbiddenException(
+            `Este leilão já recebeu ${lances} lance(s) e não pode ser cancelado pelo vendedor. Peça ao administrador (com o motivo).`,
+          );
+        }
       }
 
       // 🔎 Troca "compare-and-swap": so muda se o leilao AINDA esta no estado que lemos.
