@@ -124,11 +124,11 @@
       <div class="linha">
         <div class="campo">
           <label for="telefone">Telefone</label>
-          <input id="telefone" name="telefone" type="text" inputmode="numeric" placeholder="(11) 98765-4321" [(ngModel)]="formTelefone" (input)="mascararTelefone()" />
+          <input id="telefone" name="telefone" type="text" inputmode="numeric" placeholder="(11) 98765-4321" maxlength="15" [(ngModel)]="formTelefone" (input)="mascararTelefone()" />
         </div>
         <div class="campo">
           <label for="cpf">CPF</label>
-          <input id="cpf" name="cpf" type="text" inputmode="numeric" placeholder="123.456.789-00" [(ngModel)]="formCpf" (input)="mascararCpf()" />
+          <input id="cpf" name="cpf" type="text" inputmode="numeric" placeholder="123.456.789-00" maxlength="14" [(ngModel)]="formCpf" (input)="mascararCpf()" />
         </div>
       </div>
       <h3>Endereço</h3>
