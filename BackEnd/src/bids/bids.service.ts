@@ -121,7 +121,11 @@ export class BidsService {
           );
         }
         const agora = new Date();
-        if (agora < leilao.dataInicio || agora > leilao.dataFim) {
+        // >= (nao so >): no instante EXATO do fim, o robo de encerramento (dataFim: lte agora) e a
+        // consulta de situacao (minha-situacao, agora >= dataFim) ja tratam como fechado -- aqui
+        // precisa concordar, senao um lance nesse instante exato seria aceito enquanto todo o
+        // resto do sistema ja diz "leilao fechado"
+        if (agora < leilao.dataInicio || agora >= leilao.dataFim) {
           throw new ConflictException('Fora do período do leilão');
         }
 
@@ -170,17 +174,22 @@ export class BidsService {
             idRequisicao: contexto.idRequisicao,
           },
         });
-        // 🔎 Anti-sniping: lance nos ultimos 2 minutos estende o prazo (na MESMA transacao do lance,
-        // entao ou os dois acontecem ou nenhum)
+        // 🔎 Anti-sniping: lance nos ultimos segundos estende o prazo (na MESMA transacao do lance,
+        // entao ou os dois acontecem ou nenhum). O leilao NAO esta travado (so o item, acima) --
+        // dois lances em ITENS DIFERENTES do mesmo leilao podem calcular o novoFim ao mesmo tempo,
+        // cada um a partir da sua propria leitura de "leilao.dataFim". Por isso a escrita e um UPDATE
+        // atomico com GREATEST (nunca um SET cego): o Postgres compara contra o valor JA COMMITADO
+        // no momento da escrita, entao o prazo nunca pode retroceder, nao importa a ordem de commit
         const novoFim = calcularNovoFim(leilao.dataFim, agora);
         let dataFim = leilao.dataFim;
         let prorrogacoes = leilao.prorrogacoes;
         if (novoFim) {
-          const estendido = await tx.auction.update({
-            where: { id: leilao.id },
-            data: { dataFim: novoFim, prorrogacoes: { increment: 1 } },
-            select: { dataFim: true, prorrogacoes: true },
-          });
+          const [estendido] = await tx.$queryRaw<{ dataFim: Date; prorrogacoes: number }[]>`
+            UPDATE "Auction"
+            SET "dataFim" = GREATEST("dataFim", ${novoFim}), "prorrogacoes" = "prorrogacoes" + 1
+            WHERE id = ${leilao.id}
+            RETURNING "dataFim", "prorrogacoes"
+          `;
           dataFim = estendido.dataFim;
           prorrogacoes = estendido.prorrogacoes;
         }

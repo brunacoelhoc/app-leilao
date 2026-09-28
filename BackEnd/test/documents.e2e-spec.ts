@@ -206,6 +206,20 @@ describe('Documents (e2e)', () => {
         .field('tipo', 'DOCUMENT')
         .attach('arquivo', pdf, 'laudo.pdf');
       expect(resposta.status).toBe(201);
+
+      // Rascunho (DRAFT): certificado/laudo (tipo DOCUMENT) so baixa pro dono/ADMIN -- diferente
+      // de PHOTO, que continua livre por design
+      const documentoId = (resposta.body as { id: string }).id;
+      await request(app.getHttpServer())
+        .get(`/api/documents/${documentoId}/download`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenBidder}`)
+        .expect(404);
+      await request(app.getHttpServer())
+        .get(`/api/documents/${documentoId}/download`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenSeller}`)
+        .expect(200);
     });
 
     it('tipo de arquivo nao aceito (.exe) -> 400', async () => {
@@ -283,9 +297,12 @@ describe('Documents (e2e)', () => {
     });
 
     it('consulta por relacionamento: GET /auction-items/:itemId/documents lista o arquivo enviado, paginado', async () => {
+      // Este leilão nunca sai de DRAFT neste teste (não é o foco da suíte) -- rascunho só é
+      // visível pro dono/ADMIN, então autentica como o vendedor pra listar
       const resposta = await request(app.getHttpServer())
         .get(`/api/auction-items/${itemId}/documents`)
         .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenSeller}`)
         .expect(200);
 
       expect(resposta.body.pagina).toBe(1);
@@ -295,11 +312,23 @@ describe('Documents (e2e)', () => {
       );
     });
 
+    it('rascunho (DRAFT): quem nao e dono nem ADMIN recebe 404 ao listar os documentos do item', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/auction-items/${itemId}/documents`)
+        .set('X-API-KEY', chave)
+        .expect(404);
+      await request(app.getHttpServer())
+        .get(`/api/auction-items/${itemId}/documents`)
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenBidder}`)
+        .expect(404);
+    });
 
-    it('a listagem PUBLICA nao mostra quem enviou (id de usuario) nem o nome do arquivo em disco', async () => {
+    it('a listagem (autenticada como dono) nao mostra quem enviou (id de usuario) nem o nome do arquivo em disco', async () => {
       const resposta = await request(app.getHttpServer())
         .get(`/api/auction-items/${itemId}/documents`)
         .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenSeller}`)
         .expect(200);
 
       const documento = (resposta.body.dados as Record<string, unknown>[])[0];
@@ -310,9 +339,12 @@ describe('Documents (e2e)', () => {
     it('GET /documents/:id/download baixa o arquivo com o nome original', async () => {
       const lista = await request(app.getHttpServer())
         .get(`/api/auction-items/${itemId}/documents`)
-        .set('X-API-KEY', chave);
+        .set('X-API-KEY', chave)
+        .set('Authorization', `Bearer ${tokenSeller}`);
       const documento = (lista.body.dados as { id: string; nomeOriginal: string }[])[0];
 
+      // Download de PHOTO continua livre por design (mesmo leilão em rascunho): so listagem e
+      // documentos do tipo DOCUMENT (certificado/laudo) sao privados enquanto DRAFT
       const resposta = await request(app.getHttpServer())
         .get(`/api/documents/${documento.id}/download`)
         .set('X-API-KEY', chave)

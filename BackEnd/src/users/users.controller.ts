@@ -111,7 +111,10 @@ export class UsersController {
   @ApiOkResponse({ description: 'Conta no novo modo', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'modo diferente de BIDDER/SELLER', type: ErroResposta })
   @ApiForbiddenResponse({ description: 'ADMIN não troca de modo', type: ErroResposta })
-  @ApiConflictResponse({ description: 'A conta já está nesse modo', type: ErroResposta })
+  @ApiConflictResponse({
+    description: 'A conta já está nesse modo, ou há disputa (troca p/ SELLER) ou leilão em andamento (troca p/ BIDDER) que impede a troca agora',
+    type: ErroResposta,
+  })
   async trocarModo(
     @CurrentUser() usuario: UsuarioAutenticado,
     @Body() dto: TrocarModoDto,

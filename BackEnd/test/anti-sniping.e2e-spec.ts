@@ -12,7 +12,7 @@ import { PrismaService } from './../src/prisma/prisma.service';
 import { cepFalso } from './cep-falso';
 import { PERFIL_COMPLETO } from './perfil-teste';
 
-// Anti-sniping: lance nos ultimos 2 minutos estende o prazo do leilao (regra do servidor, na transacao do lance)
+// Anti-sniping: lance nos ultimos 30 segundos estende o prazo do leilao (regra do servidor, na transacao do lance)
 describe('Anti-sniping (e2e)', () => {
   let app: INestApplication<App>;
   let chave: string;
@@ -80,49 +80,49 @@ describe('Anti-sniping (e2e)', () => {
     expect(depois.prorrogacoes).toBe(0);
   });
 
-  it('lance faltando 3 minutos (fora da janela de 2) NAO estende', async () => {
-    const { leilaoId, itemId } = await criarLeilao(3 * 60_000);
+  it('lance faltando 45 segundos (fora da janela de 30) NAO estende', async () => {
+    const { leilaoId, itemId } = await criarLeilao(45_000);
     await dar(itemId, 100).expect(201);
     expect((await leilaoDoBanco(leilaoId)).prorrogacoes).toBe(0);
   });
 
-  it('lance faltando 30 segundos ESTENDE: o fim passa a ser "agora + 2 minutos" e a contagem sobe', async () => {
-    const { leilaoId, itemId } = await criarLeilao(30_000);
+  it('lance faltando 10 segundos ESTENDE: o fim passa a ser "agora + 30 segundos" e a contagem sobe', async () => {
+    const { leilaoId, itemId } = await criarLeilao(10_000);
     await dar(itemId, 100).expect(201);
 
     const depois = await leilaoDoBanco(leilaoId);
     expect(depois.prorrogacoes).toBe(1);
     const restante = (depois.dataFim.getTime() - Date.now()) / 1000;
-    expect(restante).toBeGreaterThan(110);
-    expect(restante).toBeLessThanOrEqual(120);
+    expect(restante).toBeGreaterThan(25);
+    expect(restante).toBeLessThanOrEqual(30);
 
     // o servidor ja informa o novo prazo na peca (e a tela so o exibe)
     const item = await api('get', `/auction-items/${itemId}`).expect(200);
     expect(item.body.prorrogacoes).toBe(1);
-    expect(item.body.segundosParaMudanca).toBeGreaterThan(110);
+    expect(item.body.segundosParaMudanca).toBeGreaterThan(25);
     expect(item.body.situacao).toBe('ABERTO');
   });
 
   it('cada novo lance na janela estende de novo (varias prorrogacoes seguidas)', async () => {
-    const { leilaoId, itemId } = await criarLeilao(20_000);
-    await dar(itemId, 100).expect(201); // estende: agora faltam ~120s (dentro da janela? nao: 120s nao e < 120s)
+    const { leilaoId, itemId } = await criarLeilao(5_000);
+    await dar(itemId, 100).expect(201); // estende: agora faltam ~30s
     const primeira = await leilaoDoBanco(leilaoId);
     expect(primeira.prorrogacoes).toBe(1);
 
-    // simula o tempo passando: faltam 10s para o novo fim
-    await prisma.auction.update({ where: { id: leilaoId }, data: { dataFim: new Date(Date.now() + 10_000) } });
+    // simula o tempo passando: faltam 5s para o novo fim
+    await prisma.auction.update({ where: { id: leilaoId }, data: { dataFim: new Date(Date.now() + 5_000) } });
     await dar(itemId, 110, tokenOutro).expect(201);
     const segunda = await leilaoDoBanco(leilaoId);
     expect(segunda.prorrogacoes).toBe(2);
-    expect(segunda.dataFim.getTime()).toBeGreaterThan(Date.now() + 100_000);
+    expect(segunda.dataFim.getTime()).toBeGreaterThan(Date.now() + 25_000);
   });
 
   it('lance REJEITADO na janela final nao estende o prazo', async () => {
-    const { leilaoId, itemId } = await criarLeilao(30_000);
+    const { leilaoId, itemId } = await criarLeilao(10_000);
     await dar(itemId, 50).expect(409); // abaixo do preco inicial
     const depois = await leilaoDoBanco(leilaoId);
     expect(depois.prorrogacoes).toBe(0);
-    expect(depois.dataFim.getTime() - Date.now()).toBeLessThanOrEqual(30_000);
+    expect(depois.dataFim.getTime() - Date.now()).toBeLessThanOrEqual(10_000);
   });
 
   it('a prorrogacao fica na auditoria e o leilao continua ABERTO depois do prazo original', async () => {

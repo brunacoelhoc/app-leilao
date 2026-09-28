@@ -24,6 +24,16 @@ export interface EnderecoPorCep {
   uf: string;
 }
 
+// Endereco por CEP quase nunca muda -- 24h de cache evita bater no ViaCEP de
+// novo pro mesmo CEP (ex.: varios itens cadastrados com o mesmo endereco de
+// retirada), e reduz a exposicao a uma instabilidade passageira do servico externo
+const CACHE_TTL_MS = 24 * 60 * 60_000;
+
+interface EntradaCache {
+  endereco: EnderecoPorCep;
+  expiraEm: number;
+}
+
 // Integracao externa (HttpService) exigida pelo enunciado: consulta o CEP e
 // preenche o endereco de retirada do item. A URL base e o timeout ja vem
 // configurados no HttpService pelo CepModule (HttpModule.registerAsync),
@@ -31,10 +41,18 @@ export interface EnderecoPorCep {
 @Injectable()
 export class CepService {
   private readonly logger = new Logger(CepService.name);
+  // Em memoria, por instancia -- suficiente pro escopo do projeto (uma unica instancia da API).
+  // So guarda CEP que deu certo; erro (nao encontrado / servico fora do ar) nunca e cacheado
+  private readonly cache = new Map<string, EntradaCache>();
 
   constructor(private readonly httpService: HttpService) {}
 
   async buscar(cep: string): Promise<EnderecoPorCep> {
+    const doCache = this.cache.get(cep);
+    if (doCache && doCache.expiraEm > Date.now()) {
+      return doCache.endereco;
+    }
+
     let resposta: RespostaViaCep;
     try {
       const { data } = await firstValueFrom(
@@ -64,10 +82,12 @@ export class CepService {
       throw new BadRequestException('CEP não encontrado');
     }
 
-    return {
+    const endereco: EnderecoPorCep = {
       logradouro: resposta.logradouro ?? '',
       cidade: resposta.localidade,
       uf: resposta.uf ?? '',
     };
+    this.cache.set(cep, { endereco, expiraEm: Date.now() + CACHE_TTL_MS });
+    return endereco;
   }
 }

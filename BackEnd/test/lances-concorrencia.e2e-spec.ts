@@ -33,7 +33,7 @@ describe('Lances: concorrência (e2e)', () => {
     return { id: usuario.id, token: app.get(JwtService, { strict: false }).sign({ sub: usuario.id, papel, sid: sessao.id }) };
   }
 
-  // Leilão já ABERTO com N itens. "segundosParaFim" curto (< 120) coloca o leilão na janela do anti-sniping:
+  // Leilão já ABERTO com N itens. "segundosParaFim" curto (< 30) coloca o leilão na janela do anti-sniping:
   // todo lance aceito também atualiza a linha do leilão (é a situação em que duas transações disputam as mesmas linhas)
   async function leilaoAberto(itens: number, opcoes: { segundosParaFim?: number; preco?: number; incremento?: number } = {}) {
     const { segundosParaFim = 3600, preco = 100, incremento = 10 } = opcoes;
@@ -155,7 +155,7 @@ describe('Lances: concorrência (e2e)', () => {
   });
 
   it('lances em itens DIFERENTES do mesmo leilão ao mesmo tempo (anti-sniping): cada lance aceito conta uma prorrogação', async () => {
-    const { leilaoId, itens } = await leilaoAberto(6, { segundosParaFim: 60 }); // dentro da janela de 2 minutos
+    const { leilaoId, itens } = await leilaoAberto(6, { segundosParaFim: 15 }); // dentro da janela de 30s
     const respostas = await Promise.all(itens.flatMap((itemId, i) => [lance(itemId, licitantes[2 * i], 100), lance(itemId, licitantes[2 * i + 1], 110)]));
 
     semErroDeServidor(respostas);
@@ -163,7 +163,9 @@ describe('Lances: concorrência (e2e)', () => {
     expect(aceitos).toBeGreaterThanOrEqual(itens.length); // ao menos um por item
     const leilao = await prisma.auction.findUniqueOrThrow({ where: { id: leilaoId } });
     expect(leilao.prorrogacoes).toBe(aceitos); // nenhuma prorrogação se perdeu na disputa pela mesma linha do leilão
-    expect(leilao.dataFim.getTime()).toBeGreaterThan(Date.now() + 100_000); // o prazo foi de fato estendido
+    // GREATEST atomico: mesmo com varios itens estendendo ao mesmo tempo, o prazo final nunca fica
+    // abaixo do que qualquer uma das prorrogações individuais teria gravado sozinha
+    expect(leilao.dataFim.getTime()).toBeGreaterThan(Date.now() + 25_000); // o prazo foi de fato estendido
   }, 60_000);
 
   describe('lances CONTRA o fechamento e o cancelamento do leilão', () => {
@@ -196,7 +198,7 @@ describe('Lances: concorrência (e2e)', () => {
 
     it('cancelar no meio da disputa, JÁ na janela do anti-sniping: sem 5xx (nada de deadlock) e os itens ficam indisponíveis', async () => {
       for (let rodada = 0; rodada < 6; rodada++) {
-        const { leilaoId, itens } = await leilaoAberto(3, { segundosParaFim: 60 });
+        const { leilaoId, itens } = await leilaoAberto(3, { segundosParaFim: 15 });
         const [cancelamento, ...respostas] = await Promise.all([
           mudarStatus(leilaoId, 'CANCELED'),
           ...itens.flatMap((itemId, i) => licitantes.slice(i * 6, i * 6 + 6).map((l, j) => lance(itemId, l, 100 + j * 11))),

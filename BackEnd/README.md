@@ -401,11 +401,14 @@ Cada item também volta com valores **calculados pelo servidor**: `situacao`
 abrir/encerrar), `prorrogacoes` (quantas vezes o **anti-sniping** estendeu o prazo) e `vencedorNome`.
 
 **Anti-sniping** (`src/auctions/anti-sniping.ts`): um lance que chega quando faltam **menos de
-2 minutos** para o fim do leilão faz o prazo passar a ser **"agora + 2 minutos"**. Cada novo lance na
-janela estende de novo, e o leilão só fecha quando ninguém mais dá lance nos minutos finais. A
-extensão acontece **na mesma transação do lance** (sob o mesmo lock) — lance rejeitado nunca estende —,
-fica na auditoria (`LEILAO_PRAZO_ESTENDIDO`) e o `dataFim`/`prorrogacoes` do leilão refletem o novo prazo.
-O robô de encerramento sempre olha o prazo atual.
+30 segundos** para o fim do leilão faz o prazo passar a ser **"agora + 30 segundos"**. Cada novo lance na
+janela estende de novo, e o leilão só fecha quando ninguém mais dá lance nos segundos finais. A
+extensão acontece **na mesma transação do lance**, mas o leilão em si não é travado (só o item) —
+por isso a escrita do novo `dataFim` é um `UPDATE ... SET "dataFim" = GREATEST("dataFim", novoFim)`
+atômico, não um `SET` direto: assim, lances em itens diferentes do mesmo leilão perto do fim nunca
+fazem o prazo retroceder, não importa a ordem em que as transações concorrentes commitam. Lance
+rejeitado nunca estende, a prorrogação fica na auditoria (`LEILAO_PRAZO_ESTENDIDO`) e o
+`dataFim`/`prorrogacoes` do leilão refletem o novo prazo. O robô de encerramento sempre olha o prazo atual.
 
 Campos de dinheiro (`precoInicial`, `incrementoMinimo`, `lanceAtual`) sempre
 voltam como **string** na resposta (ex.: `"150.50"`), nunca como número —

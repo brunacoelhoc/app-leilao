@@ -19,7 +19,8 @@ import {
   type ParametrosPaginacao,
   type RespostaPaginada,
 } from '../common/utils/paginacao.util';
-import { AuditResult, type Document, type Role } from '../generated/prisma/client';
+import { rascunhoOculto } from '../common/utils/visibilidade-leiloes.util';
+import { AuditResult, DocumentType, type Document, type Role } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { EnviarDocumentoDto } from './dto/enviar-documento.dto';
 
@@ -162,11 +163,14 @@ export class DocumentsService {
   async listarPorItem(
     itemId: string,
     params: ParametrosPaginacao,
+    usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<Omit<Document, 'enviadoPorId' | 'nomeArquivo'>>> {
     const item = await this.prisma.auctionItem.findUnique({
       where: { id: itemId },
+      include: { leilao: { select: { status: true, vendedorId: true } } },
     });
-    if (!item) {
+    // Item de leilão em rascunho: só o dono e o ADMIN veem os documentos (os demais recebem 404)
+    if (!item || (item.leilao && rascunhoOculto(item.leilao, usuario))) {
       throw new NotFoundException('Item não encontrado');
     }
 
@@ -187,11 +191,22 @@ export class DocumentsService {
   // Devolve o registro e o caminho do arquivo em disco, para o controller baixar
   async buscarParaDownload(
     id: string,
+    usuario?: UsuarioAutenticado,
   ): Promise<{ documento: Document; caminhoArquivo: string }> {
     const documento = await this.prisma.document.findUnique({
       where: { id },
+      include: { item: { select: { leilao: { select: { status: true, vendedorId: true } } } } },
     });
     if (!documento) {
+      throw new NotFoundException('Documento não encontrado');
+    }
+    // Certificado/laudo (DOCUMENT) de item de leilão em rascunho: só o dono e o ADMIN baixam.
+    // PHOTO fica de fora dessa checagem de propósito: quem chama /documents/:id/foto nunca manda
+    // usuario (tag <img> não manda Authorization), então aplicar a regra aqui quebraria a própria
+    // vendedora vendo a foto do rascunho dela. A privacidade da foto de rascunho é fechada pela
+    // LISTAGEM (listarPorItem, acima), não pelo arquivo em si -- mesma decisão já aceita no projeto
+    // de que fotos são servidas sem login por design
+    if (documento.tipo === DocumentType.DOCUMENT && documento.item.leilao && rascunhoOculto(documento.item.leilao, usuario)) {
       throw new NotFoundException('Documento não encontrado');
     }
 

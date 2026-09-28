@@ -97,6 +97,29 @@ export class UsersService {
     if (usuario.papel === modo) {
       throw new ConflictException(modo === 'SELLER' ? 'Sua conta já está no modo vendedor' : 'Sua conta já está no modo comprador');
     }
+
+    // Trocar pra SELLER com uma disputa em andamento: se alguém cobrir o lance, a conta não
+    // consegue mais recobrir (a rota de lance exige BIDDER) -- o lance fica orfão sem aviso
+    if (modo === 'SELLER') {
+      const disputas = await this.contarDisputas(id);
+      if (disputas > 0) {
+        throw new ConflictException(
+          `Você está disputando ${disputas} peça(s) em leilões em andamento. Aguarde o encerramento antes de trocar para o modo vendedor.`,
+        );
+      }
+    }
+
+    // Trocar pra BIDDER sendo dono de leilao em andamento: as rotas de gestao do leilao (cancelar,
+    // etc.) exigem SELLER, entao o dono perderia a capacidade de administrar o proprio leilao
+    if (modo === 'BIDDER') {
+      const leiloesEmAndamento = await this.contarLeiloesEmAndamento(id);
+      if (leiloesEmAndamento > 0) {
+        throw new ConflictException(
+          `Você é dono de ${leiloesEmAndamento} leilão(ões) em andamento (aberto ou agendado). Encerre ou cancele antes de trocar para o modo comprador.`,
+        );
+      }
+    }
+
     return this.prisma.user.update({ where: { id }, data: { papel: modo } });
   }
 

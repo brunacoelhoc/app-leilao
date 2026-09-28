@@ -111,20 +111,20 @@ describe('Lances: prazo, robô de encerramento e reinício (e2e)', () => {
     });
 
     it('o fim do prazo é respeitado depois de uma prorrogação: dentro do novo prazo entra, e o lance de antes já valia', async () => {
-      const { leilaoId, itemId } = await criarLeilao({ fimMs: 60_000 }); // na janela do anti-sniping
+      const { leilaoId, itemId } = await criarLeilao({ fimMs: 15_000 }); // na janela do anti-sniping (30s)
       expect((await lance(itemId, licitantes[0], 100)).status).toBe(201);
       const depois = await leilaoDoBanco(leilaoId);
-      expect(depois.dataFim.getTime()).toBeGreaterThan(Date.now() + 100_000); // estendeu para ~2 minutos
+      expect(depois.dataFim.getTime()).toBeGreaterThan(Date.now() + 25_000); // estendeu para ~30 segundos
       expect((await lance(itemId, licitantes[1], 110)).status).toBe(201); // segue aceitando
     });
   });
 
   describe('robô de encerramento x lance no limite do prazo', () => {
     it('DETERMINÍSTICO: o robô leu o leilão, um lance estendeu o prazo, e só depois o robô tenta fechar -> NÃO fecha', async () => {
-      const { leilaoId, itemId } = await criarLeilao({ fimMs: 30_000 });
+      const { leilaoId, itemId } = await criarLeilao({ fimMs: 15_000 });
       const leituraAntiga = await leilaoDoBanco(leilaoId); // é o que o robô tinha em mãos ao decidir fechar
 
-      expect((await lance(itemId, licitantes[0], 100)).status).toBe(201); // lance de última hora: prazo vai para ~2 min
+      expect((await lance(itemId, licitantes[0], 100)).status).toBe(201); // lance de última hora: prazo vai para ~30s
       expect((await leilaoDoBanco(leilaoId)).dataFim.getTime()).toBeGreaterThan(leituraAntiga.dataFim.getTime());
 
       // exatamente o que o robô faz, com a leitura antiga e "exigirMesmoPrazo" ligado
@@ -205,7 +205,7 @@ describe('Lances: prazo, robô de encerramento e reinício (e2e)', () => {
 
   describe('reinício do servidor com leilões no meio', () => {
     it('o estado está no banco: depois de reiniciar, o próximo lance respeita o lance atual e o prazo prorrogado continua valendo', async () => {
-      const { leilaoId, itemId } = await criarLeilao({ fimMs: 60_000 });
+      const { leilaoId, itemId } = await criarLeilao({ fimMs: 15_000 });
       expect((await lance(itemId, licitantes[0], 100)).status).toBe(201);
       expect((await lance(itemId, licitantes[1], 120)).status).toBe(201);
       const antes = await leilaoDoBanco(leilaoId);

@@ -11,7 +11,7 @@ describe('anti-sniping (regra pura)', () => {
   });
 
   it('lance dentro da janela estende: o novo fim e "agora + extensao"', () => {
-    const novo = calcularNovoFim(em(30_000), agora);
+    const novo = calcularNovoFim(em(10_000), agora);
     expect(novo?.getTime()).toBe(agora.getTime() + EXTENSAO_ANTI_SNIPING_MS);
   });
 

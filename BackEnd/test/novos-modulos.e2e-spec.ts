@@ -349,11 +349,27 @@ describe('Novos modulos (e2e)', () => {
       await api('post', '/auctions', novo.token).send(corpoLeilao()).expect(403);
     });
 
-    it('sem brecha: o dono nunca da lance no proprio leilao, mesmo voltando ao modo comprador', async () => {
-      await api('patch', '/users/me/modo', tokenA).send({ modo: 'BIDDER' }).expect(200);
+    it('sem brecha: nao troca pra comprador com leilao ativo; e mesmo se o papel virasse BIDDER, nao lancaria no proprio item', async () => {
+      // 1a camada: dono de leilao OPEN/SCHEDULED nao consegue nem trocar de modo (evita ficar sem
+      // conseguir gerenciar o proprio leilao, e de quebra ja fecha essa "brecha" antes dela existir)
+      const bloqueado = await api('patch', '/users/me/modo', tokenA).send({ modo: 'BIDDER' }).expect(409);
+      expect(bloqueado.body.mensagem).toContain('leilão');
+
+      // 2a camada (defesa em profundidade): mesmo que o papel virasse BIDDER por outro caminho
+      // (ex.: mexendo direto no banco), o darLance confere o DONO DO LEILAO de novo -- nunca confia
+      // so no papel da conta. Simula esse estado direto no banco pra provar que essa checagem
+      // continua de pe, independente da trava de trocarModo acima
+      await prisma.user.update({ where: { id: idA }, data: { papel: 'BIDDER' } });
       const res = await api('post', `/auction-items/${itemDeA}/bids`, tokenA).send({ valor: 500 }).expect(403);
       expect(res.body.mensagem).toContain('próprio item');
-      await api('patch', '/users/me/modo', tokenA).send({ modo: 'SELLER' }).expect(200);
+      await prisma.user.update({ where: { id: idA }, data: { papel: 'SELLER' } });
+    });
+
+    it('sem brecha (o outro lado): quem esta disputando uma peca nao troca pra vendedor', async () => {
+      // tokenB deu lance em itemDeA no primeiro teste deste bloco e o leilao (OPEN) segue em
+      // andamento -- a disputa continua ativa, entao a troca pra SELLER tem que ser bloqueada
+      const bloqueado = await api('patch', '/users/me/modo', tokenB).send({ modo: 'SELLER' }).expect(409);
+      expect(bloqueado.body.mensagem).toContain('disputando');
     });
 
     it('modo invalido -> 400; ADMIN nao troca de modo -> 403; sem login -> 401', async () => {

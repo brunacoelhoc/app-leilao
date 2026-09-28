@@ -75,7 +75,7 @@ tem lances imutáveis, vendedor que não dá lance na própria peça, vencedor d
 | **Visitante** | explorar destaques, ranking, leilões e peças sem me cadastrar | decidir se vale a pena participar | Leitura pública; nomes abreviados ("Maria S.") |
 | **Comprador** | dar um lance e ver, na hora, se alguém me cobriu | disputar a peça sem recarregar a página | Lances em tempo real (Socket.io) e cronômetro |
 | **Comprador** | ter certeza de que o lance mínimo e o prazo são respeitados | confiar no resultado | Regra e prazo validados no servidor, com lock no banco |
-| **Comprador** | não perder a peça por um lance no último segundo | competir de forma justa | Anti-sniping: lance nos últimos 2 min estende o prazo |
+| **Comprador** | não perder a peça por um lance no último segundo | competir de forma justa | Anti-sniping: lance nos últimos 30s estende o prazo |
 | **Comprador** | acompanhar as peças que ganhei, perdi ou disputo | organizar minhas compras | Tela "Meus lances" e pedido pós-leilão |
 | **Vendedor** | cadastrar leilão e peças com ficha técnica e fotos | apresentar a obra com credibilidade | Painel do vendedor, upload validado e ViaCEP |
 | **Vendedor** | conduzir o leilão (agendar, abrir, cancelar) | controlar a venda das minhas peças | Máquina de estados; só o dono conduz |
@@ -96,7 +96,7 @@ tem lances imutáveis, vendedor que não dá lance na própria peça, vencedor d
 ## Funcionalidades
 
 - **Lances em tempo real** (Socket.io) e **chat** por leilão.
-- **Anti-sniping**: lance nos últimos 2 minutos estende o prazo (+2 min), decidido pelo servidor na mesma transação do lance.
+- **Anti-sniping**: lance nos últimos 30 segundos estende o prazo (+30s), decidido pelo servidor na mesma transação do lance, com escrita atômica (`GREATEST`) contra concorrência entre itens do mesmo leilão.
 - **Indicadores por leilão**: total de lances, maior lance, itens vendidos e total arrecadado (`Decimal`, nunca `Float`).
 - **Ranking de vendedores** e **destaques** na página inicial.
 - **Ficha técnica** das obras (autor, época, técnica, dimensões, conservação, procedência) e **visualizador 3D** da peça.
@@ -192,7 +192,7 @@ Cada módulo fica em `BackEnd/src/<módulo>/` com controller, service e DTOs pr�
    concorrente no mesmo item espera e já enxerga o valor atualizado.
 2. Com o item travado, confere as regras: leilão `OPEN` e dentro do período, item disponível, o dono não dá lance no
    próprio leilão, ninguém cobre o próprio lance e o valor supera o lance atual + incremento mínimo.
-3. Grava o lance (imutável), atualiza `lanceAtual` do item e, se o lance caiu nos últimos 2 minutos, **estende o prazo** (anti-sniping), tudo na mesma transação.
+3. Grava o lance (imutável), atualiza `lanceAtual` do item e, se o lance caiu nos últimos 30 segundos, **estende o prazo** (anti-sniping) com uma escrita atômica (`GREATEST`, nunca um `SET` cego), tudo na mesma transação.
 4. Só depois de confirmar (`commit`) o gateway emite o evento `lance-novo` para quem está na sala do item.
 
 ### Tempo real e encerramento automático

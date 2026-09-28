@@ -113,21 +113,30 @@ export class DocumentsController {
   }
 
   @Get('auction-items/:itemId/documents')
-  @ApiOperation({ summary: 'Lista os documentos/fotos de um item, paginado (livre, sem login)' })
+  @UseGuards(JwtOpcionalGuard)
+  @ApiOperation({
+    summary: 'Lista os documentos/fotos de um item, paginado (livre, sem login)',
+    description: 'Item de leilão em rascunho (DRAFT): só o dono e o ADMIN veem os documentos (os demais recebem 404).',
+  })
   @ApiParam(PARAM_ITEM_ID)
   @ApiPaginacaoQuery()
   @ApiRespostaPaginada(DocumentoResposta)
   @ApiBadRequestResponse({ description: 'itemId não é um uuid válido', type: ErroResposta })
-  @ApiNotFoundResponse({ description: 'Item inexistente', type: ErroResposta })
+  @ApiNotFoundResponse({ description: 'Item inexistente, ou é rascunho de outro dono', type: ErroResposta })
   listarPorItem(
     @Param('itemId', ParseUuidPipePt) itemId: string,
     @Query() query: PaginacaoQueryDto,
+    @CurrentUser() usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<Omit<Document, 'enviadoPorId' | 'nomeArquivo'>>> {
-    return this.documentsService.listarPorItem(itemId, query);
+    return this.documentsService.listarPorItem(itemId, query, usuario);
   }
 
   // 🔎 Foto da peca para a tag <img> (o front so aponta a URL; quem serve, valida e faz cache e o
-  // servidor). So PHOTO: certificados e laudos continuam exigindo a chave em /download
+  // servidor). So PHOTO: certificados e laudos continuam exigindo a chave em /download.
+  // NAO da pra checar rascunho aqui: uma tag <img> nunca manda o cabecalho Authorization, entao nao
+  // existe "usuario" pra comparar contra o dono. Foto continua publica por design (mesma decisao ja
+  // documentada: precisa ser vista sem login) -- quem fecha a privacidade do rascunho e a LISTAGEM
+  // de documentos do item (abaixo) e o /download de certificados/laudos, que sempre vao autenticados
   @Get('documents/:id/foto')
   @SemChaveApi()
   @ApiOperation({
@@ -179,7 +188,7 @@ export class DocumentsController {
     @CurrentUser() usuario?: UsuarioAutenticado,
   ): Promise<void> {
     const { documento, caminhoArquivo } =
-      await this.documentsService.buscarParaDownload(id);
+      await this.documentsService.buscarParaDownload(id, usuario);
 
     // Certificados e laudos: so com login (a chave de API sozinha nao basta, ela fica no navegador)
     if (documento.tipo === DocumentType.DOCUMENT && !usuario) {

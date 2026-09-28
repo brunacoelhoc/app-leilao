@@ -51,7 +51,7 @@ export class AuctionItemResposta {
   @ApiPropertyOptional({ nullable: true, description: 'Só no detalhe da peça vendida: explica quando o maior lance foi desconsiderado (conta desativada) e o valor final é menor. null nos demais casos' })
   avisoResultado: string | null;
 
-  @ApiProperty({ example: 0, description: 'Quantas vezes o prazo do leilão foi estendido pelo anti-sniping (lance nos últimos 2 minutos)' })
+  @ApiProperty({ example: 0, description: 'Quantas vezes o prazo do leilão foi estendido pelo anti-sniping (lance nos últimos 30 segundos)' })
   prorrogacoes: number;
 
   @ApiPropertyOptional({ nullable: true, example: 'Vincent van Gogh', description: 'Ficha técnica: Artista, autor ou fabricante' })
