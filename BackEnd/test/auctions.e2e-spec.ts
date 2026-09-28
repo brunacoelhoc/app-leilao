@@ -681,9 +681,11 @@ describe('Auctions (e2e)', () => {
         dadosValidos('Auctions E2E Indicadores Vazio'),
       );
 
+      // Leilao sem item fica em DRAFT (nunca foi possivel agendar): so o dono ve os indicadores
       const resposta = await rota(
         'get',
         `/${criado.body.id}/indicadores`,
+        tokenSeller,
       ).expect(200);
 
       expect(resposta.body.totalItens).toBe(0);

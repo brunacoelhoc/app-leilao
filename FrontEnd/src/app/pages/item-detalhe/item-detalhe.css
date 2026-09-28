@@ -405,6 +405,13 @@
   font-weight: 800;
   font-variant-numeric: lining-nums tabular-nums;
   background: transparent;
+  -moz-appearance: textfield; /* esconde as setinhas nativas: so os botoes -50/+50 mexem no valor */
+}
+
+.campo-valor input::-webkit-outer-spin-button,
+.campo-valor input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .atalhos {
@@ -427,14 +434,6 @@
   font-size: 0.88rem;
   font-variant-numeric: lining-nums tabular-nums;
   cursor: pointer;
-}
-
-.atalho small {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cor-dourado);
 }
 
 .atalho:hover:not(:disabled) {

@@ -38,14 +38,34 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Cria o usuario. O papel e o ativo usam o padrao do schema (BIDDER e true)
-  criar(dados: { nome: string; email: string; senha: string; papel?: Role; termosAceitosEm?: Date }): Promise<User> {
+  criar(dados: {
+    nome: string;
+    email: string;
+    senha: string;
+    papel?: Role;
+    termosAceitosEm?: Date;
+    telefone?: string;
+    endereco?: string;
+    cpf?: string;
+    avatarUrl?: string;
+  }): Promise<User> {
     return this.prisma.user.create({ data: dados });
   }
 
-  // 🔎 Criacao pelo ADMIN: mesma regra de senha do cadastro (hash bcrypt), mas com papel escolhido
+  // 🔎 Criacao pelo ADMIN: mesma regra de senha do cadastro (hash bcrypt), mas com papel escolhido.
+  // Aceita o perfil (telefone/endereco/cpf/avatar) ja completo, pra nao exigir um PATCH /users/me depois
   async criarPeloAdmin(dto: CriarUsuarioAdminDto): Promise<User> {
     const senha = await bcrypt.hash(dto.senha, CUSTO_DO_HASH);
-    return this.criar({ nome: dto.nome, email: dto.email, senha, papel: dto.papel });
+    return this.criar({
+      nome: dto.nome,
+      email: dto.email,
+      senha,
+      papel: dto.papel,
+      telefone: dto.telefone,
+      endereco: dto.endereco,
+      cpf: dto.cpf,
+      avatarUrl: dto.avatarUrl,
+    });
   }
 
   // Remocao de verdade so para conta SEM historico (sem leiloes, lances, arquivos...).

@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { normalizarEmail } from '../../common/utils/normalizar-email.util';
 import { aparar } from '../../common/utils/aparar-texto.util';
@@ -15,6 +16,7 @@ import {
 // Dados exigidos para criar uma conta. Note que NAO tem campo "papel":
 // toda conta criada por aqui nasce como BIDDER (regra fica no AuthService)
 export class RegistrarUsuarioDto {
+  @ApiProperty({ example: 'Marina Duarte' })
   @Transform(aparar)
   @IsString({ message: 'nome deve ser um texto' })
   @MinLength(3, { message: 'nome deve ter no mínimo 3 caracteres' })
@@ -22,6 +24,7 @@ export class RegistrarUsuarioDto {
   nome: string;
 
   // Tira espacos e deixa minusculo, para "Ana@X.com" e "ana@x.com" serem o mesmo usuario
+  @ApiProperty({ example: 'marina.duarte@teste.com' })
   @Transform(normalizarEmail)
   @IsEmail({}, { message: 'email deve ser um e-mail válido' })
   @MaxLength(180, { message: 'email deve ter no máximo 180 caracteres' })
@@ -30,6 +33,7 @@ export class RegistrarUsuarioDto {
   // ATENCAO: com "stopAtFirstError" ligado, os decorators sao conferidos de
   // baixo para cima. Por isso o IsNotEmpty (obrigatorio) fica por ultimo,
   // para ser o primeiro a ser checado
+  @ApiProperty({ example: 'Senha@123' })
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/, {
     message:
       'A senha não segue o padrão exigido: use letra maiúscula, minúscula, número e caractere especial',
@@ -39,6 +43,7 @@ export class RegistrarUsuarioDto {
   senha: string;
 
   // O aceite dos termos e regra do servidor (que grava a data): a tela so envia a caixa marcada
+  @ApiProperty({ example: true })
   @Equals(true, { message: 'É preciso aceitar os termos de uso para criar a conta' })
   @IsBoolean({ message: 'aceiteTermos deve ser verdadeiro ou falso' })
   aceiteTermos: boolean;

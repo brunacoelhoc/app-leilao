@@ -188,7 +188,10 @@ export class UsersController {
   @Roles('ADMIN')
   @ApiOperation({
     summary: 'Cria um usuário já com o papel escolhido (só ADMIN)',
-    description: 'Diferente do cadastro público (sempre BIDDER), aqui o ADMIN escolhe BIDDER (comprador) ou SELLER (vendedor). A senha segue a mesma regra do cadastro.',
+    description:
+      'Diferente do cadastro público (sempre BIDDER), aqui o ADMIN escolhe BIDDER (comprador) ou SELLER (vendedor). ' +
+      'A senha segue a mesma regra do cadastro. telefone/endereco/cpf/avatarUrl são opcionais: se enviados, a conta ' +
+      'já nasce com o perfil completo, sem precisar de um PATCH /users/me depois.',
   })
   @ApiCreatedResponse({ description: 'Usuário criado (sem a senha na resposta)', type: UsuarioEntity, headers: HEADER_REQUEST_ID })
   @ApiBadRequestResponse({ description: 'Corpo inválido (nome curto, e-mail inválido, senha fora do padrão, papel diferente de BIDDER/SELLER)', type: ErroResposta })

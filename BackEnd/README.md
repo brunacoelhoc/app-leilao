@@ -435,6 +435,19 @@ Depois de gravar o lance, o servidor avisa em tempo real quem está vendo o item
 | GET | `/auction-items/:itemId/documents` | Livre | — | `200` lista |
 | GET | `/documents/:id/download` | Livre | — | `200` (stream do arquivo) · `404` |
 
+### Pedidos (pós-leilão)
+
+| Método | Rota | Auth | Body | Respostas |
+| --- | --- | --- | --- | --- |
+| GET | `/auction-items/:itemId/pedido` | Vencedor do item | — | `200` (só consulta, não grava nada) · `401` · `403` (quem não é o vencedor) · `404` · `409` (item ainda não foi vendido) |
+| POST | `/auction-items/:itemId/pedido/pagamento` | Vencedor do item | `{ formaPagamento }` (`PIX`, `CARTAO` ou `BOLETO`) | `200` cria o pedido e marca como pago (pagamento **simulado**) · `400` · `401` · `403` · `409` (item não vendido ou pedido já pago) |
+| POST | `/auction-items/:itemId/pedido/entrega` | Vencedor do item | `{ tipoEntrega, enderecoEntrega? }` (`RETIRADA` ou `ENTREGA`; `enderecoEntrega` obrigatório só em `ENTREGA`) | `200` finaliza o pedido: `RETIRADA` gera `codigoRetirada`, `ENTREGA` grava o endereço · `400` · `401` · `403` · `409` (pedido ainda não pago, ou entrega já definida) |
+
+Fluxo travado por estado (`AGUARDANDO_PAGAMENTO` → `PAGO` → `FINALIZADO`): pular uma
+etapa (escolher entrega antes de pagar, pagar de novo, redefinir a entrega) dá
+`409`. Só o vencedor do item acessa o próprio pedido — qualquer outro usuário,
+incluindo o vendedor e o ADMIN, recebe `403`.
+
 ### CEP (`/cep`)
 
 | Método | Rota | Auth | Respostas |
@@ -599,10 +612,6 @@ query string, para não vazar segredos (token, senha, chave de API) no log.
 - **Dinheiro sempre em `Decimal(12,2)`**, nunca `Float`; sempre convertido
   para `string` nas respostas (`class-transformer` não serializa `Decimal`
   do Prisma corretamente).
-
-A revisão de segurança feita antes da entrega (achados corrigidos, pontos já
-adequados e riscos aceitos, com evidência de cada um) está em
-[`REVISAO-SEGURANCA.md`](../REVISAO-SEGURANCA.md), na raiz do projeto.
 
 ## Estrutura de pastas
 

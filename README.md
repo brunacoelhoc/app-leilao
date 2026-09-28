@@ -140,7 +140,7 @@ A matriz completa por endpoint está em [`BackEnd/README.md`](BackEnd/README.md#
 ```
  Angular (4200) ──HTTP + JWT + X-API-KEY──▶ NestJS (3092) ──Prisma──▶ PostgreSQL (5433)
         ▲                                        │
-        └──────────── WebSocket (lances, chat) ◀─┘
+        └──────── WebSocket (namespace /lances) ◀┘
 ```
 
 Decisões principais:
@@ -149,6 +149,86 @@ Decisões principais:
 - **Defesa em profundidade**: as regras críticas também existem no banco (`CHECK`, `UNIQUE`, triggers de imutabilidade).
 - **Modelos e enums em inglês** (`User`, `Auction`, `AuctionItem`, `Bid`…); campos, mensagens e comentários em português.
 - **Migrations versionadas**, IDs UUID e erros num formato padrão único (ver [`BackEnd/README.md`](BackEnd/README.md)).
+
+### O caminho de uma requisição
+
+Toda chamada à API passa pelas mesmas camadas, nesta ordem:
+
+| # | Camada | O que faz |
+| --- | --- | --- |
+| 1 | Middleware de **id da requisição** | Gera o `X-Request-Id`, que acompanha o log e volta no cabeçalho da resposta |
+| 2 | **Helmet**, compressão e **CORS** | Cabeçalhos de segurança, gzip e origem liberada só para o front |
+| 3 | `ThrottlerGuard` (global) | Limita requisições por IP, inclusive de quem testa chaves erradas |
+| 4 | `ApiKeyGuard` (global) | Exige o cabeçalho `X-API-KEY` (rotas marcadas com `@SemChaveApi` ficam de fora) |
+| 5 | `JwtAuthGuard` / `JwtOpcionalGuard` + `RolesGuard` | Identifica a pessoa pelo token e confere o papel (`@Roles`). Leituras públicas usam o guard opcional |
+| 6 | **Pipes** (`ValidationPipe` + rejeição de caractere nulo) | Validam o DTO: campo extra ou inválido vira `400` antes de chegar à regra |
+| 7 | **Controller → Service → Prisma** | O controller só recebe e responde; o service concentra a regra de negócio e fala com o banco |
+| 8 | `FiltroExcecoes`, log e serialização | Todo erro sai no mesmo formato; cada requisição gera um log com o tempo gasto; campos `@Exclude()` (como a senha) nunca saem |
+
+### Módulos do back-end
+
+Cada módulo fica em `BackEnd/src/<módulo>/` com controller, service e DTOs próprios.
+
+| Módulo | Responsabilidade |
+| --- | --- |
+| `auth` | Cadastro, login, sessões com refresh token rotativo, recuperação de senha, estratégia JWT |
+| `users` | Perfil, modo comprador/vendedor, troca de senha, encerramento de conta (LGPD) |
+| `categories` | CRUD de categorias (escrita só do ADMIN) |
+| `auctions` | Leilões, máquina de estados, indicadores, anti-sniping e o **robô de encerramento** |
+| `auction-items` | Peças do leilão, ficha técnica e situação (`AVAILABLE`, `SOLD`, `UNSOLD`) |
+| `bids` | Lances, com regras de negócio e concorrência resolvida no banco |
+| `documents` | Upload e download de fotos e documentos, com validação da assinatura do arquivo |
+| `pedidos` | Pós-leilão: pagamento simulado e retirada/entrega, só para o vencedor |
+| `chat` | Mensagens ao vivo por leilão |
+| `realtime` | Gateway Socket.io do namespace `lances` |
+| `cep` | Integração com o ViaCEP, com tempo limite e falha controlada |
+| `audit` | Trilha de auditoria das ações sensíveis |
+| `destaques`, `ranking`, `admin`, `obras`, `institucional` | Consultas de leitura: página inicial, ranking de vendedores, totais do painel e textos de apoio |
+| `prisma`, `saude`, `config`, `common` | Conexão com o banco, `/saude`, validação do `.env` e peças compartilhadas (guards, filtros, pipes, utilitários) |
+
+### Como um lance é processado
+
+1. O `bids` service abre uma **transação** e trava a linha do item com `SELECT … FOR UPDATE` (lock pessimista): um lance
+   concorrente no mesmo item espera e já enxerga o valor atualizado.
+2. Com o item travado, confere as regras: leilão `OPEN` e dentro do período, item disponível, o dono não dá lance no
+   próprio leilão, ninguém cobre o próprio lance e o valor supera o lance atual + incremento mínimo.
+3. Grava o lance (imutável), atualiza `lanceAtual` do item e, se o lance caiu nos últimos 2 minutos, **estende o prazo** (anti-sniping), tudo na mesma transação.
+4. Só depois de confirmar (`commit`) o gateway emite o evento `lance-novo` para quem está na sala do item.
+
+### Tempo real e encerramento automático
+
+- O **gateway** (`realtime/lances.gateway.ts`) usa o namespace `lances`. O cliente entra na sala de um item (`entrar-item`) ou de
+  um leilão (`entrar-leilao`) e recebe `lance-novo`, `mensagem-nova`, `leilao-reativado` e `item-finalizado`. O front também
+  re-sincroniza os dados quando o socket reconecta.
+- O **robô de encerramento** (`EncerramentoAutomaticoService`) confere o relógio a cada 5 segundos: abre os leilões `SCHEDULED`
+  que chegaram ao início e fecha os `OPEN` que passaram do prazo, definindo o vencedor. Se um lance de última hora estendeu
+  o prazo no meio tempo, o leilão não é fechado. Ele fica desligado nos testes (`NODE_ENV=test`).
+
+### Banco de dados
+
+O modelo está em [`BackEnd/prisma/schema.prisma`](BackEnd/prisma/schema.prisma) e o histórico em
+[`BackEnd/prisma/migrations/`](BackEnd/prisma/migrations/). Tabelas: `User`, `Category`, `Auction`, `AuctionStatusHistory`,
+`AuctionItem`, `Bid`, `Pedido`, `Document`, `ChatMessage`, `AuditLog`, `PasswordReset` e `Session`.
+
+| Garantia | Como é feita |
+| --- | --- |
+| Dois lances iguais no mesmo item | `UNIQUE (itemId, valor)` |
+| Valores e datas coerentes | `CHECK` (preço e incremento positivos, período válido, vencedor coerente com a situação, formato de CEP e UF) |
+| Nenhum registro solto | Chaves estrangeiras com `RESTRICT` |
+| Lances, auditoria e histórico de status | Triggers bloqueiam `UPDATE`, `DELETE` e `TRUNCATE`: só se insere |
+| Dinheiro sem arredondamento | Colunas `Decimal`, nunca `Float` |
+| Listagens rápidas | Índices nas colunas de filtro e ordenação (status, prazo, dono, data de criação) |
+
+### Front-end
+
+O Angular fica em `FrontEnd/src/app/` e só exibe e coleta dados:
+
+- `core/`: interceptor (coloca `X-API-KEY` e o JWT em toda requisição), `auth.service` (sessão), guards de rota por papel,
+  cliente Socket.io (`tempo-real.service`), modelos que espelham as respostas da API e utilitários.
+- `services/`: um cliente HTTP por recurso da API (leilões, itens, lances, categorias, documentos, pedidos, chat, ranking…).
+- `pages/`: telas roteadas (`login`, `registrar`, `leiloes-lista`, `leilao-detalhe`, `item-detalhe`, `meus-lances`, `perfil`,
+  `vendedor-painel`, `vendedor-leilao`, `admin-painel`).
+- `shared/`: componentes reutilizáveis (modal, paginação, chat do leilão, visualizador 3D, carrossel, sidebar, barra de acessibilidade…).
 
 ## Como rodar na sua máquina
 
@@ -386,7 +466,6 @@ aplica as migrations do zero e executa lint, build, testes unitários e e2e.
 - **Sessões**: access token de 35 minutos (configurável), refresh token rotativo e de uso único (só o hash no banco; o reuso
   derruba a sessão), logout que invalida o token e revogação ao trocar a senha ou desativar a conta.
 - **Banco**: `CHECK`, `UNIQUE`, chaves estrangeiras `RESTRICT` e triggers que impedem alterar ou apagar lances, auditoria e histórico.
-- Revisão de segurança documentada em [`REVISAO-SEGURANCA.md`](REVISAO-SEGURANCA.md).
 
 ## Solução de problemas
 
@@ -417,8 +496,19 @@ aplica as migrations do zero e executa lint, build, testes unitários e e2e.
 ├── scripts/backup-banco.ps1 Backup (pg_dump) do banco do Docker
 ├── docker-compose.yml       API + PostgreSQL + pgAdmin
 ├── .env.example             Variáveis do Docker Compose
-├── .nvmrc                   Versão do Node recomendada
-└── REVISAO-SEGURANCA.md     Revisão de segurança
+└── .nvmrc                   Versão do Node recomendada
+```
+
+Dentro de `BackEnd/`:
+
+```
+BackEnd/
+├── src/                     Módulos da API (um por pasta), common/, config/ e realtime/
+├── prisma/                  schema.prisma e migrations/
+├── test/                    Testes e2e (banco PostgreSQL separado)
+├── scripts/                 Scripts auxiliares
+├── thunder-tests/           Coleção do Thunder Client
+└── Dockerfile               Build multi-stage da API
 ```
 
 ## Contribuindo
@@ -434,7 +524,6 @@ Regras do projeto: **regra de negócio só no back-end**, nada de segredo no Git
 
 - [`BackEnd/README.md`](BackEnd/README.md) — API, variáveis, endpoints, permissões, tempo real e decisões.
 - [`FrontEnd/README.md`](FrontEnd/README.md) — telas, rotas e como rodar a interface.
-- [`REVISAO-SEGURANCA.md`](REVISAO-SEGURANCA.md) — análise de segurança.
 
 ## Autoria, créditos e licença
 

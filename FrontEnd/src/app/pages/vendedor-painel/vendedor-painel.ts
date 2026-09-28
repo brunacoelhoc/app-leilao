@@ -266,8 +266,17 @@ export class VendedorPainel {
       // 3) a foto do item (opcional: sem foto, o servidor usa uma capa padrao)
       if (this.foto) await firstValueFrom(this.documentosService.enviar(item.id, 'PHOTO', this.foto));
 
-      this.modalAberto.set(false);
-      await this.alerta.sucesso('Leilão criado!', 'Ele está como rascunho. Agende quando estiver pronto.');
+      // 4) publica direto (rascunho -> agendado): ja tem 1 item, entao pode sair do DRAFT
+      // e ficar visivel pros compradores sem exigir um segundo passo manual
+      try {
+        await firstValueFrom(this.leiloesService.mudarStatus(leilao.id, 'SCHEDULED'));
+        this.modalAberto.set(false);
+        await this.alerta.sucesso('Leilão criado e publicado!', 'Já ficou visível para os compradores.');
+      } catch {
+        // a publicacao falhou (ex.: dataFim ja passou), mas o leilao e o item existem: nao trava o fluxo
+        this.modalAberto.set(false);
+        await this.alerta.sucesso('Leilão criado!', 'Ficou como rascunho — agende quando estiver pronto.');
+      }
       await this.router.navigate(['/vendedor/leiloes', leilao.id]);
     } catch (erro) {
       const mensagem = mensagemDeErro(erro, 'Não foi possível concluir o cadastro');

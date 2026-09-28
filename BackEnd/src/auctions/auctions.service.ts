@@ -124,18 +124,24 @@ export class AuctionsService {
     usuario?: UsuarioAutenticado,
   ): Promise<RespostaPaginada<Auction & { capaDocumentoId: string | null; capaPadrao: string }>> {
     const paginacao = calcularPaginacao(params);
+
+    // Busca sem acento: "leilao" tem que encontrar "Leilão". O Prisma nao tem
+    // essa funcao pronta, entao usamos a extensao unaccent do Postgres direto
+    // (parametrizada pelo $queryRaw, sem risco de injecao) so pra achar os ids
+    // que batem, e depois filtramos por id no where tipado normal
+    const idsDaBusca = params.busca
+      ? await this.prisma.$queryRaw<{ id: string }[]>`
+          SELECT id FROM "Auction"
+          WHERE unaccent(titulo) ILIKE unaccent(${'%' + params.busca + '%'})
+             OR unaccent(COALESCE(descricao, '')) ILIKE unaccent(${'%' + params.busca + '%'})
+        `
+      : null;
+
     const where: Prisma.AuctionWhereInput = {
       vendedorId: params.vendedorId,
       status: params.status,
       AND: [filtroDeLeiloesVisiveis(usuario)],
-      ...(params.busca
-        ? {
-            OR: [
-              { titulo: { contains: params.busca, mode: 'insensitive' } },
-              { descricao: { contains: params.busca, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
+      ...(idsDaBusca ? { id: { in: idsDaBusca.map((linha) => linha.id) } } : {}),
     };
     const [dados, total] = await Promise.all([
       this.prisma.auction.findMany({
@@ -147,10 +153,10 @@ export class AuctionsService {
       this.prisma.auction.count({ where }),
     ]);
 
-    // Capa do card: a primeira foto de qualquer item do leilao (uma consulta so)
+    // Capa do card: a foto mais recente de qualquer item do leilao (uma consulta so)
     const fotos = await this.prisma.document.findMany({
       where: { tipo: DocumentType.PHOTO, item: { leilaoId: { in: dados.map((l) => l.id) } } },
-      orderBy: { criadoEm: 'asc' },
+      orderBy: { criadoEm: 'desc' },
       select: { id: true, item: { select: { leilaoId: true } } },
     });
     const capas = new Map<string, string>();
@@ -185,11 +191,11 @@ export class AuctionsService {
     return resumo;
   }
 
-  // Foto de capa do leilao: a primeira foto de qualquer item dele
+  // Foto de capa do leilao: a foto mais recente de qualquer item dele
   async capaDoLeilao(leilaoId: string): Promise<string | null> {
     const foto = await this.prisma.document.findFirst({
       where: { tipo: DocumentType.PHOTO, item: { leilaoId } },
-      orderBy: { criadoEm: 'asc' },
+      orderBy: { criadoEm: 'desc' },
       select: { id: true },
     });
     return foto?.id ?? null;
@@ -215,8 +221,11 @@ export class AuctionsService {
 
   // Indicadores do dominio: resumo calculado na hora a partir dos itens/lances
   // do leilao (nao existe tabela propria para isso)
-  async obterIndicadores(id: string): Promise<IndicadoresAuctionResposta> {
-    await this.buscarPorId(id); // 404 se o leilao nao existir
+  // 🔎 Usa buscarVisivelPorId (nao buscarPorId): sem isso, dado financeiro de
+  // um leilao DRAFT/CANCELED de outro dono vazava pra quem soubesse o id,
+  // furando a mesma regra de "rascunho privado" que o resto do sistema aplica
+  async obterIndicadores(id: string, usuario?: UsuarioAutenticado): Promise<IndicadoresAuctionResposta> {
+    await this.buscarVisivelPorId(id, usuario); // 404 se o leilao nao existir ou for rascunho de outro dono
 
     const itens = await this.prisma.auctionItem.findMany({
       where: { leilaoId: id },
@@ -350,13 +359,14 @@ export class AuctionsService {
       }
 
       await this.conferirCoerenciaDaPublicacao(leilao, dto.status);
-      await this.conferirCancelamentoComLances(leilao, dto.status, usuario);
 
       const atualizado = await this.aplicarMudancaStatus(
         leilao,
         dto.status,
         usuario.id,
         dto.motivo,
+        false,
+        usuario.papel,
       );
 
       // Auditoria FORA da transacao (que ja comitou): mudanca de estado e um
@@ -471,25 +481,6 @@ export class AuctionsService {
     }
   }
 
-  // 🔎 Cancelar um leilao ABERTO que ja recebeu lances: so o ADMIN (com motivo, auditado). Se o vendedor
-  // pudesse, cancelaria quando o preco nao agrada, prejudicando quem ja deu lance. Os lances ficam
-  // guardados (imutaveis); o leilao so muda de estado
-  private async conferirCancelamentoComLances(
-    leilao: Auction,
-    novoStatus: AuctionStatus,
-    usuario: UsuarioAutenticado,
-  ): Promise<void> {
-    if (novoStatus !== AuctionStatus.CANCELED || leilao.status !== AuctionStatus.OPEN) return;
-    if (usuario.papel === 'ADMIN') return;
-
-    const lances = await this.prisma.bid.count({ where: { item: { leilaoId: leilao.id } } });
-    if (lances > 0) {
-      throw new ForbiddenException(
-        `Este leilão já recebeu ${lances} lance(s) e não pode ser cancelado pelo vendedor. Peça ao administrador (com o motivo).`,
-      );
-    }
-  }
-
   // 🔎 Publicar (agendar/abrir) so faz sentido com o leilao pronto: nao se agenda um leilao
   // vazio nem um que ja deveria ter terminado (ele ficaria preso, sem nunca fechar)
   private async conferirCoerenciaDaPublicacao(
@@ -518,6 +509,8 @@ export class AuctionsService {
     motivo?: string,
     // Encerramento por horario: so fecha se o PRAZO continua o mesmo que o robo leu (o anti-sniping pode ter estendido)
     exigirMesmoPrazo = false,
+    // So usado ao CANCELAR: quem esta cancelando (pra saber se pode cancelar com lance)
+    papelDeQuemAlterou?: string,
   ): Promise<Auction> {
     let substituicoes: SubstituicaoDeVencedor[] = [];
     const atualizado = await this.prisma.$transaction(async (tx) => {
@@ -531,6 +524,20 @@ export class AuctionsService {
         await tx.$queryRaw`
           SELECT id FROM "AuctionItem" WHERE "leilaoId" = ${leilao.id} ORDER BY id FOR UPDATE
         `;
+      }
+
+      // 🔎 Cancelar um leilao ABERTO que ja recebeu lances: so o ADMIN. Feito AQUI (depois do lock acima, dentro
+      // da mesma transacao) e nao antes: um lance concorrente so termina de inserir depois de travar a mesma
+      // linha do item, entao contar lances so depois do lock garante que nenhum lance "passa por baixo" do
+      // cancelamento (senao o vendedor podia cancelar um leilao que acabou de receber lance, na janela entre
+      // o "conferir" e o "aplicar")
+      if (novoStatus === AuctionStatus.CANCELED && leilao.status === AuctionStatus.OPEN && papelDeQuemAlterou !== 'ADMIN') {
+        const lances = await tx.bid.count({ where: { item: { leilaoId: leilao.id } } });
+        if (lances > 0) {
+          throw new ForbiddenException(
+            `Este leilão já recebeu ${lances} lance(s) e não pode ser cancelado pelo vendedor. Peça ao administrador (com o motivo).`,
+          );
+        }
       }
 
       // 🔎 Troca "compare-and-swap": so muda se o leilao AINDA esta no estado que lemos.

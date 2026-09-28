@@ -20,7 +20,7 @@ const INCLUIR = {
       _count: { select: { lances: true } },
       documentos: {
         where: { tipo: DocumentType.PHOTO },
-        orderBy: { criadoEm: 'asc' },
+        orderBy: { criadoEm: 'desc' },
         take: 1,
         select: { id: true },
       },

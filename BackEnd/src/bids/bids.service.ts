@@ -309,7 +309,7 @@ export class BidsService {
       include: {
         item: {
           include: {
-            documentos: { where: { tipo: DocumentType.PHOTO }, orderBy: { criadoEm: 'asc' }, take: 1, select: { id: true } },
+            documentos: { where: { tipo: DocumentType.PHOTO }, orderBy: { criadoEm: 'desc' }, take: 1, select: { id: true } },
             leilao: {
               select: {
                 id: true,
