@@ -147,10 +147,10 @@ export class AuctionsService {
       this.prisma.auction.count({ where }),
     ]);
 
-    // Capa do card: a primeira foto de qualquer item do leilao (uma consulta so)
+    // Capa do card: a foto mais recente de qualquer item do leilao (uma consulta so)
     const fotos = await this.prisma.document.findMany({
       where: { tipo: DocumentType.PHOTO, item: { leilaoId: { in: dados.map((l) => l.id) } } },
-      orderBy: { criadoEm: 'asc' },
+      orderBy: { criadoEm: 'desc' },
       select: { id: true, item: { select: { leilaoId: true } } },
     });
     const capas = new Map<string, string>();
@@ -185,11 +185,11 @@ export class AuctionsService {
     return resumo;
   }
 
-  // Foto de capa do leilao: a primeira foto de qualquer item dele
+  // Foto de capa do leilao: a foto mais recente de qualquer item dele
   async capaDoLeilao(leilaoId: string): Promise<string | null> {
     const foto = await this.prisma.document.findFirst({
       where: { tipo: DocumentType.PHOTO, item: { leilaoId } },
-      orderBy: { criadoEm: 'asc' },
+      orderBy: { criadoEm: 'desc' },
       select: { id: true },
     });
     return foto?.id ?? null;

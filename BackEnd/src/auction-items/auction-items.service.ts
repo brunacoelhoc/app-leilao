@@ -43,7 +43,7 @@ type ItemComContagem = AuctionItem & {
   _count?: { lances: number };
   vencedor?: { nome: string } | null;
   leilao?: { status: AuctionStatus; dataInicio: Date; dataFim: Date; prorrogacoes: number };
-  documentos?: { id: string }[]; // so na listagem: a primeira foto vira a capa
+  documentos?: { id: string }[]; // so na listagem: a foto mais recente vira a capa
 };
 
 function paraResposta(itemComRelacoes: ItemComContagem): AuctionItemResposta {
@@ -209,7 +209,7 @@ export class AuctionItemsService {
           },
           documentos: {
             where: { tipo: DocumentType.PHOTO },
-            orderBy: { criadoEm: 'asc' },
+            orderBy: { criadoEm: 'desc' },
             take: 1,
             select: { id: true },
           },
